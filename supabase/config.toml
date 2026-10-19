@@ -1,0 +1,39 @@
+# Configuración del entorno local de Supabase (CLI).
+# El proyecto en la nube se configura desde el panel de Supabase;
+# docs/deployment/github-pages-supabase.md lista los valores equivalentes.
+project_id = "lam-virtual-acars"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.seed]
+enabled = false
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = [
+  "http://localhost:5173/auth/callback",
+  "http://localhost:5173/restablecer",
+  "https://inavae.github.io/lam-virtual-acars/auth/callback",
+  "https://inavae.github.io/lam-virtual-acars/restablecer",
+]
+jwt_expiry = 3600
+enable_signup = true
+minimum_password_length = 8
+password_requirements = "letters_digits"
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+double_confirm_changes = true
+secure_password_change = false

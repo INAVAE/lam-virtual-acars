@@ -1,0 +1,47 @@
+# Roles y permisos
+
+Los permisos se aplican en PostgreSQL con RLS y disparadores; la web solo oculta lo que el usuario no puede usar. Las pruebas de esta matriz están en `supabase/tests/database/001_foundation_rls.test.sql`.
+
+## Roles
+
+| Rol | Ámbito | Dónde se guarda |
+| --- | --- | --- |
+| Superadministrador LAM | Organización | `organization_members.role = 'superadmin'` |
+| Administrador de aerolínea | Una aerolínea | `'airline_admin' = any(airline_memberships.roles)` |
+| Jefe de operaciones | Una aerolínea | `'ops_chief' = any(airline_memberships.roles)` |
+| Piloto | Una aerolínea | `'pilot' = any(airline_memberships.roles)` |
+| Visitante | Público | Rol `anon` de Supabase |
+
+Una persona puede tener roles distintos en distintas aerolíneas. Solo cuentan las membresías con `status = 'active'` y perfiles con `account_status = 'active'`.
+
+## Funciones de autorización (`private`)
+
+| Función | Verdadero cuando quien llama… |
+| --- | --- |
+| `is_org_admin()` | es superadministrador activo |
+| `has_airline_role(airline, roles[])` | tiene alguno de esos roles activos en la aerolínea |
+| `is_airline_member(airline)` | tiene cualquier rol activo en la aerolínea |
+| `can_manage_airline(airline)` | es superadministrador o administrador de la aerolínea |
+| `can_staff_airline(airline)` | es superadministrador, administrador o jefe de operaciones |
+| `is_staff_for_user(user)` | administra o supervisa alguna aerolínea de esa persona |
+
+## Matriz de la Fase 1
+
+| Tabla | Visitante | Piloto | Jefe de operaciones | Admin. de aerolínea | Superadmin |
+| --- | --- | --- | --- | --- | --- |
+| `organizations` | Leer | Leer | Leer | Leer | Leer, editar nombre |
+| `airlines` | Leer activas | Leer activas y las suyas | Igual que piloto | Editar nombre, identidad visual y descripción de la suya | Todo |
+| `airline_settings` | No | Leer de sus aerolíneas | Leer | Editar la suya | Todo |
+| `airline_memberships` | No | Leer las suyas; solicitar ingreso como piloto pendiente; cancelar o dejar si solo es piloto | Leer las de su aerolínea | Alta, cambio de estado y roles (sin nombrar administradores), baja; nunca sobre sí mismo | Todo, incluido nombrar administradores |
+| `profiles` | No | Leer y editar el suyo (sin correo, estado ni alta) | Leer perfiles de su aerolínea | Leer perfiles de su aerolínea | Leer y editar todos |
+| `organization_members` | No | Ver si él mismo lo es | Igual | Igual | Leer, agregar y quitar a otros (no a sí mismo) |
+| `audit_logs` | No | No | No | Leer los de su aerolínea | Leer todos |
+| `get_dashboard_summary()` | No | Sus aerolíneas | Sus aerolíneas | Sus aerolíneas | Consolidado o por aerolínea |
+
+## Reglas contra la escalada de privilegios
+
+- Nadie puede crear su propia membresía activa ni con rol distinto de piloto.
+- Un administrador de aerolínea no puede modificar su propia membresía ni la de otro administrador.
+- Solo un superadministrador nombra administradores de aerolínea.
+- Un superadministrador no puede quitarse a sí mismo, así que siempre queda al menos uno.
+- El primer superadministrador se da de alta con `private.grant_superadmin(correo)` desde el SQL Editor; la función no es ejecutable desde la API.

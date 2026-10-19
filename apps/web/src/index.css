@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/*
+ * Tokens de LAM Virtual ACARS.
+ * Modo oscuro por defecto (centro de operaciones); modo claro con los mismos
+ * significados de color. El acento cambia con la aerolínea seleccionada.
+ */
+:root {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --surface: #111c2e;
+  --surface-2: #17243a;
+  --border: #23344f;
+  --text: #e6edf7;
+  --text-muted: #9aabc2;
+  --brand: #2563eb;
+  --cyan: #06b6d4;
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --ok-text: #4ade80;
+  --warn-text: #fbbf24;
+  --danger-text: #f87171;
+  --accent: #2563eb;
+  --accent-fg: #ffffff;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f2f5f9;
+  --surface: #ffffff;
+  --surface-2: #eaeff6;
+  --border: #d3dce8;
+  --text: #0b1220;
+  --text-muted: #4a5a70;
+  --ok-text: #15803d;
+  --warn-text: #b45309;
+  --danger-text: #b91c1c;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-ink: var(--text);
+  --color-muted: var(--text-muted);
+  --color-brand: var(--brand);
+  --color-cyan: var(--cyan);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-ok-ink: var(--ok-text);
+  --color-warn-ink: var(--warn-text);
+  --color-danger-ink: var(--danger-text);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-fg);
+
+  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Barlow Semi Condensed", "Barlow", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+@layer base {
+  html {
+    background-color: var(--bg);
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "tnum" 1;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--brand) 40%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

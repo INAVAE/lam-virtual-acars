@@ -1,0 +1,92 @@
+import { NavLink } from 'react-router';
+import { cn } from '@/lib/cn';
+import { navigation, type NavItem } from './navigation';
+
+function LamMark() {
+  return (
+    <svg viewBox="0 0 64 64" className="size-8 shrink-0" aria-hidden>
+      <rect width="64" height="64" rx="14" className="fill-surface-2" />
+      <path d="M10 40 L54 18" stroke="var(--cyan)" strokeWidth="5" strokeLinecap="round" />
+      <path d="M10 48 L54 26" stroke="var(--accent)" strokeWidth="5" strokeLinecap="round" />
+      <circle cx="54" cy="18" r="4" fill="var(--ok)" />
+    </svg>
+  );
+}
+
+function Item({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
+  const Icon = item.icon;
+  const base = 'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[15px]';
+
+  if (!item.to) {
+    return (
+      <li>
+        <span
+          aria-disabled="true"
+          title={`Disponible en la Fase ${item.phase}`}
+          className={cn(base, 'cursor-default text-muted/70')}
+        >
+          <Icon className="size-4 shrink-0" aria-hidden />
+          <span className="flex-1 truncate">{item.label}</span>
+          <span className="text-xs tabular-nums text-muted/80">Fase {item.phase}</span>
+        </span>
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <NavLink
+        to={item.to}
+        end={item.to === '/'}
+        onClick={onNavigate}
+        className={({ isActive }) =>
+          cn(
+            base,
+            'transition-colors',
+            isActive
+              ? 'bg-surface-2 font-medium text-ink shadow-[inset_3px_0_0_var(--accent)]'
+              : 'text-ink/85 hover:bg-surface-2 hover:text-ink',
+          )
+        }
+      >
+        <Icon className="size-4 shrink-0" aria-hidden />
+        <span className="truncate">{item.label}</span>
+      </NavLink>
+    </li>
+  );
+}
+
+export function Sidebar({ isOrgAdmin, onNavigate }: { isOrgAdmin: boolean; onNavigate?: () => void }) {
+  return (
+    <nav aria-label="Navegación principal" className="flex h-full flex-col">
+      <div className="flex items-center gap-2.5 px-4 pb-4 pt-5">
+        <LamMark />
+        <div className="leading-tight">
+          <p className="font-display text-lg font-semibold">LAM Virtual ACARS</p>
+          <p className="text-xs text-muted">Líneas Aéreas Mexicanas</p>
+        </div>
+      </div>
+
+      <div className="flex-1 space-y-5 overflow-y-auto px-2 pb-4">
+        {navigation.map((group) => {
+          const items = group.items.filter((item) => !item.adminOnly || isOrgAdmin);
+          return (
+            <div key={group.label}>
+              <p className="px-2.5 pb-1 text-sm text-muted">{group.label}</p>
+              <ul className="space-y-0.5">
+                {items.map((item) => (
+                  <Item key={item.label} item={item} onNavigate={onNavigate} />
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="border-t border-line px-4 py-3 text-xs leading-snug text-muted">
+        Simulación para Microsoft Flight Simulator 2024. Las aerolíneas basadas en marcas reales son operaciones
+        virtuales no oficiales.
+      </p>
+    </nav>
+  );
+}

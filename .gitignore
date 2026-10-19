@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+.vscode/
+.idea/
+supabase/.branches/
+supabase/.temp/
+# .NET
+bin/
+obj/
+*.user

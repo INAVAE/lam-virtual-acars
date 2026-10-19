@@ -1,0 +1,26 @@
+name: Database CI
+
+on:
+  pull_request:
+    paths: ["supabase/**"]
+  push:
+    branches: [main]
+    paths: ["supabase/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pgtap:
+    name: Migraciones y pruebas RLS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Iniciar base de datos local y aplicar migraciones
+        run: supabase db start
+      - name: Pruebas pgTAP
+        run: supabase test db
