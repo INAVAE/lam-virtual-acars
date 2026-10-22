@@ -4,6 +4,7 @@ import { UtcClock } from '@/components/layout/utc-clock';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAirlines } from '@/hooks/use-lam-data';
 import { useAuth } from '@/lib/auth';
+import { displayDomain, operationTypeLabels } from '@/lib/format';
 
 const linkPrimary =
   'inline-flex h-11 items-center rounded-md bg-accent px-5 font-medium text-accent-ink transition-[filter] hover:brightness-110';
@@ -94,7 +95,17 @@ export function PublicHomePage() {
                   <div className="min-w-0">
                     <p className="font-mono text-xl leading-tight">{a.icao_code}</p>
                     <p className="mt-0.5 font-medium">{a.name}</p>
-                    {a.radio_callsign ? <p className="text-sm text-muted">Callsign {a.radio_callsign}</p> : null}
+                    <p className="text-sm text-muted">{operationTypeLabels[a.operation_type]}</p>
+                    {a.website_url ? (
+                      <a
+                        href={a.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-block text-sm text-ink underline underline-offset-4"
+                      >
+                        {displayDomain(a.website_url)}
+                      </a>
+                    ) : null}
                     {a.is_unofficial_brand ? <p className="mt-1 text-sm text-muted">Operación virtual no oficial</p> : null}
                   </div>
                 </li>

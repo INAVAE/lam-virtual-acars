@@ -19,7 +19,7 @@ import {
 } from '@/hooks/use-lam-data';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
-import { formatPilotNumber, formatRoles, statusLabels } from '@/lib/format';
+import { displayDomain, formatPilotNumber, formatRoles, operationTypeLabels, statusLabels } from '@/lib/format';
 
 // -----------------------------------------------------------------------------
 // Encabezado: el código de la aerolínea es la identidad de la pantalla.
@@ -33,19 +33,28 @@ const LAM_EMBLEM = {
 
 function OperationFacts({ airline }: { airline: Airline }) {
   const facts = [
-    { label: 'Callsign', value: airline.radio_callsign },
-    { label: 'RMK', value: airline.flight_plan_remarks },
-    { label: 'Red', value: airline.network === 'OFFLINE' ? 'Sin red' : airline.network },
-    { label: 'IATA', value: airline.iata_code },
+    { label: 'Operación', value: operationTypeLabels[airline.operation_type], mono: false },
+    { label: 'Red', value: airline.network === 'OFFLINE' ? 'Sin red' : airline.network, mono: true },
+    { label: 'RMK', value: airline.flight_plan_remarks, mono: true },
   ];
   return (
     <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
       {facts.map((f) => (
         <div key={f.label} className="flex items-baseline gap-2">
           <dt className="text-muted">{f.label}</dt>
-          <dd className={f.value ? 'font-mono text-ink' : 'text-muted/70'}>{f.value ?? 'Sin definir'}</dd>
+          <dd className={f.value ? (f.mono ? 'font-mono text-ink' : 'text-ink') : 'text-muted/70'}>{f.value ?? 'Sin definir'}</dd>
         </div>
       ))}
+      {airline.website_url ? (
+        <div className="flex items-baseline gap-2">
+          <dt className="text-muted">Sitio</dt>
+          <dd>
+            <a href={airline.website_url} target="_blank" rel="noopener noreferrer" className="text-ink underline underline-offset-4">
+              {displayDomain(airline.website_url)}
+            </a>
+          </dd>
+        </div>
+      ) : null}
     </dl>
   );
 }
@@ -317,7 +326,7 @@ function OrganizationAirlinesPanel() {
               <tr className="border-b border-line">
                 <th scope="col" className="px-4 pb-2 font-medium">Aerolínea</th>
                 <th scope="col" className="px-4 pb-2 font-medium">ICAO</th>
-                <th scope="col" className="px-4 pb-2 font-medium">Callsign</th>
+                <th scope="col" className="px-4 pb-2 font-medium">Operación</th>
                 <th scope="col" className="px-4 pb-2 font-medium">Estado</th>
               </tr>
             </thead>
@@ -332,7 +341,7 @@ function OrganizationAirlinesPanel() {
                     </span>
                   </td>
                   <td className="px-4 py-2.5 font-mono">{a.icao_code ?? <span className="font-sans text-muted">Sin definir</span>}</td>
-                  <td className="px-4 py-2.5 font-mono">{a.radio_callsign ?? <span className="font-sans text-muted">Sin definir</span>}</td>
+                  <td className="px-4 py-2.5">{operationTypeLabels[a.operation_type]}</td>
                   <td className="px-4 py-2.5">
                     {a.is_active ? <Badge tone="ok">Activa</Badge> : <Badge tone="warn">Inactiva</Badge>}
                   </td>

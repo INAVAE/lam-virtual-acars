@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatPilotNumber, formatRoles, formatZulu, formatZuluDate } from './format';
+import { displayDomain, formatPilotNumber, formatRoles, formatZulu, formatZuluDate, operationTypeLabels } from './format';
 
 describe('formatPilotNumber', () => {
   it('rellena a cuatro dígitos', () => {
@@ -19,5 +19,21 @@ describe('formatZulu', () => {
 describe('formatRoles', () => {
   it('ordena los roles de mayor a menor responsabilidad', () => {
     expect(formatRoles(['pilot', 'airline_admin'])).toBe('Administrador, Piloto');
+  });
+});
+
+describe('displayDomain', () => {
+  it('muestra el dominio sin www', () => {
+    expect(displayDomain('https://www.alasdelsurva.org/')).toBe('alasdelsurva.org');
+  });
+
+  it('devuelve el texto original si no es una URL', () => {
+    expect(displayDomain('no es url')).toBe('no es url');
+  });
+});
+
+describe('operationTypeLabels', () => {
+  it('nombra la operación de carga', () => {
+    expect(operationTypeLabels.cargo).toBe('Carga');
   });
 });

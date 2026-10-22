@@ -18,3 +18,4 @@ Reglas:
 - Cada evento y lote lleva un UUID generado por el cliente y un número de secuencia; el servidor descarta duplicados.
 - Esquemas definidos con Zod en `packages/validation` y publicados como JSON Schema para generar los modelos de C#.
 - Marcas de tiempo en UTC (ISO 8601).
+- El callsign del vuelo lo elige el piloto al reservar; el conector lo toma de la reserva y lo compara con el del plan de SimBrief.

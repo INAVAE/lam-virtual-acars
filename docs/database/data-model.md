@@ -27,7 +27,6 @@ erDiagram
     text name
     text icao_code UK "3 letras, obligatorio para activar"
     text iata_code UK
-    text radio_callsign "callsign, ej. AGUILA"
     text network "IVAO, VATSIM u OFFLINE"
     text flight_plan_remarks "RMK, ej. IVAOVA/MXL"
     text brand_primary_color
@@ -112,12 +111,16 @@ Cada fase diseña en detalle sus tablas al empezar, para no fijar decisiones ant
 
 ## Aerolíneas registradas
 
-| Aerolínea | ICAO | Callsign | RMK | Estado | Fuente |
+| Aerolínea | ICAO | Operación | RMK | Sitio | Estado |
 | --- | --- | --- | --- | --- | --- |
-| Líneas Aéreas Mexicanas | MXL | AGUILA | IVAOVA/MXL | Activa | Identidad corporativa de LAM |
-| Alas del Sur | WOS | Sin definir | Sin definir | Inactiva | lineasaereasmexicanas.com.mx/es/alianzas |
-| TAESA | TEJ | Sin definir | Sin definir | Inactiva | Ídem |
-| FedEx Virtual | FDX | Sin definir | Sin definir | Inactiva | Ídem |
-| VIVA Virtual | VIV | Sin definir | Sin definir | Inactiva | Ídem (sitio "próximamente") |
+| Líneas Aéreas Mexicanas | MXL | Pasajeros y carga | IVAOVA/MXL | lineasaereasmexicanas.com.mx | Activa |
+| Alas del Sur | WOS | Pasajeros | Sin definir | alasdelsurva.org | Activa |
+| TAESA | TEJ | Pasajeros | Sin definir | taesava.com | Activa |
+| FedEx Virtual | FDX | Carga | Sin definir | Sin sitio | Activa |
+| VIVA Virtual | VIV | Pasajeros | Sin definir | Sin sitio | Activa |
 
-Todas operan en IVAO. Paleta de LAM, tomada del emblema: verde `#057956`, rojo `#D6061C`, blanco, azul noche `#0A1420`, superficie `#182837` y dorado `#C8A96A`.
+Fuentes: identidad corporativa de LAM, lineasaereasmexicanas.com.mx/es/alianzas y los sitios de cada aerolínea. Todas operan en IVAO; TAESA indica también VATSIM. Los colores se tomaron de cada logotipo.
+
+**Callsign:** no es un dato de la aerolínea. Cada piloto elige el suyo y se guardará por vuelo en la reserva (Fase 3). La columna `airlines.radio_callsign` queda sin uso.
+
+Paleta de LAM, tomada del emblema: verde `#057956`, rojo `#D6061C`, blanco, azul noche `#0A1420`, superficie `#182837` y dorado `#C8A96A`.

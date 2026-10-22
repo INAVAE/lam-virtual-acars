@@ -10,8 +10,9 @@ export type Airline = Pick<
   | 'name'
   | 'icao_code'
   | 'iata_code'
-  | 'radio_callsign'
   | 'flight_plan_remarks'
+  | 'operation_type'
+  | 'website_url'
   | 'network'
   | 'brand_primary_color'
   | 'brand_secondary_color'
@@ -24,7 +25,7 @@ export type Membership = Pick<Tables<'airline_memberships'>, 'id' | 'airline_id'
 export type Profile = Tables<'profiles'>;
 
 const AIRLINE_COLUMNS =
-  'id, slug, name, icao_code, iata_code, radio_callsign, flight_plan_remarks, network, brand_primary_color, brand_secondary_color, logo_path, is_active, is_unofficial_brand, description' as const;
+  'id, slug, name, icao_code, iata_code, flight_plan_remarks, network, operation_type, website_url, brand_primary_color, brand_secondary_color, logo_path, is_active, is_unofficial_brand, description' as const;
 
 export const queryKeys = {
   airlines: (userId: string | null) => ['airlines', userId] as const,

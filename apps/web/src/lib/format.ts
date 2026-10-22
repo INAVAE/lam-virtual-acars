@@ -1,4 +1,4 @@
-import type { AirlineRole, MembershipStatus } from '@lam/shared-types';
+import type { AirlineOperationType, AirlineRole, MembershipStatus } from '@lam/shared-types';
 
 /** Número de piloto LAM: LAM + 4 dígitos (LAM1001). */
 export function formatPilotNumber(pilotNumber: number): string {
@@ -53,5 +53,20 @@ export function countryName(code: string | null): string {
     return regionNames.of(code) ?? code;
   } catch {
     return code;
+  }
+}
+
+export const operationTypeLabels: Record<AirlineOperationType, string> = {
+  passenger: 'Pasajeros',
+  cargo: 'Carga',
+  mixed: 'Pasajeros y carga',
+};
+
+/** Dominio legible de una URL: https://www.taesava.com/ -> taesava.com */
+export function displayDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
   }
 }

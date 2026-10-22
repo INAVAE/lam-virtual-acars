@@ -82,16 +82,20 @@ await check('La raíz redirige a la bienvenida sin sesión', async () => {
 });
 
 // 1b. Aerolínea activa con logotipo en la página pública.
-await check('La bienvenida muestra Líneas Aéreas Mexicanas (MXL) con su logotipo', async () => {
+await check('La bienvenida muestra las 5 aerolíneas con su logotipo', async () => {
   const { context, page, problems } = await openPage(desktop);
   await page.goto(`${SITE}bienvenida`, { waitUntil: 'networkidle' });
-  await page.getByText('MXL', { exact: true }).waitFor({ timeout: 15000 });
-  const logo = page.getByAltText('Logotipo de Líneas Aéreas Mexicanas');
-  await logo.waitFor();
-  const loaded = await logo.evaluate((img) => img.complete && img.naturalWidth > 0);
-  if (!loaded) throw new Error('El logotipo no cargó');
+  for (const code of ['MXL', 'WOS', 'TEJ', 'FDX', 'VIV']) {
+    await page.getByText(code, { exact: true }).waitFor({ timeout: 15000 });
+  }
+  const logos = page.getByAltText(/^Logotipo de /);
+  const count = await logos.count();
+  if (count < 5) throw new Error(`Solo hay ${count} logotipos`);
+  const broken = await logos.evaluateAll((imgs) => imgs.filter((i) => !(i.complete && i.naturalWidth > 0)).map((i) => i.alt));
+  if (broken.length) throw new Error(`No cargaron: ${broken.join(', ')}`);
   if (problems.length) throw new Error(problems.join(' | '));
   await context.close();
+  return `${count} logotipos`;
 });
 
 // 2. Ruta profunda cargada directamente (fallback 404.html de Pages).
