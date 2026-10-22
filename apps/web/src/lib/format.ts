@@ -62,6 +62,11 @@ export const operationTypeLabels: Record<AirlineOperationType, string> = {
   mixed: 'Pasajeros y carga',
 };
 
+/** Etiqueta de un tipo de operación guardado como texto en la base de datos. */
+export function operationTypeLabel(value: string): string {
+  return operationTypeLabels[value as AirlineOperationType] ?? value;
+}
+
 /** Dominio legible de una URL: https://www.taesava.com/ -> taesava.com */
 export function displayDomain(url: string): string {
   try {

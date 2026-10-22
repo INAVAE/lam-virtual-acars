@@ -30,11 +30,11 @@ jobs:
             echo "::warning::No hay pnpm-lock.yaml; ejecuta el flujo 'Actualizar lockfile'."
             pnpm install --no-frozen-lockfile
           fi
-      - run: pnpm typecheck
-      - run: pnpm lint
-      - run: pnpm test
+      - run: scripts/ci-run.sh Tipos pnpm typecheck
+      - run: scripts/ci-run.sh Lint pnpm lint
+      - run: scripts/ci-run.sh Pruebas pnpm test
       - name: Build
-        run: pnpm build
+        run: scripts/ci-run.sh Build pnpm build
         env:
           VITE_SUPABASE_URL: https://example.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder

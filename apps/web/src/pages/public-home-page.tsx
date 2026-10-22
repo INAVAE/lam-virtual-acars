@@ -4,7 +4,7 @@ import { UtcClock } from '@/components/layout/utc-clock';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAirlines } from '@/hooks/use-lam-data';
 import { useAuth } from '@/lib/auth';
-import { displayDomain, operationTypeLabels } from '@/lib/format';
+import { displayDomain, operationTypeLabel } from '@/lib/format';
 
 const linkPrimary =
   'inline-flex h-11 items-center rounded-md bg-accent px-5 font-medium text-accent-ink transition-[filter] hover:brightness-110';
@@ -95,7 +95,7 @@ export function PublicHomePage() {
                   <div className="min-w-0">
                     <p className="font-mono text-xl leading-tight">{a.icao_code}</p>
                     <p className="mt-0.5 font-medium">{a.name}</p>
-                    <p className="text-sm text-muted">{operationTypeLabels[a.operation_type]}</p>
+                    <p className="text-sm text-muted">{operationTypeLabel(a.operation_type)}</p>
                     {a.website_url ? (
                       <a
                         href={a.website_url}

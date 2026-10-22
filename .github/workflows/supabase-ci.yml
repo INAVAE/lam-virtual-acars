@@ -21,6 +21,6 @@ jobs:
         with:
           version: latest
       - name: Iniciar base de datos local y aplicar migraciones
-        run: supabase db start
+        run: scripts/ci-run.sh Migraciones supabase db start
       - name: Pruebas pgTAP
-        run: supabase test db
+        run: scripts/ci-run.sh pgTAP supabase test db

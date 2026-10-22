@@ -129,7 +129,7 @@ export function useDashboardSummary(airlineId: string | null) {
     queryKey: queryKeys.summary(user?.id ?? '', airlineId),
     enabled: Boolean(user),
     queryFn: async (): Promise<DashboardSummary> => {
-      const { data, error } = await getSupabase().rpc('get_dashboard_summary', { p_airline_id: airlineId });
+      const { data, error } = await getSupabase().rpc('get_dashboard_summary', airlineId ? { p_airline_id: airlineId } : {});
       if (error) throw error;
       return toSummary(data);
     },

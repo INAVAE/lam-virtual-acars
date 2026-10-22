@@ -19,7 +19,7 @@ import {
 } from '@/hooks/use-lam-data';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
-import { displayDomain, formatPilotNumber, formatRoles, operationTypeLabels, statusLabels } from '@/lib/format';
+import { displayDomain, formatPilotNumber, formatRoles, operationTypeLabel, statusLabels } from '@/lib/format';
 
 // -----------------------------------------------------------------------------
 // Encabezado: el código de la aerolínea es la identidad de la pantalla.
@@ -33,7 +33,7 @@ const LAM_EMBLEM = {
 
 function OperationFacts({ airline }: { airline: Airline }) {
   const facts = [
-    { label: 'Operación', value: operationTypeLabels[airline.operation_type], mono: false },
+    { label: 'Operación', value: operationTypeLabel(airline.operation_type), mono: false },
     { label: 'Red', value: airline.network === 'OFFLINE' ? 'Sin red' : airline.network, mono: true },
     { label: 'RMK', value: airline.flight_plan_remarks, mono: true },
   ];
@@ -341,7 +341,7 @@ function OrganizationAirlinesPanel() {
                     </span>
                   </td>
                   <td className="px-4 py-2.5 font-mono">{a.icao_code ?? <span className="font-sans text-muted">Sin definir</span>}</td>
-                  <td className="px-4 py-2.5">{operationTypeLabels[a.operation_type]}</td>
+                  <td className="px-4 py-2.5">{operationTypeLabel(a.operation_type)}</td>
                   <td className="px-4 py-2.5">
                     {a.is_active ? <Badge tone="ok">Activa</Badge> : <Badge tone="warn">Inactiva</Badge>}
                   </td>

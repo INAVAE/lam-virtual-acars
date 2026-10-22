@@ -1,237 +1,39 @@
 /**
- * Tipos de la base de datos de LAM Virtual ACARS.
+ * Tipos de dominio de LAM Virtual ACARS.
  *
- * Escritos a mano a partir de supabase/migrations para la Fase 1.
- * Regenerar con `supabase gen types typescript` cuando cambie el esquema
- * y comparar con este archivo antes de reemplazarlo.
+ * El esquema completo se genera en database.generated.ts desde el proyecto
+ * Supabase. Aquí solo hay alias legibles y las formas de las respuestas JSON
+ * de las funciones RPC.
  */
+import type { Database, Enums } from './database.generated';
 
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type { Database, Json, Tables, TablesInsert, TablesUpdate, Enums } from './database.generated';
 
-export type OrgRole = 'superadmin';
-export type AirlineRole = 'airline_admin' | 'ops_chief' | 'pilot';
-export type MembershipStatus = 'pending' | 'active' | 'suspended' | 'rejected';
-export type AccountStatus = 'active' | 'suspended';
-export type AirlineNetwork = 'IVAO' | 'VATSIM' | 'OFFLINE';
-export type AirlineOperationType = 'passenger' | 'cargo' | 'mixed';
+export type OrgRole = Enums<'org_role'>;
+export type AirlineRole = Enums<'airline_role'>;
+export type MembershipStatus = Enums<'membership_status'>;
+export type AccountStatus = Enums<'account_status'>;
+export type AircraftStatus = Enums<'aircraft_status'>;
 
-export type Database = {
-  public: {
-    Tables: {
-      organizations: {
-        Row: {
-          id: string;
-          slug: string;
-          name: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          slug: string;
-          name: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          name?: string;
-        };
-        Relationships: [];
-      };
-      airlines: {
-        Row: {
-          id: string;
-          organization_id: string;
-          slug: string;
-          name: string;
-          icao_code: string | null;
-          iata_code: string | null;
-          radio_callsign: string | null;
-          description: string | null;
-          brand_primary_color: string;
-          brand_secondary_color: string | null;
-          logo_path: string | null;
-          is_unofficial_brand: boolean;
-          is_active: boolean;
-          network: AirlineNetwork;
-          flight_plan_remarks: string | null;
-          operation_type: AirlineOperationType;
-          website_url: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          organization_id: string;
-          slug: string;
-          name: string;
-          icao_code?: string | null;
-          iata_code?: string | null;
-          radio_callsign?: string | null;
-          description?: string | null;
-          brand_primary_color?: string;
-          brand_secondary_color?: string | null;
-          logo_path?: string | null;
-          is_unofficial_brand?: boolean;
-          is_active?: boolean;
-          network?: AirlineNetwork;
-          flight_plan_remarks?: string | null;
-          operation_type?: AirlineOperationType;
-          website_url?: string | null;
-        };
-        Update: {
-          name?: string;
-          icao_code?: string | null;
-          iata_code?: string | null;
-          radio_callsign?: string | null;
-          description?: string | null;
-          brand_primary_color?: string;
-          brand_secondary_color?: string | null;
-          logo_path?: string | null;
-          is_unofficial_brand?: boolean;
-          is_active?: boolean;
-          network?: AirlineNetwork;
-          flight_plan_remarks?: string | null;
-          operation_type?: AirlineOperationType;
-          website_url?: string | null;
-        };
-        Relationships: [];
-      };
-      profiles: {
-        Row: {
-          id: string;
-          pilot_number: number;
-          email: string;
-          display_name: string;
-          country_code: string | null;
-          simbrief_username: string | null;
-          primary_airline_id: string | null;
-          account_status: AccountStatus;
-          joined_at: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id: string;
-          email: string;
-          display_name: string;
-        };
-        Update: {
-          display_name?: string;
-          country_code?: string | null;
-          simbrief_username?: string | null;
-          primary_airline_id?: string | null;
-          account_status?: AccountStatus;
-        };
-        Relationships: [];
-      };
-      organization_members: {
-        Row: {
-          organization_id: string;
-          user_id: string;
-          role: OrgRole;
-          created_at: string;
-          created_by: string | null;
-        };
-        Insert: {
-          organization_id: string;
-          user_id: string;
-          role: OrgRole;
-        };
-        Update: {
-          role?: OrgRole;
-        };
-        Relationships: [];
-      };
-      airline_memberships: {
-        Row: {
-          id: string;
-          airline_id: string;
-          user_id: string;
-          roles: AirlineRole[];
-          status: MembershipStatus;
-          requested_at: string;
-          decided_at: string | null;
-          decided_by: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          airline_id: string;
-          user_id: string;
-          roles?: AirlineRole[];
-          status?: MembershipStatus;
-        };
-        Update: {
-          roles?: AirlineRole[];
-          status?: MembershipStatus;
-        };
-        Relationships: [];
-      };
-      airline_settings: {
-        Row: {
-          airline_id: string;
-          max_active_bookings: number;
-          booking_expiry_hours: number;
-          require_aircraft_at_origin: boolean;
-          auto_approve_pireps: boolean;
-          public_tracking: boolean;
-          delay_tolerance_minutes: number;
-          updated_at: string;
-          updated_by: string | null;
-        };
-        Insert: {
-          airline_id: string;
-        };
-        Update: {
-          max_active_bookings?: number;
-          booking_expiry_hours?: number;
-          require_aircraft_at_origin?: boolean;
-          auto_approve_pireps?: boolean;
-          public_tracking?: boolean;
-          delay_tolerance_minutes?: number;
-        };
-        Relationships: [];
-      };
-      audit_logs: {
-        Row: {
-          id: number;
-          occurred_at: string;
-          actor_id: string | null;
-          airline_id: string | null;
-          action: 'insert' | 'update' | 'delete';
-          entity_type: string;
-          entity_id: string;
-          old_data: Json | null;
-          new_data: Json | null;
-        };
-        Insert: never;
-        Update: never;
-        Relationships: [];
-      };
-    };
-    Views: { [_ in never]: never };
-    Functions: {
-      get_dashboard_summary: {
-        Args: { p_airline_id?: string | null };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      org_role: OrgRole;
-      airline_role: AirlineRole;
-      membership_status: MembershipStatus;
-      account_status: AccountStatus;
-    };
-    CompositeTypes: { [_ in never]: never };
-  };
-};
+/** Valores permitidos por las restricciones CHECK (la generación los tipa como string). */
+export const AIRLINE_NETWORKS = ['IVAO', 'VATSIM', 'OFFLINE'] as const;
+export type AirlineNetwork = (typeof AIRLINE_NETWORKS)[number];
 
-type PublicSchema = Database['public'];
+export const OPERATION_TYPES = ['passenger', 'cargo', 'mixed'] as const;
+export type AirlineOperationType = (typeof OPERATION_TYPES)[number];
 
-export type Tables<T extends keyof PublicSchema['Tables']> = PublicSchema['Tables'][T]['Row'];
-export type TablesInsert<T extends keyof PublicSchema['Tables']> = PublicSchema['Tables'][T]['Insert'];
-export type TablesUpdate<T extends keyof PublicSchema['Tables']> = PublicSchema['Tables'][T]['Update'];
+export const WAKE_CATEGORIES = ['L', 'M', 'H', 'J'] as const;
+export type WakeCategory = (typeof WAKE_CATEGORIES)[number];
+
+export const ENGINE_TYPES = ['jet', 'turboprop', 'piston'] as const;
+export type EngineType = (typeof ENGINE_TYPES)[number];
+
+export const AIRPORT_TYPES = ['large_airport', 'medium_airport', 'small_airport', 'heliport', 'seaplane_base', 'other'] as const;
+export type AirportType = (typeof AIRPORT_TYPES)[number];
+
+export const AIRCRAFT_STATUSES: readonly AircraftStatus[] = ['available', 'assigned', 'in_flight', 'maintenance', 'out_of_service'];
+/** Estados que una persona puede elegir; los demás los pone el sistema. */
+export const MANUAL_AIRCRAFT_STATUSES: readonly AircraftStatus[] = ['available', 'maintenance', 'out_of_service'];
 
 /** Respuesta de get_dashboard_summary. */
 export interface DashboardSummary {
@@ -242,3 +44,27 @@ export interface DashboardSummary {
   pending_requests: number;
   profiles_total: number | null;
 }
+
+/** Fila de entrada de import_routes (CSV convertido). */
+export interface RouteImportRow {
+  flight_number: string;
+  origin: string;
+  destination: string;
+  aircraft_types: string;
+  departure_time_utc?: string;
+  days?: string;
+  operation_type?: string;
+  estimated_minutes?: string;
+  active?: string;
+}
+
+/** Respuesta de import_routes. */
+export interface RouteImportResult {
+  total: number;
+  valid: number;
+  created: number;
+  updated: number;
+  errors: { row: number; flight_number: string | null; message: string }[];
+}
+
+export type PublicFunctions = Database['public']['Functions'];

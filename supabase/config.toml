@@ -37,3 +37,6 @@ enable_signup = true
 enable_confirmations = true
 double_confirm_changes = true
 secure_password_change = false
+
+[functions.import-airports]
+verify_jwt = true
