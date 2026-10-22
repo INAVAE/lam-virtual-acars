@@ -2,7 +2,7 @@
 
 Última actualización: 2026-10-22
 
-## Fase actual: 2, Administración
+## Fase 2, Administración (terminada)
 
 ### Hecho
 
@@ -12,10 +12,13 @@
 - Tipos de TypeScript generados desde el proyecto Supabase.
 - CI: errores de compilación como anotaciones; revisión visual de 13 pantallas con sesión (datos simulados) después de cada publicación.
 
-### Pendiente para cerrar la Fase 2
+### Verificado con datos reales (2026-10-22)
 
-- [ ] Importar aeropuertos desde la web (Airports, Importar de OurAirports).
-- [ ] Probar en el sitio con datos reales: crear una aeronave, una ruta e importar un CSV.
+- [x] Importación de OurAirports desde la web: 5,947 aeropuertos.
+- [x] Alta de aeronave y de rutas en el sitio publicado.
+
+### Pendiente menor
+
 - [ ] Unir las dos políticas INSERT de `airline_memberships` (requiere ejecutar un DROP desde el SQL Editor).
 
 ### Criterios de aceptación
@@ -61,4 +64,4 @@
 
 ## Siguiente paso
 
-Cerrar la Fase 2 con datos reales y empezar la Fase 3: reservas, callsign por vuelo elegido por el piloto, habilitaciones por tipo e integración con SimBrief.
+Fase 3: reservas, callsign por vuelo elegido por el piloto, habilitaciones por tipo (`pilot_type_ratings`) e integración con SimBrief.
