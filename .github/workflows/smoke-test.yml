@@ -1,8 +1,10 @@
 name: Prueba del sitio publicado
 
-# Abre el sitio de GitHub Pages en Chromium después de cada publicación y
-# comprueba carga, rutas, conexión con Supabase y formularios. Las capturas
-# se guardan en la rama ci/smoke-screenshots para revisión visual.
+# Abre el sitio de GitHub Pages en Chromium después de cada publicación:
+# 1. Comprobaciones públicas contra la base real (carga, rutas, Supabase, CSP).
+# 2. Revisión visual de las pantallas con sesión usando datos simulados en el
+#    navegador (no toca la base real).
+# Las capturas se guardan en la rama ci/smoke-screenshots.
 on:
   workflow_run:
     workflows: ["Publicar en GitHub Pages"]
@@ -35,17 +37,24 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Esperar a que Pages sirva la versión nueva
         run: sleep 30
-      - name: Ejecutar comprobaciones
-        # El script se copia junto a node_modules de Playwright para que el
+      - name: Comprobaciones públicas
+        # Los scripts se copian junto a node_modules de Playwright para que el
         # import lo resuelva; las capturas quedan en el directorio de trabajo.
         run: |
           cp scripts/smoke-test.mjs "$RUNNER_TEMP/pw/smoke-test.mjs"
           node "$RUNNER_TEMP/pw/smoke-test.mjs"
+      - name: Revisión visual con sesión (datos simulados)
+        if: always()
+        run: |
+          cp scripts/visual-check.mjs "$RUNNER_TEMP/pw/visual-check.mjs"
+          node "$RUNNER_TEMP/pw/visual-check.mjs"
       - name: Guardar capturas en la rama ci/smoke-screenshots
         if: always()
         run: |
-          [ -d smoke-screenshots ] || exit 0
-          cp -r smoke-screenshots "$RUNNER_TEMP/shots"
+          mkdir -p "$RUNNER_TEMP/shots"
+          for f in smoke-screenshots/*.png; do [ -e "$f" ] && cp "$f" "$RUNNER_TEMP/shots/"; done
+          for f in visual-screenshots/*.png; do [ -e "$f" ] && cp "$f" "$RUNNER_TEMP/shots/v-$(basename "$f")"; done
+          ls "$RUNNER_TEMP"/shots/*.png >/dev/null 2>&1 || exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout --orphan ci/smoke-screenshots
