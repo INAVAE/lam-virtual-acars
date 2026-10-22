@@ -38,6 +38,24 @@ Una persona puede tener roles distintos en distintas aerolíneas. Solo cuentan l
 | `audit_logs` | No | No | No | Leer los de su aerolínea | Leer todos |
 | `get_dashboard_summary()` | No | Sus aerolíneas | Sus aerolíneas | Sus aerolíneas | Consolidado o por aerolínea |
 
+## Matriz de la Fase 2
+
+| Tabla | Piloto | Jefe de operaciones | Admin. de aerolínea | Superadmin |
+| --- | --- | --- | --- | --- |
+| `airports` | Leer | Leer | Leer | Todo (incluida la importación de OurAirports) |
+| `aircraft_types` | Leer | Leer | Leer | Todo |
+| `aircraft` | Leer la flota de sus aerolíneas | Igual | Alta, edición y baja en su aerolínea | Todo |
+| `routes`, `route_aircraft_types` | Leer las de sus aerolíneas | Igual | Alta, edición, baja e importación CSV en su aerolínea | Todo |
+| Storage `airline-logos` | Ver (público) | Ver | Subir y borrar en la carpeta de su aerolínea | Todo |
+
+Reglas adicionales que impone la base de datos:
+
+- Horas, ciclos y último vuelo de una aeronave no se editan a mano (sin permiso de columna).
+- Los estados Asignada y En vuelo solo los pone el sistema.
+- Una aeronave o ruta no cambia de aerolínea.
+- La distancia de una ruta siempre la calcula el servidor.
+- `import_routes` corre con los permisos de quien llama (SECURITY INVOKER) y guarda todo o nada.
+
 ## Reglas contra la escalada de privilegios
 
 - Nadie puede crear su propia membresía activa ni con rol distinto de piloto.

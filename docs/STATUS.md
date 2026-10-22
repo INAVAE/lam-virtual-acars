@@ -2,7 +2,29 @@
 
 Última actualización: 2026-10-22
 
-## Fase actual: 1, Fundación
+## Fase actual: 2, Administración
+
+### Hecho
+
+- Base de datos: aeropuertos, tipos de aeronave (25 iniciales), flota, rutas con distancia calculada, importación de rutas por CSV (`import_routes`), logotipos en Storage. 28 pruebas pgTAP nuevas (66 en total).
+- Edge Function `import-airports`: importa OurAirports con los permisos del superadministrador que la llama.
+- Web: Airlines (lista, ficha, logotipo, políticas, alta de aerolíneas), Pilots (solicitudes, roles, suspensión), Fleet (aeronaves y catálogo de tipos), Airports (búsqueda, filtros, importación, alta manual), Routes (filtros, edición, días, tipos permitidos, importación CSV con revisión previa), Administration (bitácora y superadministradores).
+- Tipos de TypeScript generados desde el proyecto Supabase.
+- CI: errores de compilación como anotaciones; revisión visual de 13 pantallas con sesión (datos simulados) después de cada publicación.
+
+### Pendiente para cerrar la Fase 2
+
+- [ ] Importar aeropuertos desde la web (Airports, Importar de OurAirports).
+- [ ] Probar en el sitio con datos reales: crear una aeronave, una ruta e importar un CSV.
+- [ ] Unir las dos políticas INSERT de `airline_memberships` (requiere ejecutar un DROP desde el SQL Editor).
+
+### Criterios de aceptación
+
+- [x] Un administrador de aerolínea gestiona su flota, rutas y pilotos, y no puede tocar otra aerolínea (pgTAP).
+- [x] La importación CSV reporta errores por fila antes de confirmar (pgTAP y revisión visual).
+- [x] Cambios de rol quedan en `audit_logs` y se ven en Administration.
+
+## Fase 1, Fundación (terminada)
 
 ### Hecho
 
@@ -39,4 +61,4 @@
 
 ## Siguiente paso
 
-Cerrar la Fase 1 en el sitio publicado y empezar la Fase 2 con el módulo Airlines (configurar códigos y activar aerolíneas) y la gestión de membresías.
+Cerrar la Fase 2 con datos reales y empezar la Fase 3: reservas, callsign por vuelo elegido por el piloto, habilitaciones por tipo e integración con SimBrief.

@@ -31,7 +31,7 @@ function AirlineSwitcher() {
       </label>
       <Select
         id={id}
-        className="h-9 w-auto min-w-0 max-w-[16rem] bg-surface"
+        className="h-9 w-auto min-w-0 max-w-[22rem] bg-surface"
         value={selected?.id ?? ALL_AIRLINES}
         onChange={(e) => select(e.target.value === ALL_AIRLINES ? null : e.target.value)}
       >

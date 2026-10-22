@@ -88,12 +88,34 @@ erDiagram
 
 Los roles por aerolínea se guardan como `airline_role[]` en `airline_memberships` en lugar de las tablas `roles`, `permissions` y `membership_roles`. Ver [ADR 0003](../decisions/0003-roles-por-membresia.md).
 
+## Fase 2 (implementado)
+
+```mermaid
+erDiagram
+  airlines ||--o{ aircraft : opera
+  aircraft_types ||--o{ aircraft : "es de tipo"
+  airports |o--o{ aircraft : "base y ubicación"
+  airlines ||--o{ routes : programa
+  airports ||--o{ routes : "origen y destino"
+  routes ||--o{ route_aircraft_types : permite
+  aircraft_types ||--o{ route_aircraft_types : "es permitido en"
+```
+
+| Tabla | Contenido |
+| --- | --- |
+| `airports` | Catálogo global (ICAO, IATA, nombre, ciudad, país, coordenadas, elevación, tipo, origen OurAirports o manual) |
+| `aircraft_types` | Catálogo global por designador ICAO (25 tipos iniciales) con estela, motor, capacidad y velocidad de crucero |
+| `aircraft` | Flota por aerolínea: matrícula única, número de flota, configuración, estado, base, ubicación, horas y ciclos |
+| `routes` | Plantillas de vuelo: número, origen, destino, distancia calculada, duración, hora UTC, días (máscara de bits), tipo de operación |
+| `route_aircraft_types` | Tipos de aeronave permitidos por ruta |
+
+Logotipos: bucket público `airline-logos` en Storage, una carpeta por aerolínea (`{airline_id}/logo-*.png`).
+
 ## Fases siguientes (diseño conceptual)
 
 | Grupo | Tablas | Fase |
 | --- | --- | --- |
-| Flota | `aircraft_types`, `aircraft`, `pilot_type_ratings` | 2 |
-| Red | `airports`, `routes`, `route_aircraft_types` | 2 |
+| Habilitaciones | `pilot_type_ratings` | 3 |
 | Operación | `flight_bookings`, `flights`, `simbrief_ofps` | 3 |
 | ACARS | `acars_devices`, `acars_link_codes`, `flight_sessions`, `flight_positions_live`, `flight_track_points`, `flight_events` | 4 |
 | PIREP | `pireps`, `pirep_reviews`, `scoring_rule_sets`, `flight_scores` | 5 |

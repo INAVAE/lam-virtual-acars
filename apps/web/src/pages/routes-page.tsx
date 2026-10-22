@@ -188,8 +188,15 @@ function RouteDialog({
             )}
           />
         </Field>
-        <Field id="r-time" label="Salida programada (UTC)" error={errors.departure_time_utc?.message} hint="Opcional. Formato HH:MM.">
-          <Input type="time" {...fieldAria('r-time', errors.departure_time_utc?.message)} {...register('departure_time_utc')} />
+        <Field id="r-time" label="Salida programada (UTC)" error={errors.departure_time_utc?.message} hint="Opcional. Formato de 24 horas, HH:MM.">
+          <Input
+            className="font-mono"
+            inputMode="numeric"
+            placeholder="14:30"
+            maxLength={5}
+            {...fieldAria('r-time', errors.departure_time_utc?.message)}
+            {...register('departure_time_utc')}
+          />
         </Field>
         <Field id="r-minutes" label="Duración estimada (minutos)" error={errors.estimated_minutes?.message} hint="Opcional.">
           <Input type="number" inputMode="numeric" {...fieldAria('r-minutes', errors.estimated_minutes?.message)} {...register('estimated_minutes')} />

@@ -336,7 +336,7 @@ async function shoot(name, path, { viewport = { width: 1440, height: 900 }, airl
 }
 
 await shoot('01-dashboard', '', { waitFor: 'Aerolíneas registradas' });
-await shoot('02-airlines', 'airlines', { waitFor: 'Alas del Sur' });
+await shoot('02-airlines', 'airlines', { waitFor: 'Nueva aerolínea' });
 await shoot('03-airline-detail', 'airlines/lineas-aereas-mexicanas', { waitFor: 'Políticas operacionales' });
 await shoot('04-pilots', 'pilots', { airlineId: MXL.id, waitFor: 'Ana Martínez' });
 await shoot('05-fleet', 'fleet', { airlineId: MXL.id, waitFor: 'XA-MXA' });
@@ -373,8 +373,10 @@ await shoot('13-airline-detail-light', 'airlines/alas-del-sur', { theme: 'light'
 await browser.close();
 
 for (const r of results) {
-  console.log(r.ok ? `::notice title=OK::${r.name}` : `::error title=FALLA::${r.name}: ${r.detail}`);
+  if (!r.ok) console.log(`::error title=FALLA::${r.name}: ${r.detail}`);
 }
+// Un solo resumen: GitHub limita las anotaciones por paso.
+console.log(`::notice title=Revisión visual::${results.filter((r) => r.ok).map((r) => r.name).join(', ')}`);
 const failed = results.filter((r) => !r.ok);
 console.log(`${results.length - failed.length}/${results.length} pantallas sin errores`);
 process.exit(failed.length ? 1 : 0);

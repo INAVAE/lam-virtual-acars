@@ -91,9 +91,16 @@ function ColorField({ id, label, value, onChange, error }: { id: string; label: 
           aria-label={`${label}: selector`}
           value={valid ? value : '#000000'}
           onChange={(e) => onChange(e.target.value.toUpperCase())}
-          className="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-line bg-bg p-1"
+          className={`h-10 w-12 shrink-0 cursor-pointer rounded-md border border-line bg-bg p-1 ${valid ? '' : 'opacity-30'}`}
         />
-        <Input id={id} className="font-mono uppercase" value={value} onChange={(e) => onChange(e.target.value)} aria-invalid={error ? true : undefined} />
+        <Input
+          id={id}
+          className="font-mono uppercase"
+          placeholder="Sin color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-invalid={error ? true : undefined}
+        />
       </div>
     </Field>
   );
@@ -341,7 +348,7 @@ function SettingsPanel({ airlineId, canManage }: { airlineId: string; canManage:
   return (
     <Panel title="Políticas operacionales" description="Se aplican a las reservas (Fase 3) y a los PIREP (Fase 5).">
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <fieldset disabled={!canManage} className="grid gap-4 md:grid-cols-3">
+        <fieldset disabled={!canManage} className="grid gap-4">
           <Field id="st-bookings" label="Reservas activas por piloto" error={errors.max_active_bookings?.message}>
             <Input type="number" min={1} max={10} {...fieldAria('st-bookings', errors.max_active_bookings?.message)} {...register('max_active_bookings')} />
           </Field>
