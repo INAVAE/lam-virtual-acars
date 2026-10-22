@@ -27,6 +27,17 @@ export type Profile = Tables<'profiles'>;
 const AIRLINE_COLUMNS =
   'id, slug, name, icao_code, iata_code, flight_plan_remarks, network, operation_type, website_url, brand_primary_color, brand_secondary_color, logo_path, is_active, is_unofficial_brand, description' as const;
 
+/** Aerolínea principal de la organización: aparece primero en listas y selectores. */
+export const HOME_AIRLINE_SLUG = 'lineas-aereas-mexicanas';
+
+export function sortAirlines<T extends { slug: string; name: string }>(airlines: T[]): T[] {
+  return [...airlines].sort((a, b) => {
+    if (a.slug === HOME_AIRLINE_SLUG) return -1;
+    if (b.slug === HOME_AIRLINE_SLUG) return 1;
+    return a.name.localeCompare(b.name, 'es');
+  });
+}
+
 export const queryKeys = {
   airlines: (userId: string | null) => ['airlines', userId] as const,
   memberships: (userId: string) => ['memberships', userId] as const,
@@ -45,7 +56,7 @@ export function useAirlines() {
     queryFn: async (): Promise<Airline[]> => {
       const { data, error } = await getSupabase().from('airlines').select(AIRLINE_COLUMNS).order('name');
       if (error) throw error;
-      return data;
+      return sortAirlines(data);
     },
   });
 }

@@ -101,7 +101,7 @@ export function PublicHomePage() {
                         href={a.website_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-1 inline-block text-sm text-ink underline underline-offset-4"
+                        className="mt-1 block truncate text-sm text-ink underline underline-offset-4"
                       >
                         {displayDomain(a.website_url)}
                       </a>
