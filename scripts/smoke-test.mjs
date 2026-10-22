@@ -37,12 +37,24 @@ async function openPage(viewport, colorScheme = 'dark') {
   const page = await context.newPage();
   const problems = [];
   page.on('console', (msg) => {
-    if (msg.type() === 'error') problems.push(`consola: ${msg.text()}`);
+    // Los recursos fallidos se revisan abajo por su respuesta HTTP.
+    if (msg.type() === 'error' && !msg.text().startsWith('Failed to load resource')) {
+      problems.push(`consola: ${msg.text()}`);
+    }
   });
   page.on('pageerror', (err) => problems.push(`excepción: ${err.message}`));
   const supabase = [];
   page.on('response', (res) => {
-    if (res.url().includes('.supabase.co')) supabase.push({ url: res.url(), status: res.status() });
+    const url = res.url();
+    if (url.includes('.supabase.co')) {
+      supabase.push({ url, status: res.status() });
+      return;
+    }
+    // El documento de una ruta profunda llega con 404 (fallback de GitHub Pages);
+    // cualquier otro recurso fallido es un problema real.
+    if (res.status() >= 400 && !res.request().isNavigationRequest()) {
+      problems.push(`recurso ${res.status()}: ${url}`);
+    }
   });
   return { context, page, problems, supabase };
 }
@@ -103,9 +115,7 @@ await check('Supabase Auth rechaza credenciales inválidas con un mensaje claro'
   await page.screenshot({ path: `${OUT}/03-entrar-error.png`, fullPage: true });
   const token = supabase.find((r) => r.url.includes('/auth/v1/token'));
   if (!token) throw new Error('No hubo llamada a Supabase Auth');
-  // El 400 de Auth se registra como error de red en consola; no es un fallo de la app.
-  const real = problems.filter((p) => !/status of 400/.test(p));
-  if (real.length) throw new Error(real.join(' | '));
+  if (problems.length) throw new Error(problems.join(' | '));
   await context.close();
   return `Auth respondió ${token.status}`;
 });

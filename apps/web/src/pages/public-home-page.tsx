@@ -19,7 +19,11 @@ export function PublicHomePage() {
     <div className="min-h-dvh">
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5">
         <span className="font-display text-lg font-semibold">LAM Virtual ACARS</span>
-        <UtcClock />
+        {user ? null : (
+          <Link to="/entrar" className="text-sm font-medium underline-offset-4 hover:underline">
+            Iniciar sesión
+          </Link>
+        )}
       </header>
 
       <main className="mx-auto max-w-6xl px-5 pb-16">

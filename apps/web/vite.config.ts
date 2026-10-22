@@ -7,7 +7,8 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 /**
  * GitHub Pages no permite cabeceras HTTP propias: la Content Security Policy
  * se inyecta como <meta> solo en el build (en desarrollo Vite usa scripts
- * en línea que la política bloquearía).
+ * en línea que la política bloquearía). `frame-ancestors` no se incluye: los
+ * navegadores lo ignoran cuando llega por <meta> y solo funciona como cabecera.
  */
 function contentSecurityPolicy(supabaseUrl: string): Plugin {
   let supabaseOrigin = '';
@@ -24,7 +25,6 @@ function contentSecurityPolicy(supabaseUrl: string): Plugin {
     "font-src 'self'",
     `img-src 'self' data: blob: ${supabaseOrigin}`.trim(),
     `connect-src 'self' ${supabaseOrigin} ${realtimeOrigin}`.trim(),
-    "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",

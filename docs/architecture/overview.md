@@ -41,7 +41,7 @@ flowchart LR
 | Formularios | React Hook Form + Zod (`@lam/validation`) |
 | Estilos | Tailwind CSS 4 con tokens CSS; modo oscuro y claro |
 | Autenticación | Supabase Auth, flujo PKCE |
-| Seguridad | Content Security Policy por `<meta>` (Pages no admite cabeceras propias) |
+| Seguridad | Content Security Policy por `<meta>` (Pages no admite cabeceras propias, por eso no hay `frame-ancestors` ni protección contra incrustación en iframes) |
 
 ### Rutas de la Fase 1
 
