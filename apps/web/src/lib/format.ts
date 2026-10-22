@@ -1,4 +1,4 @@
-import type { AirlineOperationType, AirlineRole, MembershipStatus } from '@lam/shared-types';
+import type { AircraftStatus, AirlineOperationType, AirlineRole, MembershipStatus } from '@lam/shared-types';
 
 /** Número de piloto LAM: LAM + 4 dígitos (LAM1001). */
 export function formatPilotNumber(pilotNumber: number): string {
@@ -74,4 +74,57 @@ export function displayDomain(url: string): string {
   } catch {
     return url;
   }
+}
+
+export const aircraftStatusLabels: Record<AircraftStatus, string> = {
+  available: 'Disponible',
+  assigned: 'Asignada',
+  in_flight: 'En vuelo',
+  maintenance: 'Mantenimiento virtual',
+  out_of_service: 'Fuera de servicio',
+};
+
+export const aircraftStatusTone: Record<AircraftStatus, 'ok' | 'info' | 'warn' | 'danger' | 'neutral'> = {
+  available: 'ok',
+  assigned: 'info',
+  in_flight: 'info',
+  maintenance: 'warn',
+  out_of_service: 'danger',
+};
+
+const airportTypeLabels: Record<string, string> = {
+  large_airport: 'Grande',
+  medium_airport: 'Mediano',
+  small_airport: 'Pequeño',
+  heliport: 'Helipuerto',
+  seaplane_base: 'Hidropuerto',
+  other: 'Otro',
+};
+
+export function airportTypeLabel(value: string): string {
+  return airportTypeLabels[value] ?? value;
+}
+
+const engineLabels: Record<string, string> = { jet: 'Reactor', turboprop: 'Turbohélice', piston: 'Pistón' };
+
+export function engineTypeLabel(value: string): string {
+  return engineLabels[value] ?? value;
+}
+
+const wakeLabels: Record<string, string> = { L: 'Ligera', M: 'Media', H: 'Pesada', J: 'Súper' };
+
+export function wakeCategoryLabel(value: string): string {
+  return wakeLabels[value] ?? value;
+}
+
+const numberFormat = new Intl.NumberFormat('es-MX');
+
+export function formatNumber(value: number): string {
+  return numberFormat.format(value);
+}
+
+const dateTimeFormatter = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+
+export function formatLocalDateTime(iso: string): string {
+  return dateTimeFormatter.format(new Date(iso));
 }

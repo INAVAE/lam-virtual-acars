@@ -44,11 +44,11 @@ export const navigation: NavGroup[] = [
   {
     label: 'Red y flota',
     items: [
-      { label: 'Pilots', icon: Users, phase: 2 },
-      { label: 'Airlines', icon: Building2, phase: 2 },
-      { label: 'Fleet', icon: Plane, phase: 2 },
-      { label: 'Routes', icon: Route, phase: 2 },
-      { label: 'Airports', icon: MapPin, phase: 2 },
+      { label: 'Pilots', icon: Users, to: '/pilots' },
+      { label: 'Airlines', icon: Building2, to: '/airlines' },
+      { label: 'Fleet', icon: Plane, to: '/fleet' },
+      { label: 'Routes', icon: Route, to: '/routes' },
+      { label: 'Airports', icon: MapPin, to: '/airports' },
     ],
   },
   {
@@ -56,7 +56,7 @@ export const navigation: NavGroup[] = [
     items: [
       { label: 'Statistics', icon: Activity, phase: 6 },
       { label: 'Operations Center', icon: Monitor, phase: 6 },
-      { label: 'Administration', icon: ShieldCheck, phase: 2, adminOnly: true },
+      { label: 'Administration', icon: ShieldCheck, to: '/administration', adminOnly: true },
       { label: 'Settings', icon: Settings, to: '/settings' },
     ],
   },

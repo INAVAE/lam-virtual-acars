@@ -7,9 +7,16 @@ import { ForgotPasswordPage } from '@/pages/auth/forgot-password-page';
 import { ResetPasswordPage } from '@/pages/auth/reset-password-page';
 import { SignInPage } from '@/pages/auth/sign-in-page';
 import { SignUpPage } from '@/pages/auth/sign-up-page';
+import { AdministrationPage } from '@/pages/administration-page';
+import { AirlineDetailPage } from '@/pages/airline-detail-page';
+import { AirlinesPage } from '@/pages/airlines-page';
+import { AirportsPage } from '@/pages/airports-page';
 import { DashboardPage } from '@/pages/dashboard-page';
+import { FleetPage } from '@/pages/fleet-page';
 import { NotFoundPage } from '@/pages/not-found-page';
+import { PilotsPage } from '@/pages/pilots-page';
 import { PublicHomePage } from '@/pages/public-home-page';
+import { RoutesPage } from '@/pages/routes-page';
 import { SettingsPage } from '@/pages/settings-page';
 
 export function App() {
@@ -34,6 +41,13 @@ export function App() {
           }
         >
           <Route index element={<DashboardPage />} />
+          <Route path="airlines" element={<AirlinesPage />} />
+          <Route path="airlines/:slug" element={<AirlineDetailPage />} />
+          <Route path="pilots" element={<PilotsPage />} />
+          <Route path="fleet" element={<FleetPage />} />
+          <Route path="airports" element={<AirportsPage />} />
+          <Route path="routes" element={<RoutesPage />} />
+          <Route path="administration" element={<AdministrationPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Route>

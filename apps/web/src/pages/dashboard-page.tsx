@@ -360,7 +360,7 @@ function OrganizationAirlinesPanel() {
 // -----------------------------------------------------------------------------
 const modules: { name: string; phase: number; done: boolean }[] = [
   { name: 'Cuentas, roles y aerolíneas', phase: 1, done: true },
-  { name: 'Administración de pilotos, flota y rutas', phase: 2, done: false },
+  { name: 'Administración de pilotos, flota, aeropuertos y rutas', phase: 2, done: true },
   { name: 'Reservas e integración con SimBrief', phase: 3, done: false },
   { name: 'LAM ACARS Connector para MSFS 2024', phase: 4, done: false },
   { name: 'PIREP automático y evaluación', phase: 5, done: false },
