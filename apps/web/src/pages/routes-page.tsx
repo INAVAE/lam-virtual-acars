@@ -274,7 +274,7 @@ const TEMPLATE_HEADER = ['flight_number', 'origin', 'destination', 'aircraft_typ
 const TEMPLATE_EXAMPLE = ['100', 'MMMX', 'MMGL', 'B738|A20N', '14:30', '1234567', 'passenger', '', 'true'];
 
 function downloadText(filename: string, text: string) {
-  const url = URL.createObjectURL(new Blob(['﻿', text], { type: 'text/csv;charset=utf-8' }));
+  const url = URL.createObjectURL(new Blob(['\uFEFF', text], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;

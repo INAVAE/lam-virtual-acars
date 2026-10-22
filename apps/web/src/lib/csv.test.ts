@@ -21,7 +21,7 @@ describe('parseCsv', () => {
   });
 
   it('ignora filas vacías y el BOM', () => {
-    expect(parseCsv('﻿a\n\n1\n')).toEqual([['a'], ['1']]);
+    expect(parseCsv('\uFEFFa\n\n1\n')).toEqual([['a'], ['1']]);
   });
 });
 

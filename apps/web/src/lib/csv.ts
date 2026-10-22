@@ -4,7 +4,7 @@
  * (Excel en español exporta con punto y coma).
  */
 export function parseCsv(text: string): string[][] {
-  const source = text.replace(/^﻿/, '');
+  const source = text.replace(/^\uFEFF/, '');
   const firstLine = source.split(/\r?\n/, 1)[0] ?? '';
   const delimiter = (firstLine.match(/;/g)?.length ?? 0) > (firstLine.match(/,/g)?.length ?? 0) ? ';' : ',';
 
