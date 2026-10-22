@@ -10,6 +10,12 @@ on:
       - "**/*.md"
   workflow_dispatch:
 
+# URL y clave publicable de Supabase: valores públicos por diseño (terminan en el
+# sitio). Las variables del repositorio, si existen, tienen prioridad.
+env:
+  VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://fnsfgjtmwfiizofsjajm.supabase.co' }}
+  VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_pDYDqhsPZvVuPYj8LQtj9w_VPufCI6B' }}
+
 permissions:
   contents: read
   pages: write
@@ -34,17 +40,12 @@ jobs:
       - name: Verificar configuración
         run: |
           missing=0
-          [ -n "$VITE_SUPABASE_URL" ] || { echo "::error::Falta la variable de repositorio VITE_SUPABASE_URL"; missing=1; }
-          [ -n "$VITE_SUPABASE_PUBLISHABLE_KEY" ] || { echo "::error::Falta la variable de repositorio VITE_SUPABASE_PUBLISHABLE_KEY"; missing=1; }
+          [ -n "$VITE_SUPABASE_URL" ] || { echo "::error::Falta VITE_SUPABASE_URL"; missing=1; }
+          [ -n "$VITE_SUPABASE_PUBLISHABLE_KEY" ] || { echo "::error::Falta VITE_SUPABASE_PUBLISHABLE_KEY"; missing=1; }
           exit $missing
-        env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
       - name: Build
         run: pnpm build
         env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
       - name: Comprobar que no hay claves secretas en el sitio
         run: |

@@ -6,12 +6,7 @@ La web se publica sola en cada push a `main`. Esta guía cubre la configuración
 
 ### Migraciones
 
-Aplicar en orden los archivos de `supabase/migrations` al proyecto. Con Supabase CLI:
-
-```bash
-supabase link --project-ref fnsfgjtmwfiizofsjajm
-supabase db push
-```
+Las migraciones de la Fase 1 ya están aplicadas en el proyecto `fnsfgjtmwfiizofsjajm`, con la conexión de Supabase de Claude, que registra su propia versión de cada migración. Antes de usar `supabase db push` desde la CLI, alinea el historial con `supabase migration repair` para que no intente aplicarlas de nuevo.
 
 ### Autenticación (panel de Supabase → Authentication → URL Configuration)
 
@@ -42,23 +37,25 @@ select private.grant_superadmin('tu-correo@ejemplo.com');
 
 *Settings → Pages → Build and deployment → Source*: **GitHub Actions**.
 
-### Variables del repositorio
+### URL y clave de Supabase
 
-*Settings → Secrets and variables → Actions → Variables*:
+`deploy-pages.yml` ya trae como valores por defecto la URL del proyecto y su clave **publicable**. Ambos valores son públicos por diseño, porque terminan dentro del sitio; la protección real son las políticas RLS.
+
+Para apuntar a otro proyecto sin tocar el código, crea estas variables en *Settings → Secrets and variables → Actions → Variables*. Tienen prioridad sobre los valores por defecto:
 
 | Variable | Valor |
 | --- | --- |
-| `VITE_SUPABASE_URL` | `https://fnsfgjtmwfiizofsjajm.supabase.co` |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Clave publicable (`sb_publishable_…`) del proyecto |
+| `VITE_SUPABASE_URL` | URL del proyecto |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Clave publicable (`sb_publishable_…`) |
 
-Son variables y no secretos porque ambos valores son públicos por diseño: terminan dentro del sitio. La protección real son las políticas RLS. La clave secreta de Supabase no se configura en GitHub en la Fase 1.
+La clave **secreta** de Supabase nunca va en el repositorio ni en estas variables.
 
 ### Flujos
 
 | Flujo | Cuándo corre | Qué hace |
 | --- | --- | --- |
 | `web-ci.yml` | PR y push a `main` | Tipos, lint, pruebas y build |
-| `deploy-pages.yml` | Push a `main` (cambios de la web) o manual | Build con las variables y publicación en Pages |
+| `deploy-pages.yml` | Push a `main` (cambios de la web) o manual | Build y publicación en Pages |
 | `supabase-ci.yml` | Cambios en `supabase/` | Aplica migraciones en una base local y corre pgTAP |
 | `update-lockfile.yml` | Manual | Regenera `pnpm-lock.yaml` |
 

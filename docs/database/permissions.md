@@ -45,3 +45,10 @@ Una persona puede tener roles distintos en distintas aerolíneas. Solo cuentan l
 - Solo un superadministrador nombra administradores de aerolínea.
 - Un superadministrador no puede quitarse a sí mismo, así que siempre queda al menos uno.
 - El primer superadministrador se da de alta con `private.grant_superadmin(correo)` desde el SQL Editor; la función no es ejecutable desde la API.
+
+## Avisos aceptados del linter de Supabase
+
+| Aviso | Motivo |
+| --- | --- |
+| `authenticated_security_definer_function_executable` en `get_dashboard_summary` | Intencional: exige sesión, valida el acceso a la aerolínea pedida y devuelve solo conteos, sin datos personales |
+| `multiple_permissive_policies` en el INSERT de `airline_memberships` | Dos políticas (solicitud propia y alta por administrador). Impacto nulo con el volumen actual; se unirán en una sola cuando se toque esa tabla en la Fase 2 |
