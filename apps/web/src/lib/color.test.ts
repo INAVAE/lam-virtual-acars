@@ -8,6 +8,10 @@ describe('contrastRatio', () => {
 });
 
 describe('readableTextOn', () => {
+  it('usa texto blanco sobre el verde LAM', () => {
+    expect(readableTextOn('#057956')).toBe('#FFFFFF');
+  });
+
   it('usa texto blanco sobre azul aeronáutico', () => {
     expect(readableTextOn('#2563EB')).toBe('#FFFFFF');
   });
@@ -18,9 +22,9 @@ describe('readableTextOn', () => {
 });
 
 describe('safeAccent', () => {
-  it('vuelve al azul LAM con un color inválido', () => {
-    expect(safeAccent('rojo')).toBe('#2563EB');
-    expect(safeAccent(null)).toBe('#2563EB');
+  it('vuelve al verde LAM con un color inválido', () => {
+    expect(safeAccent('rojo')).toBe('#057956');
+    expect(safeAccent(null)).toBe('#057956');
     expect(safeAccent('#E11D48')).toBe('#E11D48');
   });
 });

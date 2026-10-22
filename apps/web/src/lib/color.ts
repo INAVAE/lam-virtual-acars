@@ -1,6 +1,7 @@
 const HEX = /^#([0-9a-f]{6})$/i;
 
-export const DEFAULT_ACCENT = '#2563EB';
+/** Verde del emblema de Líneas Aéreas Mexicanas. */
+export const DEFAULT_ACCENT = '#057956';
 const DARK_TEXT = '#0B1220';
 const LIGHT_TEXT = '#FFFFFF';
 
@@ -36,7 +37,7 @@ export function readableTextOn(background: string): string {
   return contrastRatio(background, LIGHT_TEXT) >= contrastRatio(background, DARK_TEXT) ? LIGHT_TEXT : DARK_TEXT;
 }
 
-/** Acento seguro: si el color de la aerolínea no es válido, usa el azul LAM. */
+/** Acento seguro: si el color de la aerolínea no es válido, usa el verde LAM. */
 export function safeAccent(color: string | null | undefined): string {
   return color && isHexColor(color) ? color : DEFAULT_ACCENT;
 }

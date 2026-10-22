@@ -1,11 +1,12 @@
 import { Link } from 'react-router';
+import { AirlineLogo } from '@/components/airline-logo';
 import { UtcClock } from '@/components/layout/utc-clock';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAirlines } from '@/hooks/use-lam-data';
 import { useAuth } from '@/lib/auth';
 
 const linkPrimary =
-  'inline-flex h-11 items-center rounded-md bg-brand px-5 font-medium text-white transition-[filter] hover:brightness-110';
+  'inline-flex h-11 items-center rounded-md bg-accent px-5 font-medium text-accent-ink transition-[filter] hover:brightness-110';
 const linkSecondary =
   'inline-flex h-11 items-center rounded-md border border-line px-5 font-medium transition-colors hover:border-muted';
 
@@ -18,7 +19,14 @@ export function PublicHomePage() {
   return (
     <div className="min-h-dvh">
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5">
-        <span className="font-display text-lg font-semibold">LAM Virtual ACARS</span>
+        <span className="flex items-center gap-2.5 font-display text-lg font-semibold">
+          <img
+            src={`${import.meta.env.BASE_URL}airlines/lineas-aereas-mexicanas.png`}
+            alt=""
+            className="size-9 rounded-lg bg-white object-contain"
+          />
+          LAM Virtual ACARS
+        </span>
         {user ? null : (
           <Link to="/entrar" className="text-sm font-medium underline-offset-4 hover:underline">
             Iniciar sesión
@@ -77,10 +85,18 @@ export function PublicHomePage() {
           ) : (
             <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {active.map((a) => (
-                <li key={a.id} className="rounded-lg border border-line bg-surface p-4" style={{ borderTopColor: a.brand_primary_color, borderTopWidth: 3 }}>
-                  <p className="font-mono text-2xl">{a.icao_code}</p>
-                  <p className="mt-1 font-medium">{a.name}</p>
-                  {a.is_unofficial_brand ? <p className="mt-1 text-sm text-muted">Operación virtual no oficial</p> : null}
+                <li
+                  key={a.id}
+                  className="flex gap-3 rounded-lg border border-line bg-surface p-4"
+                  style={{ borderTopColor: a.brand_primary_color, borderTopWidth: 3 }}
+                >
+                  <AirlineLogo airline={a} size="md" />
+                  <div className="min-w-0">
+                    <p className="font-mono text-xl leading-tight">{a.icao_code}</p>
+                    <p className="mt-0.5 font-medium">{a.name}</p>
+                    {a.radio_callsign ? <p className="text-sm text-muted">Callsign {a.radio_callsign}</p> : null}
+                    {a.is_unofficial_brand ? <p className="mt-1 text-sm text-muted">Operación virtual no oficial</p> : null}
+                  </div>
                 </li>
               ))}
             </ul>

@@ -5,13 +5,26 @@ import { getSupabase } from '@/lib/supabase';
 
 export type Airline = Pick<
   Tables<'airlines'>,
-  'id' | 'slug' | 'name' | 'icao_code' | 'iata_code' | 'brand_primary_color' | 'is_active' | 'is_unofficial_brand' | 'description'
+  | 'id'
+  | 'slug'
+  | 'name'
+  | 'icao_code'
+  | 'iata_code'
+  | 'radio_callsign'
+  | 'flight_plan_remarks'
+  | 'network'
+  | 'brand_primary_color'
+  | 'brand_secondary_color'
+  | 'logo_path'
+  | 'is_active'
+  | 'is_unofficial_brand'
+  | 'description'
 >;
 export type Membership = Pick<Tables<'airline_memberships'>, 'id' | 'airline_id' | 'roles' | 'status' | 'requested_at'>;
 export type Profile = Tables<'profiles'>;
 
 const AIRLINE_COLUMNS =
-  'id, slug, name, icao_code, iata_code, brand_primary_color, is_active, is_unofficial_brand, description' as const;
+  'id, slug, name, icao_code, iata_code, radio_callsign, flight_plan_remarks, network, brand_primary_color, brand_secondary_color, logo_path, is_active, is_unofficial_brand, description' as const;
 
 export const queryKeys = {
   airlines: (userId: string | null) => ['airlines', userId] as const,

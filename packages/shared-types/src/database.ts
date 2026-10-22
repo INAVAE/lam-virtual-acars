@@ -12,6 +12,7 @@ export type OrgRole = 'superadmin';
 export type AirlineRole = 'airline_admin' | 'ops_chief' | 'pilot';
 export type MembershipStatus = 'pending' | 'active' | 'suspended' | 'rejected';
 export type AccountStatus = 'active' | 'suspended';
+export type AirlineNetwork = 'IVAO' | 'VATSIM' | 'OFFLINE';
 
 export type Database = {
   public: {
@@ -51,6 +52,8 @@ export type Database = {
           logo_path: string | null;
           is_unofficial_brand: boolean;
           is_active: boolean;
+          network: AirlineNetwork;
+          flight_plan_remarks: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -68,6 +71,8 @@ export type Database = {
           logo_path?: string | null;
           is_unofficial_brand?: boolean;
           is_active?: boolean;
+          network?: AirlineNetwork;
+          flight_plan_remarks?: string | null;
         };
         Update: {
           name?: string;
@@ -80,6 +85,8 @@ export type Database = {
           logo_path?: string | null;
           is_unofficial_brand?: boolean;
           is_active?: boolean;
+          network?: AirlineNetwork;
+          flight_plan_remarks?: string | null;
         };
         Relationships: [];
       };

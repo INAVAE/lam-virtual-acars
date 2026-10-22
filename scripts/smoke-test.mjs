@@ -81,6 +81,19 @@ await check('La raíz redirige a la bienvenida sin sesión', async () => {
   return `Supabase respondió ${airlines.status}`;
 });
 
+// 1b. Aerolínea activa con logotipo en la página pública.
+await check('La bienvenida muestra Líneas Aéreas Mexicanas (MXL) con su logotipo', async () => {
+  const { context, page, problems } = await openPage(desktop);
+  await page.goto(`${SITE}bienvenida`, { waitUntil: 'networkidle' });
+  await page.getByText('MXL', { exact: true }).waitFor({ timeout: 15000 });
+  const logo = page.getByAltText('Logotipo de Líneas Aéreas Mexicanas');
+  await logo.waitFor();
+  const loaded = await logo.evaluate((img) => img.complete && img.naturalWidth > 0);
+  if (!loaded) throw new Error('El logotipo no cargó');
+  if (problems.length) throw new Error(problems.join(' | '));
+  await context.close();
+});
+
 // 2. Ruta profunda cargada directamente (fallback 404.html de Pages).
 await check('La ruta profunda /registro carga directamente', async () => {
   const { context, page, problems } = await openPage(desktop);

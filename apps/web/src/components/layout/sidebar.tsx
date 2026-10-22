@@ -4,12 +4,13 @@ import { navigation, type NavItem } from './navigation';
 
 function LamMark() {
   return (
-    <svg viewBox="0 0 64 64" className="size-8 shrink-0" aria-hidden>
-      <rect width="64" height="64" rx="14" className="fill-surface-2" />
-      <path d="M10 40 L54 18" stroke="var(--cyan)" strokeWidth="5" strokeLinecap="round" />
-      <path d="M10 48 L54 26" stroke="var(--accent)" strokeWidth="5" strokeLinecap="round" />
-      <circle cx="54" cy="18" r="4" fill="var(--ok)" />
-    </svg>
+    <span className="inline-flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
+      <img
+        src={`${import.meta.env.BASE_URL}airlines/lineas-aereas-mexicanas.png`}
+        alt=""
+        className="size-full object-contain"
+      />
+    </span>
   );
 }
 

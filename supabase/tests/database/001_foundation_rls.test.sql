@@ -34,8 +34,10 @@ select is(
 );
 
 select private.grant_superadmin('admin@lam.test');
-update airlines set icao_code = 'ADS', is_active = true where slug = 'alas-del-sur';
-update airlines set icao_code = 'TSX', is_active = true where slug = 'taesa';
+-- Escenario: Alas del Sur y TAESA activas; FedEx Virtual sin código ICAO.
+update airlines set icao_code = coalesce(icao_code, 'ADS'), is_active = true where slug = 'alas-del-sur';
+update airlines set icao_code = coalesce(icao_code, 'TSX'), is_active = true where slug = 'taesa';
+update airlines set icao_code = null, is_active = false where slug = 'fedex-virtual';
 
 insert into airline_memberships (airline_id, user_id, roles, status)
 select id, '00000000-0000-0000-0000-0000000000a2', '{airline_admin,pilot}', 'active' from airlines where slug = 'alas-del-sur';
@@ -45,7 +47,7 @@ insert into airline_memberships (airline_id, user_id, roles, status)
 select id, '00000000-0000-0000-0000-0000000000a4', '{pilot}', 'active' from airlines where slug = 'taesa';
 
 -- Copia de los ids para usarlos con roles que no ven todas las aerolíneas.
-create temp table t_airlines on commit drop as select slug, id from airlines;
+create temp table t_airlines on commit drop as select slug, id, is_active from airlines;
 grant select on t_airlines to anon, authenticated;
 
 select throws_ok(
@@ -58,7 +60,11 @@ select throws_ok(
 -- Visitante
 -- -----------------------------------------------------------------------------
 set local role anon;
-select is((select count(*)::int from airlines), 2, 'Visitante ve solo aerolíneas activas');
+select is(
+  (select count(*)::int from airlines),
+  (select count(*)::int from t_airlines where is_active),
+  'Visitante ve solo aerolíneas activas'
+);
 select throws_ok('select * from profiles', '42501', null, 'Visitante no puede leer perfiles');
 select throws_ok('select * from airline_memberships', '42501', null, 'Visitante no puede leer membresías');
 select throws_ok('select get_dashboard_summary()', '42501', null, 'Visitante no puede pedir el resumen');
@@ -194,7 +200,11 @@ select is(
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000a1"}';
 
-select is((select count(*)::int from airlines), 4, 'Superadministrador ve todas las aerolíneas');
+select is(
+  (select count(*)::int from airlines),
+  (select count(*)::int from t_airlines),
+  'Superadministrador ve todas las aerolíneas, activas e inactivas'
+);
 select is(get_dashboard_summary() ->> 'scope', 'organization', 'El resumen del superadministrador es consolidado');
 reset role;
 

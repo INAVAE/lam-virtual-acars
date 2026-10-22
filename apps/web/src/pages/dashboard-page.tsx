@@ -1,6 +1,7 @@
 import type { DashboardSummary } from '@lam/shared-types';
 import { useMemo } from 'react';
 import { toast } from 'sonner';
+import { AirlineLogo } from '@/components/airline-logo';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,32 @@ import { formatPilotNumber, formatRoles, statusLabels } from '@/lib/format';
 // -----------------------------------------------------------------------------
 // Encabezado: el código de la aerolínea es la identidad de la pantalla.
 // -----------------------------------------------------------------------------
+const LAM_EMBLEM = {
+  name: 'Líneas Aéreas Mexicanas',
+  icao_code: 'LAM',
+  logo_path: 'airlines/lineas-aereas-mexicanas.png',
+  brand_primary_color: '#057956',
+};
+
+function OperationFacts({ airline }: { airline: Airline }) {
+  const facts = [
+    { label: 'Callsign', value: airline.radio_callsign },
+    { label: 'RMK', value: airline.flight_plan_remarks },
+    { label: 'Red', value: airline.network === 'OFFLINE' ? 'Sin red' : airline.network },
+    { label: 'IATA', value: airline.iata_code },
+  ];
+  return (
+    <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+      {facts.map((f) => (
+        <div key={f.label} className="flex items-baseline gap-2">
+          <dt className="text-muted">{f.label}</dt>
+          <dd className={f.value ? 'font-mono text-ink' : 'text-muted/70'}>{f.value ?? 'Sin definir'}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function ScopeHeader() {
   const { selected, isOrgAdmin } = useAirlineScope();
   const profile = useProfile();
@@ -33,14 +60,18 @@ function ScopeHeader() {
     : isOrgAdmin
       ? 'Vista consolidada de todas las aerolíneas.'
       : 'Datos de tus aerolíneas.';
+  const logoSource = selected ?? LAM_EMBLEM;
 
   return (
-    <header className="flex flex-wrap items-end gap-x-6 gap-y-4">
-      <div
-        aria-hidden
-        className="flex h-20 min-w-28 items-center justify-center rounded-lg bg-accent px-4 font-mono text-4xl font-medium tracking-[0.12em] text-accent-ink"
-      >
-        {code}
+    <header className="flex flex-wrap items-center gap-x-6 gap-y-4">
+      <div className="flex items-stretch gap-3">
+        {logoSource.logo_path ? <AirlineLogo airline={logoSource} size="lg" /> : null}
+        <div
+          aria-hidden
+          className="flex h-20 min-w-28 items-center justify-center rounded-xl bg-accent px-4 font-mono text-4xl font-medium tracking-[0.12em] text-accent-ink"
+        >
+          {code}
+        </div>
       </div>
       <div className="min-w-0">
         <h1 className="font-display text-3xl font-semibold leading-tight sm:text-4xl">{title}</h1>
@@ -57,6 +88,7 @@ function ScopeHeader() {
         {selected?.is_unofficial_brand ? (
           <p className="mt-1 text-sm text-warn-ink">Operación virtual no oficial, sin relación con la aerolínea real.</p>
         ) : null}
+        {selected ? <OperationFacts airline={selected} /> : null}
       </div>
     </header>
   );
@@ -160,7 +192,7 @@ function MembershipRow({ membership, airline }: { membership: Membership; airlin
 
   return (
     <li className="flex flex-wrap items-center gap-3 py-3">
-      <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: airline?.brand_primary_color }} />
+      {airline ? <AirlineLogo airline={airline} size="sm" /> : null}
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">
           {airline?.name ?? 'Aerolínea no disponible'}
@@ -192,7 +224,7 @@ function JoinableAirline({ airline }: { airline: Airline }) {
 
   return (
     <li className="flex flex-wrap items-center gap-3 py-3">
-      <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: airline.brand_primary_color }} />
+      <AirlineLogo airline={airline} size="sm" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">
           {airline.name}
@@ -285,7 +317,7 @@ function OrganizationAirlinesPanel() {
               <tr className="border-b border-line">
                 <th scope="col" className="px-4 pb-2 font-medium">Aerolínea</th>
                 <th scope="col" className="px-4 pb-2 font-medium">ICAO</th>
-                <th scope="col" className="px-4 pb-2 font-medium">IATA</th>
+                <th scope="col" className="px-4 pb-2 font-medium">Callsign</th>
                 <th scope="col" className="px-4 pb-2 font-medium">Estado</th>
               </tr>
             </thead>
@@ -294,13 +326,13 @@ function OrganizationAirlinesPanel() {
                 <tr key={a.id}>
                   <td className="px-4 py-2.5">
                     <span className="flex items-center gap-2">
-                      <span aria-hidden className="size-2.5 rounded-full" style={{ backgroundColor: a.brand_primary_color }} />
+                      <AirlineLogo airline={a} size="sm" />
                       {a.name}
                       {a.is_unofficial_brand ? <Badge>No oficial</Badge> : null}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 font-mono">{a.icao_code ?? <span className="text-muted">Sin definir</span>}</td>
-                  <td className="px-4 py-2.5 font-mono">{a.iata_code ?? <span className="text-muted">Sin definir</span>}</td>
+                  <td className="px-4 py-2.5 font-mono">{a.icao_code ?? <span className="font-sans text-muted">Sin definir</span>}</td>
+                  <td className="px-4 py-2.5 font-mono">{a.radio_callsign ?? <span className="font-sans text-muted">Sin definir</span>}</td>
                   <td className="px-4 py-2.5">
                     {a.is_active ? <Badge tone="ok">Activa</Badge> : <Badge tone="warn">Inactiva</Badge>}
                   </td>

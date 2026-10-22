@@ -21,7 +21,8 @@
   --ok-text: #4ade80;
   --warn-text: #fbbf24;
   --danger-text: #f87171;
-  --accent: #2563eb;
+  /* Acento: verde del emblema LAM; cambia con la aerolínea seleccionada. */
+  --accent: #057956;
   --accent-fg: #ffffff;
 }
 

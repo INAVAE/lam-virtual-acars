@@ -27,6 +27,9 @@ erDiagram
     text name
     text icao_code UK "3 letras, obligatorio para activar"
     text iata_code UK
+    text radio_callsign "callsign, ej. AGUILA"
+    text network "IVAO, VATSIM u OFFLINE"
+    text flight_plan_remarks "RMK, ej. IVAOVA/MXL"
     text brand_primary_color
     bool is_unofficial_brand
     bool is_active
@@ -106,3 +109,15 @@ Cada fase diseña en detalle sus tablas al empezar, para no fijar decisiones ant
 | Posición viva | Cada 10 s | `flight_positions_live` (una fila por vuelo, sobrescrita) | Se borra al terminar |
 | Traza | Lotes cada 60 s, puntos reducidos por fase | `flight_track_points` (particionada por mes) | 90 días |
 | Eventos | Inmediato, con idempotencia | `flight_events` | Permanente |
+
+## Aerolíneas registradas
+
+| Aerolínea | ICAO | Callsign | RMK | Estado | Fuente |
+| --- | --- | --- | --- | --- | --- |
+| Líneas Aéreas Mexicanas | MXL | AGUILA | IVAOVA/MXL | Activa | Identidad corporativa de LAM |
+| Alas del Sur | WOS | Sin definir | Sin definir | Inactiva | lineasaereasmexicanas.com.mx/es/alianzas |
+| TAESA | TEJ | Sin definir | Sin definir | Inactiva | Ídem |
+| FedEx Virtual | FDX | Sin definir | Sin definir | Inactiva | Ídem |
+| VIVA Virtual | VIV | Sin definir | Sin definir | Inactiva | Ídem (sitio "próximamente") |
+
+Todas operan en IVAO. Paleta de LAM, tomada del emblema: verde `#057956`, rojo `#D6061C`, blanco, azul noche `#0A1420`, superficie `#182837` y dorado `#C8A96A`.
