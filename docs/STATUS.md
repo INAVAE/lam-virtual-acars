@@ -21,16 +21,17 @@
 - [x] Configurar en Supabase la Site URL y las URL de redirección de Pages.
 - [x] Activar Pages con origen GitHub Actions.
 - [ ] Verificar los criterios de aceptación en el sitio publicado.
-- [ ] Dar de alta al primer superadministrador.
+- [x] Dar de alta al primer superadministrador (LAM1001).
 - [ ] Reemplazar los tipos escritos a mano por los generados desde el proyecto.
 
 ### Criterios de aceptación
 
 - [x] El sitio carga desde GitHub Pages y las rutas profundas funcionan al recargar (prueba del sitio publicado).
-- [ ] Registro, verificación de correo, inicio y cierre de sesión, y recuperación de contraseña funcionan en Pages.
-- [ ] Al registrarse se crea el perfil con número de piloto único.
+- [x] Registro, verificación de correo e inicio de sesión funcionan en Pages (probado con la cuenta LAM1001).
+- [ ] Cierre de sesión y recuperación de contraseña probados por una persona en Pages.
+- [x] Al registrarse se crea el perfil con número de piloto único (LAM1001).
 - [x] Pruebas pgTAP demuestran el aislamiento entre aerolíneas y que nadie se asigna roles.
-- [ ] El dashboard muestra conteos reales o estados vacíos.
+- [x] El dashboard muestra conteos reales: consolidado de LAM con 4 aerolíneas registradas, 0 activas y 1 cuenta.
 - [x] Los módulos no construidos aparecen como pendientes con su fase.
 - [x] Cada PR ejecuta lint, tipos, pruebas y build.
 - [x] `main` publica automáticamente en Pages y una prueba con Chromium revisa el sitio después de cada publicación.
