@@ -120,6 +120,8 @@ function toSummary(value: unknown): DashboardSummary {
     pilots_active_members: num(v.pilots_active_members),
     pending_requests: num(v.pending_requests),
     profiles_total: v.profiles_total === null || v.profiles_total === undefined ? null : num(v.profiles_total),
+    bookings_active: num(v.bookings_active),
+    my_bookings_active: num(v.my_bookings_active),
   };
 }
 

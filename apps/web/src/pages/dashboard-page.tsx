@@ -126,11 +126,11 @@ function buildMetrics(summary: DashboardSummary | undefined, canManage: boolean)
     },
     {
       label: 'Tus reservas activas',
-      value: summary ? String(summary.my_bookings_active ?? 0) : null,
+      value: summary ? String(summary.my_bookings_active) : null,
     },
   ];
   if (canManage) {
-    live.push({ label: 'Reservas activas', value: summary ? String(summary.bookings_active ?? 0) : null, detail: 'de todos los pilotos' });
+    live.push({ label: 'Reservas activas', value: summary ? String(summary.bookings_active) : null, detail: 'de todos los pilotos' });
   }
   if (canManage) {
     live.push({
