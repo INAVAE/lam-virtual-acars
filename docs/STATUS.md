@@ -1,6 +1,32 @@
 # Estado del proyecto
 
-Última actualización: 2026-10-24
+Última actualización: 2026-10-25
+
+## Fase 4, LAM ACARS Connector (construida; falta la prueba en MSFS 2024)
+
+### Hecho
+
+- Base de datos: `acars_devices`, `acars_link_codes`, `flight_sessions`, `flight_positions_live`, `flight_track_points` (particionada por mes, particiones en `private`) y `flight_events`, con RLS de solo lectura para piloto y staff. Ingesta solo por funciones `acars_*` ejecutables por service_role. 42 pruebas pgTAP nuevas (154 en total).
+- Edge Function `acars` (contrato v1): vinculación por código, token de dispositivo (solo hash en la base), sesiones reanudables, posición viva, traza, eventos y cierre, todo idempotente; límite de 240 unidades por minuto por dispositivo. Prueba de humo en producción: 8/8.
+- Web: Settings → Dispositivos ACARS (vincular y revocar) y estado ACARS en My Flights (fase, altitud, velocidad, último contacto).
+- Conector (`apps/acars-connector`, .NET 8): app de bandeja WPF, SimConnect por la API C con datos etiquetados, adaptador genérico, máquina de 15 fases, análisis de aterrizaje, cola SQLite, sincronización con reintentos, token con DPAPI, grabación de una lectura por segundo. 30 pruebas xUnit con un vuelo sintético y los ejemplos del contrato.
+- CI: pruebas del núcleo en Linux, paquete para Windows (zip con SHA-256) y publicación opcional como versión descargable.
+- Documentos: `docs/architecture/flight-phases.md`, `docs/integrations/acars-api.md`, ADR 0006.
+
+### Para cerrar la Fase 4
+
+- [ ] Subir `SimConnect.dll` (SDK de MSFS 2024) a un borrador de publicación `deps-simconnect` y publicar la primera versión del conector.
+- [ ] Vincular el conector desde Settings.
+- [ ] Vuelo real con aeronave predeterminada que registre todas las fases en orden.
+- [ ] Cortar internet a mitad del vuelo y comprobar que no se pierde ni se duplica ningún evento.
+- [ ] Revocar el dispositivo y comprobar que la ingesta se detiene en el siguiente envío.
+- [ ] Adaptadores PMDG y Fenix (después de la prueba con el genérico).
+
+### Criterios de aceptación
+
+- [ ] Un vuelo real en MSFS 2024 con aeronave predeterminada registra todas las fases en orden (probado con el vuelo sintético en xUnit).
+- [ ] Al cortar internet a mitad de vuelo no se pierde ni se duplica ningún evento (probado en xUnit y pgTAP; falta en real).
+- [ ] Revocar el dispositivo detiene la ingesta en el siguiente envío (probado en pgTAP y xUnit; falta en real).
 
 ## Fase 3, Reservas y SimBrief (verificada con datos reales el 2026-10-24)
 
@@ -88,4 +114,4 @@
 
 ## Siguiente paso
 
-Cerrar la Fase 3 con la prueba de datos reales. Después, Fase 4: LAM ACARS Connector para MSFS 2024 (vinculación del equipo, sesión de vuelo, posición en vivo, traza y eventos).
+Prueba real de la Fase 4 en MSFS 2024 (guía en `apps/acars-connector/INSTALAR.txt`). Después, adaptadores PMDG y Fenix y la Fase 5 (PIREP).
