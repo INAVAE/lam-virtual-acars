@@ -42,7 +42,12 @@ jobs:
         with:
           dotnet-version: 8.0.x
       - name: Pruebas
-        run: scripts/ci-run.sh "Pruebas del conector" dotnet test apps/acars-connector/tests/LamAcars.Core.Tests -c Release --logger "console;verbosity=normal"
+        run: |
+          set -o pipefail
+          scripts/ci-run.sh "Pruebas del conector" dotnet test apps/acars-connector/tests/LamAcars.Core.Tests -c Release --logger "console;verbosity=normal" | tee test.log
+          echo "::notice title=Pruebas del conector::$(grep -E 'Passed!|Failed!' test.log | tail -1 | sed 's/^ *//')"
+          warnings=$(grep -oE 'warning CS[0-9]+[^[]*' test.log | sort -u | head -20 | awk '{printf "%s%%0A", $0}')
+          if [ -n "$warnings" ]; then echo "::warning title=Avisos del compilador::$warnings"; fi
 
   build:
     name: Paquete para Windows
