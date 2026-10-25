@@ -1,0 +1,99 @@
+name: Conector ACARS
+
+# Pruebas del núcleo (Linux), compilación del conector para Windows y, si se
+# pide, publicación de una versión descargable con su suma SHA-256.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/acars-connector/**'
+      - 'packages/flight-engine/fixtures/**'
+      - 'docs/integrations/acars-v1-examples/**'
+      - '.github/workflows/connector.yml'
+  pull_request:
+    paths:
+      - 'apps/acars-connector/**'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publicar como versión descargable (prerelease)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: connector-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  VERSION: 0.1.${{ github.run_number }}
+
+jobs:
+  test:
+    name: Pruebas del núcleo (xUnit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Pruebas
+        run: scripts/ci-run.sh "Pruebas del conector" dotnet test apps/acars-connector/tests/LamAcars.Core.Tests -c Release --logger "console;verbosity=normal"
+
+  build:
+    name: Paquete para Windows
+    needs: test
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Obtener SimConnect.dll (borrador deps-simconnect)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release download deps-simconnect -p SimConnect.dll -D apps/acars-connector/lib --clobber 2>/dev/null; then
+            echo "SimConnect.dll incluida"
+            echo "SIMCONNECT=si" >> "$GITHUB_ENV"
+          else
+            echo "::warning title=SimConnect::No se encontró SimConnect.dll en el borrador 'deps-simconnect'. El paquete pedirá copiarla junto a LamAcars.exe."
+            echo "SIMCONNECT=no" >> "$GITHUB_ENV"
+          fi
+      - name: Publicar ejecutable
+        run: scripts/ci-run.sh "Publicación del conector" dotnet publish apps/acars-connector/src/LamAcars.App -c Release -o out/LamAcars -p:Version=$VERSION -clp:ErrorsOnly
+      - name: Empaquetar
+        run: |
+          cp apps/acars-connector/INSTALAR.txt out/LamAcars/LEEME.txt
+          if [ "$SIMCONNECT" = "no" ]; then
+            echo "" >> out/LamAcars/LEEME.txt
+            echo "Este paquete NO incluye SimConnect.dll: copiala desde el SDK de MSFS 2024 junto a LamAcars.exe." >> out/LamAcars/LEEME.txt
+          fi
+          ls -la out/LamAcars
+          cd out
+          7z a -tzip "LamAcars-$VERSION-win-x64.zip" LamAcars > /dev/null
+          sha256sum "LamAcars-$VERSION-win-x64.zip" | tee "LamAcars-$VERSION-win-x64.zip.sha256"
+          echo "::notice title=Conector::LamAcars-$VERSION-win-x64.zip (SimConnect: $SIMCONNECT) $(cut -d' ' -f1 LamAcars-$VERSION-win-x64.zip.sha256)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LamAcars-${{ env.VERSION }}-win-x64
+          path: |
+            out/LamAcars-*.zip
+            out/LamAcars-*.sha256
+          retention-days: 30
+      - name: Publicar versión
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(cut -d' ' -f1 out/LamAcars-$VERSION-win-x64.zip.sha256)
+          notes=$(printf 'LAM ACARS %s para MSFS 2024 (Windows 10/11, 64 bits).\n\nSHA-256 del zip: `%s`\n\nInstrucciones: descomprime, abre LamAcars.exe y vincula el equipo desde la web (Settings → Dispositivos ACARS).' "$VERSION" "$sha")
+          gh release create "connector-v$VERSION" out/LamAcars-$VERSION-win-x64.zip out/LamAcars-$VERSION-win-x64.zip.sha256 \
+            --title "LAM ACARS $VERSION" --notes "$notes" --prerelease --target "$GITHUB_SHA"

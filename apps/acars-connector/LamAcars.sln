@@ -1,0 +1,37 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LamAcars.Core", "src\LamAcars.Core\LamAcars.Core.csproj", "{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000001}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LamAcars.Sim", "src\LamAcars.Sim\LamAcars.Sim.csproj", "{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000002}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LamAcars.App", "src\LamAcars.App\LamAcars.App.csproj", "{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000003}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LamAcars.Core.Tests", "tests\LamAcars.Core.Tests\LamAcars.Core.Tests.csproj", "{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000004}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000001}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000002}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000002}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000003}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000003}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000003}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000004}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000004}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B1A4C21-0C3E-4E6F-9C2B-0A1F00000004}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

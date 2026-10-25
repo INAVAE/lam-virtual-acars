@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Lectura de MSFS 2024 por SimConnect con llamadas directas a SimConnect.dll
+    (API C del SDK). No se compila contra la DLL administrada del SDK: la DLL
+    nativa se busca junto al ejecutable al ejecutar.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>LamAcars.Sim</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LamAcars.Core\LamAcars.Core.csproj" />
+  </ItemGroup>
+</Project>

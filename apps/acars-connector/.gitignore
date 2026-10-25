@@ -1,0 +1,5 @@
+lib/SimConnect.dll
+bin/
+obj/
+*.user
+.vs/

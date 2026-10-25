@@ -1,0 +1,33 @@
+LAM ACARS · Líneas Aéreas Mexicanas
+Conector de MSFS 2024 para LAM Virtual ACARS
+
+Requisitos
+- Windows 10 u 11 de 64 bits.
+- Microsoft Flight Simulator 2024.
+- Una cuenta de piloto en https://inavae.github.io/lam-virtual-acars/
+
+Instalación
+1. Descomprime la carpeta LamAcars donde quieras (por ejemplo, Documentos).
+2. Verifica que SimConnect.dll esté junto a LamAcars.exe.
+3. Abre LamAcars.exe. Windows puede mostrar "Windows protegió su PC" porque el
+   ejecutable no está firmado: elige "Más información" → "Ejecutar de todas formas".
+   Compara antes la suma SHA-256 del zip con la publicada en la página de descarga.
+
+Vincular el equipo (una sola vez)
+1. En el conector pulsa "Vincular este equipo": aparece un código de 8 caracteres.
+2. En la web entra a Settings → Dispositivos ACARS, escribe el código y pulsa
+   "Vincular equipo". El conector muestra tu nombre en unos segundos.
+
+Volar
+1. Reserva el vuelo e importa el plan de SimBrief en la web (My Flights).
+2. Abre MSFS 2024 y carga la aeronave en la puerta de salida.
+3. En el conector elige el vuelo y pulsa "Iniciar ACARS".
+4. Vuela normalmente. El conector detecta las fases solo.
+5. Al llegar, apaga motores y pon el freno de estacionamiento: el vuelo se cierra solo.
+
+Si se cae internet, el conector guarda todo y lo envía al recuperar la conexión.
+Si cierras el conector a mitad del vuelo, al abrirlo de nuevo el vuelo se reanuda.
+
+Archivos del conector: %LOCALAPPDATA%\LamAcars
+- logs\        bitácora diaria (envíala si algo falla)
+- recordings\  una lectura por segundo de cada vuelo (sirve para revisar fases)
