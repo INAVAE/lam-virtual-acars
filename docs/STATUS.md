@@ -2,7 +2,7 @@
 
 Última actualización: 2026-10-24
 
-## Fase 3, Reservas y SimBrief (construida; falta probar con datos reales)
+## Fase 3, Reservas y SimBrief (verificada con datos reales el 2026-10-24)
 
 ### Hecho
 
@@ -14,9 +14,9 @@
 
 ### Para cerrar la Fase 3 (prueba con datos reales)
 
-- [ ] Otorgarte una habilitación en Pilots (lo puede hacer el superadministrador, incluso para sí mismo).
-- [ ] Reservar una ruta con una aeronave compatible y tu callsign.
-- [ ] Guardar tu usuario de SimBrief en Settings, generar el OFP con el botón Crear en SimBrief e importarlo en My Flights.
+- [x] Otorgarte una habilitación en Pilots (lo puede hacer el superadministrador, incluso para sí mismo).
+- [x] Reservar una ruta con una aeronave compatible y tu callsign (MXL106, MMBT a MMSD, A320).
+- [x] Guardar tu usuario de SimBrief en Settings, generar el OFP con el botón Crear en SimBrief e importarlo en My Flights (ruta, FL360, combustible, pesos, alterno y PDF del OFP correctos).
 - [ ] Generar un OFP con otro destino o tipo y comprobar que se avisa la diferencia.
 - [ ] Cancelar la reserva y ver la aeronave Disponible de nuevo.
 
@@ -24,7 +24,7 @@
 
 - [x] Un piloto solo reserva combinaciones válidas y la base rechaza las inválidas (pgTAP: tipo, habilitación, carga/pasajeros, ubicación, disponibilidad, máximo, membresía, callsign).
 - [x] Una aeronave no se reserva dos veces y cancelar o vencer la libera (pgTAP).
-- [ ] Un OFP real de SimBrief se importa y se avisan las diferencias (lógica probada con pgTAP; falta el OFP real).
+- [x] Un OFP real de SimBrief se importa y se avisan las diferencias (aviso real de matrícula distinta: MXL106 en la flota, G-FENX en SimBrief).
 
 ## Fase 2, Administración (terminada)
 
