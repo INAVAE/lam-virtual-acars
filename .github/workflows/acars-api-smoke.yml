@@ -1,0 +1,29 @@
+name: Prueba de la API ACARS
+
+# Comprueba la Edge Function `acars` publicada en Supabase.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/acars/**'
+      - 'supabase/migrations/**'
+      - 'scripts/acars-api-smoke.mjs'
+      - '.github/workflows/acars-api-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: API ACARS publicada
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Comprobaciones
+        run: node scripts/acars-api-smoke.mjs
+        env:
+          ACARS_URL: https://fnsfgjtmwfiizofsjajm.supabase.co/functions/v1/acars

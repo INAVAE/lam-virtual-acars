@@ -1,0 +1,7 @@
+{
+  "session_id": "0b9a8c7d-6e5f-4a3b-8c2d-1e0f9a8b7c6d",
+  "points": [
+    { "seq": 0, "sampled_at": "2026-10-25T14:31:00Z", "latitude": 19.4401, "longitude": -99.0688, "altitude_ft": 7316, "ias_kt": 142, "gs_kt": 140, "heading_deg": 52, "vs_fpm": 0, "on_ground": true, "phase": "takeoff" },
+    { "seq": 1, "sampled_at": "2026-10-25T14:31:04Z", "latitude": 19.4452, "longitude": -99.0612, "altitude_ft": 7520, "ias_kt": 158, "gs_kt": 156, "heading_deg": 52, "vs_fpm": 2100, "on_ground": false, "phase": "initial_climb" }
+  ]
+}

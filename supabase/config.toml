@@ -43,3 +43,7 @@ verify_jwt = true
 
 [functions.simbrief-ofp]
 verify_jwt = true
+
+[functions.acars]
+# El conector no tiene sesión de Supabase: se autentica con su token de dispositivo.
+verify_jwt = false

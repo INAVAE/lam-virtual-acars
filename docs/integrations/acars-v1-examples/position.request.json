@@ -1,0 +1,16 @@
+{
+  "session_id": "0b9a8c7d-6e5f-4a3b-8c2d-1e0f9a8b7c6d",
+  "position": {
+    "sampled_at": "2026-10-25T14:30:10Z",
+    "latitude": 19.4363,
+    "longitude": -99.0721,
+    "altitude_ft": 7316,
+    "agl_ft": 0,
+    "ias_kt": 0,
+    "gs_kt": 14.2,
+    "heading_deg": 52.5,
+    "vs_fpm": 0,
+    "on_ground": true,
+    "phase": "taxi_out"
+  }
+}

@@ -30,6 +30,8 @@ jobs:
             echo "::warning::No hay pnpm-lock.yaml; ejecuta el flujo 'Actualizar lockfile'."
             pnpm install --no-frozen-lockfile
           fi
+      - name: Contrato ACARS sincronizado
+        run: scripts/ci-run.sh "Contrato ACARS" cmp packages/validation/src/acars.ts supabase/functions/acars/contract.ts
       - run: scripts/ci-run.sh Tipos pnpm typecheck
       - run: scripts/ci-run.sh Lint pnpm lint
       - run: scripts/ci-run.sh Pruebas pnpm test

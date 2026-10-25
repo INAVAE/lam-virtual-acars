@@ -1,0 +1,27 @@
+{
+  "session_id": "0b9a8c7d-6e5f-4a3b-8c2d-1e0f9a8b7c6d",
+  "events": [
+    {
+      "id": "5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a",
+      "seq": 7,
+      "type": "phase_change",
+      "phase": "takeoff",
+      "occurred_at": "2026-10-25T14:30:55Z",
+      "latitude": 19.4392,
+      "longitude": -99.0701,
+      "altitude_ft": 7316,
+      "data": { "from": "taxi_out", "to": "takeoff" }
+    },
+    {
+      "id": "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d",
+      "seq": 8,
+      "type": "touchdown",
+      "phase": "landing",
+      "occurred_at": "2026-10-25T16:58:12Z",
+      "latitude": 21.0365,
+      "longitude": -86.8771,
+      "altitude_ft": 22,
+      "data": { "vs_fpm": -142.6, "g_force": 1.18, "pitch_deg": 3.1, "bank_deg": 0.8, "ias_kt": 134, "gs_kt": 131, "bounces": 0 }
+    }
+  ]
+}

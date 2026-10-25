@@ -85,3 +85,5 @@ export const icaoAirlineCodeSchema = z
 export const hexColorSchema = z
   .string()
   .regex(/^#[0-9A-Fa-f]{6}$/, 'Usa un color en formato #RRGGBB');
+
+export * from './acars';
