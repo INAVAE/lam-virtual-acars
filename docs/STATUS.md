@@ -1,6 +1,30 @@
 # Estado del proyecto
 
-Última actualización: 2026-10-22
+Última actualización: 2026-10-24
+
+## Fase 3, Reservas y SimBrief (construida; falta probar con datos reales)
+
+### Hecho
+
+- Base de datos: `pilot_type_ratings`, `flight_bookings`, `flights` y `simbrief_ofps` con RLS. Reservas solo por `book_flight` y `cancel_booking`, que validan todas las reglas en el servidor. Una reserva activa por aeronave (índice único), máximo por piloto, vencimiento automático cada 10 minutos (pg_cron) y antes de cada reserva. Política nueva por aerolínea: Exigir habilitación de tipo (activada por defecto).
+- 46 pruebas pgTAP nuevas (112 en total), en verde en local y en Database CI.
+- Edge Function `simbrief-ofp`: trae el último OFP del usuario de SimBrief del piloto y lo guarda con su token (sin clave secreta). La base calcula las diferencias contra la reserva.
+- Web: Flight Booking (rutas activas, aeronaves con el motivo de bloqueo, callsign del piloto, reservas de la aerolínea para el staff), My Flights (tarjeta por vuelo, enlace a SimBrief Dispatch, importación y comparación del OFP, cancelación, historial), habilitaciones en Pilots, interruptor en Políticas y reservas activas en el dashboard.
+- Revisión visual: 21 pantallas sin errores (8 nuevas).
+
+### Para cerrar la Fase 3 (prueba con datos reales)
+
+- [ ] Otorgarte una habilitación en Pilots (lo puede hacer el superadministrador, incluso para sí mismo).
+- [ ] Reservar una ruta con una aeronave compatible y tu callsign.
+- [ ] Guardar tu usuario de SimBrief en Settings, generar el OFP con el botón Crear en SimBrief e importarlo en My Flights.
+- [ ] Generar un OFP con otro destino o tipo y comprobar que se avisa la diferencia.
+- [ ] Cancelar la reserva y ver la aeronave Disponible de nuevo.
+
+### Criterios de aceptación
+
+- [x] Un piloto solo reserva combinaciones válidas y la base rechaza las inválidas (pgTAP: tipo, habilitación, carga/pasajeros, ubicación, disponibilidad, máximo, membresía, callsign).
+- [x] Una aeronave no se reserva dos veces y cancelar o vencer la libera (pgTAP).
+- [ ] Un OFP real de SimBrief se importa y se avisan las diferencias (lógica probada con pgTAP; falta el OFP real).
 
 ## Fase 2, Administración (terminada)
 
@@ -64,4 +88,4 @@
 
 ## Siguiente paso
 
-Fase 3: reservas, callsign por vuelo elegido por el piloto, habilitaciones por tipo (`pilot_type_ratings`) e integración con SimBrief.
+Cerrar la Fase 3 con la prueba de datos reales. Después, Fase 4: LAM ACARS Connector para MSFS 2024 (vinculación del equipo, sesión de vuelo, posición en vivo, traza y eventos).

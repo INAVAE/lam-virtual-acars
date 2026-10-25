@@ -243,7 +243,9 @@ function UpcomingFlight({ flight, hasSimbriefUser }: { flight: MyFlight; hasSimb
 
       {scheduled && booking ? (
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-2.5">
-          <p className="text-sm text-muted">Reservado el {formatLocalDateTime(flight.created_at)}. El vuelo se inicia desde LAM ACARS (Fase 4).</p>
+          <p className="text-sm text-muted">
+            Reservado el {formatLocalDateTime(flight.created_at)} · El vuelo se inicia desde LAM ACARS (Fase 4)
+          </p>
           <ConfirmButton
             size="sm"
             variant="ghost"

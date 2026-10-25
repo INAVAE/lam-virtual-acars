@@ -111,12 +111,37 @@ erDiagram
 
 Logotipos: bucket público `airline-logos` en Storage, una carpeta por aerolínea (`{airline_id}/logo-*.png`).
 
+## Fase 3 (implementado)
+
+```mermaid
+erDiagram
+  airlines ||--o{ pilot_type_ratings : otorga
+  profiles ||--o{ pilot_type_ratings : tiene
+  aircraft_types ||--o{ pilot_type_ratings : "habilita en"
+  profiles ||--o{ flight_bookings : reserva
+  routes |o--o{ flight_bookings : "de la ruta"
+  aircraft |o--o{ flight_bookings : aparta
+  flight_bookings ||--|| flights : genera
+  flights ||--o| simbrief_ofps : "plan de vuelo"
+```
+
+| Tabla | Contenido |
+| --- | --- |
+| `pilot_type_ratings` | Tipos que cada piloto puede volar en cada aerolínea; quién y cuándo la otorgó |
+| `flight_bookings` | Reserva: piloto, ruta, aeronave, estado (activa, volada, cancelada, vencida) y vencimiento |
+| `flights` | Operación: copia de la ruta (número, origen, destino, distancia, duración, salida programada), aeronave y matrícula, callsign del piloto, red y RMK. Estados: reservado, en vuelo, completado, cancelado |
+| `simbrief_ofps` | Último OFP de SimBrief del vuelo (ruta, nivel, combustibles, pesos, PDF) y las diferencias con la reserva |
+
+Por qué reserva y vuelo son tablas distintas: la reserva controla el apartado de la aeronave y su vencimiento; el vuelo es el registro operacional que usarán el ACARS (Fase 4) y el PIREP (Fase 5) y no cambia si la ruta se edita o se borra.
+
+El callsign se guarda en `flights.callsign` y lo escribe el piloto al reservar.
+
+Diferencias del OFP (las calcula el disparador `simbrief_ofps_set`, no el cliente): origen, destino y tipo (importancia alta); matrícula, callsign y plan con más de 24 h (importancia baja).
+
 ## Fases siguientes (diseño conceptual)
 
 | Grupo | Tablas | Fase |
 | --- | --- | --- |
-| Habilitaciones | `pilot_type_ratings` | 3 |
-| Operación | `flight_bookings`, `flights`, `simbrief_ofps` | 3 |
 | ACARS | `acars_devices`, `acars_link_codes`, `flight_sessions`, `flight_positions_live`, `flight_track_points`, `flight_events` | 4 |
 | PIREP | `pireps`, `pirep_reviews`, `scoring_rule_sets`, `flight_scores` | 5 |
 | Estadísticas | `pilot_statistics` y vistas de agregados | 5 y 6 |
@@ -143,6 +168,6 @@ Cada fase diseña en detalle sus tablas al empezar, para no fijar decisiones ant
 
 Fuentes: identidad corporativa de LAM, lineasaereasmexicanas.com.mx/es/alianzas y los sitios de cada aerolínea. Todas operan en IVAO; TAESA indica también VATSIM. Los colores se tomaron de cada logotipo.
 
-**Callsign:** no es un dato de la aerolínea. Cada piloto elige el suyo y se guardará por vuelo en la reserva (Fase 3). La columna `airlines.radio_callsign` queda sin uso.
+**Callsign:** no es un dato de la aerolínea. Cada piloto elige el suyo al reservar y se guarda en `flights.callsign`. La columna `airlines.radio_callsign` queda sin uso.
 
 Paleta de LAM, tomada del emblema: verde `#057956`, rojo `#D6061C`, blanco, azul noche `#0A1420`, superficie `#182837` y dorado `#C8A96A`.

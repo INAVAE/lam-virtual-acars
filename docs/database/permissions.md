@@ -1,6 +1,6 @@
 # Roles y permisos
 
-Los permisos se aplican en PostgreSQL con RLS y disparadores; la web solo oculta lo que el usuario no puede usar. Las pruebas de esta matriz están en `supabase/tests/database/001_foundation_rls.test.sql`.
+Los permisos se aplican en PostgreSQL con RLS y disparadores; la web solo oculta lo que el usuario no puede usar. Las pruebas están en `supabase/tests/database/` (001 Fase 1, 002 Fase 2, 003 Fase 3).
 
 ## Roles
 
@@ -56,6 +56,37 @@ Reglas adicionales que impone la base de datos:
 - La distancia de una ruta siempre la calcula el servidor.
 - `import_routes` corre con los permisos de quien llama (SECURITY INVOKER) y guarda todo o nada.
 
+## Matriz de la Fase 3
+
+| Tabla o función | Piloto | Jefe de operaciones | Admin. de aerolínea | Superadmin |
+| --- | --- | --- | --- | --- |
+| `pilot_type_ratings` | Ver las suyas | Ver, otorgar y retirar en su aerolínea (no a sí mismo) | Igual que jefe de operaciones | Todo, incluidas las propias |
+| `flight_bookings`, `flights` | Ver los suyos | Ver los de su aerolínea | Igual | Todo |
+| `simbrief_ofps` | Ver e importar el OFP de su vuelo mientras no comienza | Ver los de su aerolínea | Igual | Ver todos |
+| `book_flight()` | Reservar en aerolíneas donde tiene membresía activa | Igual | Igual | Igual (necesita membresía activa) |
+| `cancel_booking()` | Cancelar las suyas | Cancelar las de su aerolínea | Igual | Todas |
+| `route_aircraft_options()` | Aeronaves de la ruta con el motivo de bloqueo para él | Igual | Igual | Igual |
+
+Nadie inserta ni modifica reservas o vuelos directamente: solo `book_flight`, `cancel_booking` y el vencimiento automático (`private.expire_bookings`, cada 10 minutos con pg_cron y antes de cada reserva).
+
+Reglas de reserva (todas en `private.booking_block_reason` y `book_flight`):
+
+| Regla | Código |
+| --- | --- |
+| La ruta existe y está activa | `route_inactive` |
+| La aeronave es de la aerolínea de la ruta | `aircraft_other_airline` |
+| La aeronave está disponible | `aircraft_unavailable` |
+| El tipo está permitido en la ruta (si la ruta no marca tipos, cualquiera) | `type_not_allowed` |
+| Carga y pasajeros compatibles (mixta sirve para ambas) | `operation_mismatch` |
+| Habilitación del tipo, si la aerolínea la exige | `no_rating` |
+| Aeronave en el origen (ubicación actual o, si falta, su base), si la aerolínea lo exige | `not_at_origin` |
+| No superar `max_active_bookings` | `max_bookings` |
+| Membresía activa y aerolínea activa | `not_member` |
+| Callsign de 3 a 10 letras o números | `invalid_callsign` |
+| Una reserva activa por aeronave | Índice único parcial `flight_bookings_one_active_per_aircraft` |
+
+Una aeronave reservada queda en estado Asignada; mientras lo esté, nadie puede cambiar su estado, tipo o ubicación ni borrarla. Cancelar o vencer la reserva la deja Disponible.
+
 ## Reglas contra la escalada de privilegios
 
 - Nadie puede crear su propia membresía activa ni con rol distinto de piloto.
@@ -69,4 +100,5 @@ Reglas adicionales que impone la base de datos:
 | Aviso | Motivo |
 | --- | --- |
 | `authenticated_security_definer_function_executable` en `get_dashboard_summary` | Intencional: exige sesión, valida el acceso a la aerolínea pedida y devuelve solo conteos, sin datos personales |
-| `multiple_permissive_policies` en el INSERT de `airline_memberships` | Dos políticas (solicitud propia y alta por administrador). Impacto nulo con el volumen actual; se unirán en una sola cuando se toque esa tabla en la Fase 2 |
+| `authenticated_security_definer_function_executable` en `book_flight` y `cancel_booking` | Intencional: son la única vía para escribir reservas y vuelos; validan identidad, membresía y todas las reglas antes de escribir |
+| `multiple_permissive_policies` en el INSERT de `airline_memberships` | Dos políticas (solicitud propia y alta por administrador). Impacto nulo con el volumen actual; unirlas requiere un DROP desde el SQL Editor |
