@@ -124,7 +124,14 @@ function buildMetrics(summary: DashboardSummary | undefined, canManage: boolean)
       label: 'Pilotos con membresía activa',
       value: summary ? String(summary.pilots_active_members) : null,
     },
+    {
+      label: 'Tus reservas activas',
+      value: summary ? String(summary.my_bookings_active ?? 0) : null,
+    },
   ];
+  if (canManage) {
+    live.push({ label: 'Reservas activas', value: summary ? String(summary.bookings_active ?? 0) : null, detail: 'de todos los pilotos' });
+  }
   if (canManage) {
     live.push({
       label: 'Solicitudes de ingreso pendientes',
@@ -361,7 +368,7 @@ function OrganizationAirlinesPanel() {
 const modules: { name: string; phase: number; done: boolean }[] = [
   { name: 'Cuentas, roles y aerolíneas', phase: 1, done: true },
   { name: 'Administración de pilotos, flota, aeropuertos y rutas', phase: 2, done: true },
-  { name: 'Reservas e integración con SimBrief', phase: 3, done: false },
+  { name: 'Reservas e integración con SimBrief', phase: 3, done: true },
   { name: 'LAM ACARS Connector para MSFS 2024', phase: 4, done: false },
   { name: 'PIREP automático y evaluación', phase: 5, done: false },
   { name: 'Mapa en vivo y Operations Center', phase: 6, done: false },

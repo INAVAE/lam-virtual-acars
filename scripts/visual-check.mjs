@@ -64,7 +64,7 @@ const PROFILE = {
   email: 'piloto@example.com',
   display_name: 'Piloto de Prueba',
   country_code: 'MX',
-  simbrief_username: null,
+  simbrief_username: 'pilotolam',
   primary_airline_id: null,
   account_status: 'active',
   joined_at: now,
@@ -194,6 +194,104 @@ const MEMBERS = [
   member(5, 'Sofía Ramírez', ['pilot'], 'active'),
 ];
 
+const RATINGS = [
+  { airline_id: MXL.id, user_id: USER_ID, aircraft_type_id: 2, granted_at: now },
+  { airline_id: MXL.id, user_id: USER_ID, aircraft_type_id: 1, granted_at: now },
+  { airline_id: MXL.id, user_id: id(603), aircraft_type_id: 2, granted_at: now },
+  { airline_id: MXL.id, user_id: id(605), aircraft_type_id: 1, granted_at: now },
+];
+
+const AIRCRAFT_OPTIONS = [
+  ['XA-MXA', '101', 2, 'available', 'MMMX', null],
+  ['XA-MXE', '103', 1, 'available', 'MMMX', null],
+  ['XA-MXB', '102', 2, 'in_flight', 'MMGL', 'aircraft_unavailable'],
+  ['XA-MXC', '201', 1, 'maintenance', 'MMGL', 'aircraft_unavailable'],
+  ['XA-MXD', '301', 3, 'available', 'MMUN', 'type_not_allowed'],
+].map(([reg, fleet, typeId, status, loc, reason], i) => ({
+  aircraft_id: id(300 + i),
+  registration: reg,
+  fleet_number: fleet,
+  aircraft_type_id: typeId,
+  type_icao: TYPES[typeId - 1].icao_code,
+  type_model: TYPES[typeId - 1].model,
+  status,
+  location_icao: loc,
+  block_reason: reason,
+}));
+
+const inHours = (h) => new Date(Date.now() + h * 3600_000).toISOString();
+const flight = (n, callsign, fn, o, d, typeId, reg, status, extra = {}) => ({
+  id: id(700 + n),
+  booking_id: id(800 + n),
+  airline_id: MXL.id,
+  user_id: USER_ID,
+  aircraft_id: id(300),
+  aircraft_registration: reg,
+  airline_icao: 'MXL',
+  flight_number: fn,
+  callsign,
+  planned_distance_nm: 248,
+  planned_minutes: 65,
+  scheduled_departure_at: inHours(5),
+  operation_type: 'passenger',
+  network: 'IVAO',
+  flight_plan_remarks: 'IVAOVA/MXL',
+  status,
+  created_at: now,
+  started_at: null,
+  completed_at: null,
+  cancelled_at: null,
+  airline: { name: MXL.name, slug: MXL.slug, logo_path: MXL.logo_path, brand_primary_color: MXL.brand_primary_color },
+  type: typeRef(typeId),
+  origin: { icao_code: o, name: ap(o).name, city: ap(o).city },
+  destination: { icao_code: d, name: ap(d).name, city: ap(d).city },
+  booking: { id: id(800 + n), status: status === 'scheduled' ? 'active' : 'cancelled', expires_at: inHours(19), closed_at: null },
+  ofp: null,
+  pilot: { display_name: PROFILE.display_name, pilot_number: PROFILE.pilot_number },
+  ...extra,
+});
+const FLIGHTS = [
+  flight(1, 'MXL100', '100', 'MMMX', 'MMGL', 2, 'XA-MXA', 'scheduled', {
+    ofp: {
+      flight_id: id(701),
+      airline_id: MXL.id,
+      user_id: USER_ID,
+      request_id: '123456789',
+      static_id: null,
+      generated_at: now,
+      airline_icao: 'MXL',
+      flight_number: '100',
+      atc_callsign: 'MXL100',
+      origin_icao: 'MMMX',
+      destination_icao: 'MMGL',
+      alternate_icao: 'MMPR',
+      aircraft_icao: 'A20N',
+      registration: 'XA-MXA',
+      route: 'MEX1A TLC UJ5 GDL',
+      cruise_altitude_ft: 34000,
+      air_distance_nm: 262,
+      est_enroute_minutes: 58,
+      est_block_minutes: 72,
+      fuel_units: 'kg',
+      block_fuel: 5320,
+      trip_fuel: 2810,
+      reserve_fuel: 1150,
+      zfw: 58210,
+      tow: 63300,
+      ldw: 60490,
+      pax_count: 168,
+      cargo: 1200,
+      pdf_url: 'https://www.simbrief.com/ofp/flightplans/MMMXMMGL_PDF_123456789.pdf',
+      mismatches: [{ field: 'aircraft_type', expected: 'B738', actual: 'A20N', severity: 'high' }],
+      fetched_at: now,
+    },
+  }),
+  flight(2, 'MXL21K', '210', 'MMMX', 'MMMY', 1, 'XA-MXE', 'scheduled', { scheduled_departure_at: null }),
+];
+const HISTORY = [
+  flight(3, 'MXL801', '801', 'MMTJ', 'MMMX', 3, 'XA-MXD', 'cancelled', { cancelled_at: now, booking: { id: id(803), status: 'expired', expires_at: now, closed_at: now } }),
+];
+
 const AUDIT = [
   { id: 3, occurred_at: now, actor_id: USER_ID, airline_id: MXL.id, action: 'update', entity_type: 'airlines', entity_id: MXL.id, old_data: { name: 'LAM', is_active: false }, new_data: { name: 'Líneas Aéreas Mexicanas', is_active: true } },
   { id: 2, occurred_at: now, actor_id: USER_ID, airline_id: MXL.id, action: 'insert', entity_type: 'aircraft', entity_id: 'XA-MXA', old_data: null, new_data: { registration: 'XA-MXA', status: 'available' } },
@@ -222,9 +320,19 @@ function rowsFor(url) {
     case 'organization_members':
       return [{ organization_id: ORG_ID, user_id: USER_ID, role: 'superadmin', created_at: now, created_by: null, profile: { pilot_number: 1001, display_name: PROFILE.display_name, email: PROFILE.email } }];
     case 'airline_memberships':
-      return eqParam(url, 'user_id') ? [] : MEMBERS;
+      return eqParam(url, 'user_id')
+        ? [{ id: id(599), airline_id: MXL.id, roles: ['pilot'], status: 'active', requested_at: now }]
+        : MEMBERS;
+    case 'pilot_type_ratings': {
+      const user = eqParam(url, 'user_id');
+      return user ? RATINGS.filter((r) => r.user_id === user) : RATINGS;
+    }
+    case 'flights': {
+      const status = url.searchParams.get('status') ?? '';
+      return status.includes('scheduled') ? FLIGHTS : HISTORY;
+    }
     case 'airline_settings':
-      return [{ airline_id: eqParam(url, 'airline_id'), max_active_bookings: 1, booking_expiry_hours: 24, require_aircraft_at_origin: false, auto_approve_pireps: false, public_tracking: true, delay_tolerance_minutes: 30, updated_at: now, updated_by: null }];
+      return [{ airline_id: eqParam(url, 'airline_id'), max_active_bookings: 3, booking_expiry_hours: 24, require_aircraft_at_origin: false, require_type_rating: true, auto_approve_pireps: false, public_tracking: true, delay_tolerance_minutes: 30, updated_at: now, updated_by: null }];
     case 'airports': {
       const one = eqParam(url, 'id');
       return one ? AIRPORTS.filter((a) => String(a.id) === one) : AIRPORTS;
@@ -265,8 +373,11 @@ async function handleSupabase(route) {
     return route.fulfill({
       status: 200,
       headers: CORS,
-      json: { scope: 'organization', airlines_total: 5, airlines_active: 5, pilots_active_members: 3, pending_requests: 2, profiles_total: 6 },
+      json: { scope: 'organization', airlines_total: 5, airlines_active: 5, pilots_active_members: 3, pending_requests: 2, profiles_total: 6, bookings_active: 4, my_bookings_active: 2 },
     });
+  }
+  if (url.pathname === '/rest/v1/rpc/route_aircraft_options') {
+    return route.fulfill({ status: 200, headers: CORS, json: AIRCRAFT_OPTIONS });
   }
   if (url.pathname.startsWith('/rest/v1/') && (request.method() === 'GET' || request.method() === 'HEAD')) {
     const rows = rowsFor(url);
@@ -369,6 +480,43 @@ await shoot('10-routes-import', 'routes', {
 await shoot('11-administration', 'administration', { waitFor: 'Bitácora' });
 await shoot('12-fleet-mobile', 'fleet', { airlineId: MXL.id, viewport: { width: 390, height: 844 }, waitFor: 'XA-MXA' });
 await shoot('13-airline-detail-light', 'airlines/alas-del-sur', { theme: 'light', waitFor: 'Políticas operacionales' });
+await shoot('14-booking', 'booking', { airlineId: MXL.id, waitFor: 'Tus reservas activas' });
+await shoot('15-booking-dialog', 'booking', {
+  airlineId: MXL.id,
+  waitFor: 'MXL100',
+  action: async (page) => {
+    await page.getByRole('button', { name: 'Reservar' }).first().click();
+    await page.getByRole('dialog').getByText('XA-MXE').waitFor();
+    await page.getByRole('dialog').getByLabel('Callsign').fill('mxl 4100');
+  },
+});
+await shoot('16-booking-airline', 'booking', {
+  airlineId: MXL.id,
+  waitFor: 'MXL100',
+  action: async (page) => {
+    await page.getByRole('tab', { name: 'Reservas de la aerolínea' }).click();
+    await page.getByText('MXL21K').first().waitFor();
+  },
+});
+await shoot('17-my-flights', 'my-flights', { waitFor: 'MXL21K' });
+await shoot('18-my-flights-history', 'my-flights', {
+  waitFor: 'MXL21K',
+  action: async (page) => {
+    await page.getByRole('tab', { name: 'Historial' }).click();
+    await page.getByText('MXL801').waitFor();
+  },
+});
+await shoot('19-my-flights-mobile', 'my-flights', { viewport: { width: 390, height: 844 }, waitFor: 'MXL21K' });
+await shoot('20-pilot-ratings', 'pilots', {
+  airlineId: MXL.id,
+  waitFor: 'Ana Martínez',
+  action: async (page) => {
+    await page.getByRole('tab', { name: /Miembros/ }).click();
+    await page.getByRole('button', { name: 'Habilitaciones' }).first().click();
+    await page.getByRole('dialog').getByText('En la flota de la aerolínea').waitFor();
+  },
+});
+await shoot('21-my-flights-light', 'my-flights', { theme: 'light', waitFor: 'MXL21K' });
 
 await browser.close();
 

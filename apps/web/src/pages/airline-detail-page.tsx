@@ -302,6 +302,7 @@ const settingsSchema = z.object({
   booking_expiry_hours: z.coerce.number().int().min(1, 'Mínimo 1 hora').max(168, 'Máximo 168 horas'),
   delay_tolerance_minutes: z.coerce.number().int().min(0).max(600, 'Máximo 600 minutos'),
   require_aircraft_at_origin: z.boolean(),
+  require_type_rating: z.boolean(),
   auto_approve_pireps: z.boolean(),
   public_tracking: z.boolean(),
 });
@@ -313,6 +314,7 @@ function toSettingsForm(s: AirlineSettings): SettingsForm {
     booking_expiry_hours: s.booking_expiry_hours,
     delay_tolerance_minutes: s.delay_tolerance_minutes,
     require_aircraft_at_origin: s.require_aircraft_at_origin,
+    require_type_rating: s.require_type_rating,
     auto_approve_pireps: s.auto_approve_pireps,
     public_tracking: s.public_tracking,
   };
@@ -346,7 +348,7 @@ function SettingsPanel({ airlineId, canManage }: { airlineId: string; canManage:
   if (!settings.data) return <Alert>Solo los miembros de la aerolínea ven sus políticas.</Alert>;
 
   return (
-    <Panel title="Políticas operacionales" description="Se aplican a las reservas (Fase 3) y a los PIREP (Fase 5).">
+    <Panel title="Políticas operacionales" description="Se aplican a las reservas y, desde la Fase 5, a los PIREP.">
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <fieldset disabled={!canManage} className="grid gap-4">
           <Field id="st-bookings" label="Reservas activas por piloto" error={errors.max_active_bookings?.message}>
@@ -363,6 +365,12 @@ function SettingsPanel({ airlineId, canManage }: { airlineId: string; canManage:
             label="La aeronave debe estar en el origen"
             hint="Para reservar, la aeronave tiene que estar en el aeropuerto de salida."
             {...register('require_aircraft_at_origin')}
+          />
+          <Checkbox
+            id="st-rating"
+            label="Exigir habilitación de tipo"
+            hint="El piloto solo reserva tipos de aeronave para los que el staff lo habilitó en Pilots."
+            {...register('require_type_rating')}
           />
           <Checkbox
             id="st-auto"

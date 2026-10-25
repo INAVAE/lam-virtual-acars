@@ -13,7 +13,9 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
+import { useAircraftTypes, useFleet, type AircraftType } from '@/hooks/use-fleet';
 import type { Airline } from '@/hooks/use-lam-data';
+import { useAirlineRatings, useSaveRatings } from '@/hooks/use-ratings';
 import { useAirlineMembers, useRemoveMembership, useUpdateMembership, type AirlineMember } from '@/hooks/use-members';
 import { useAuth } from '@/lib/auth';
 import { describeError } from '@/lib/errors';
@@ -92,6 +94,95 @@ function RolesDialog({
           );
         })}
         {roles.length === 0 ? <p className="text-sm text-danger-ink">Elige al menos un rol.</p> : null}
+      </div>
+    </Dialog>
+  );
+}
+
+function RatingsDialog({
+  member,
+  types,
+  fleetTypeIds,
+  current,
+  canEdit,
+  onClose,
+}: {
+  member: AirlineMember;
+  types: AircraftType[];
+  fleetTypeIds: Set<number>;
+  current: number[];
+  canEdit: boolean;
+  onClose: () => void;
+}) {
+  const [selected, setSelected] = useState<number[]>(current);
+  const save = useSaveRatings();
+  const inFleet = types.filter((t) => fleetTypeIds.has(t.id));
+  const others = types.filter((t) => !fleetTypeIds.has(t.id));
+  const changed = selected.length !== current.length || selected.some((t) => !current.includes(t));
+
+  function toggle(id: number, checked: boolean) {
+    setSelected((s) => (checked ? [...new Set([...s, id])] : s.filter((t) => t !== id)));
+  }
+
+  async function submit() {
+    try {
+      await save.mutateAsync({ airlineId: member.airline_id, userId: member.user_id, typeIds: selected, previous: current });
+      toast.success('Habilitaciones actualizadas');
+      onClose();
+    } catch (error) {
+      toast.error(describeError(error));
+    }
+  }
+
+  function group(label: string, list: AircraftType[]) {
+    if (list.length === 0) return null;
+    return (
+      <fieldset>
+        <legend className="mb-2 text-sm font-medium">{label}</legend>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+          {list.map((t) => (
+            <Checkbox
+              key={t.id}
+              id={`rating-${t.id}`}
+              disabled={!canEdit}
+              checked={selected.includes(t.id)}
+              onChange={(e) => toggle(t.id, e.target.checked)}
+              label={
+                <>
+                  <span className="font-mono">{t.icao_code}</span> <span className="text-muted">{t.model}</span>
+                </>
+              }
+            />
+          ))}
+        </div>
+      </fieldset>
+    );
+  }
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      size="lg"
+      title={`Habilitaciones de ${member.profile?.display_name ?? 'piloto'}`}
+      description="Tipos de aeronave que puede reservar en esta aerolínea cuando la política exige habilitación."
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            {canEdit ? 'Cancelar' : 'Cerrar'}
+          </Button>
+          {canEdit ? (
+            <Button loading={save.isPending} disabled={!changed} onClick={submit}>
+              Guardar habilitaciones
+            </Button>
+          ) : null}
+        </>
+      }
+    >
+      <div className="space-y-5">
+        {!canEdit ? <Alert>Nadie puede otorgarse habilitaciones a sí mismo. Pide a otro miembro del staff que lo haga.</Alert> : null}
+        {group('En la flota de la aerolínea', inFleet)}
+        {group('Otros tipos del catálogo', others)}
       </div>
     </Dialog>
   );
@@ -191,6 +282,19 @@ function PilotsView({ airline }: { airline: Airline }) {
   const [view, setView] = useState<View>('pending');
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<AirlineMember | null>(null);
+  const [rating, setRating] = useState<AirlineMember | null>(null);
+  const { user } = useAuth();
+  const ratings = useAirlineRatings(airline.id, permissions.canStaff);
+  const types = useAircraftTypes();
+  const fleet = useFleet(permissions.canStaff ? airline.id : null);
+
+  const typeCode = useMemo(() => new Map((types.data ?? []).map((t) => [t.id, t.icao_code])), [types.data]);
+  const fleetTypeIds = useMemo(() => new Set((fleet.data ?? []).map((a) => a.aircraft_type_id)), [fleet.data]);
+  const ratingsByUser = useMemo(() => {
+    const map = new Map<string, number[]>();
+    for (const r of ratings.data ?? []) map.set(r.user_id, [...(map.get(r.user_id) ?? []), r.aircraft_type_id]);
+    return map;
+  }, [ratings.data]);
 
   const groups = useMemo(() => {
     const all = members.data ?? [];
@@ -251,13 +355,14 @@ function PilotsView({ airline }: { airline: Airline }) {
               <Th>Correo</Th>
               <Th>País</Th>
               <Th>Roles</Th>
+              {view === 'members' ? <Th>Habilitaciones</Th> : null}
               <Th>{view === 'pending' ? 'Solicitó' : 'Estado'}</Th>
               <Th className="text-right">Acciones</Th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <EmptyRow colSpan={6}>
+              <EmptyRow colSpan={view === 'members' ? 7 : 6}>
                 {view === 'pending'
                   ? 'No hay solicitudes pendientes. Los pilotos solicitan ingreso desde su dashboard.'
                   : search
@@ -274,6 +379,15 @@ function PilotsView({ airline }: { airline: Airline }) {
                   <Td className="break-all text-muted">{m.profile?.email}</Td>
                   <Td>{countryName(m.profile?.country_code ?? null)}</Td>
                   <Td>{formatRoles(m.roles)}</Td>
+                  {view === 'members' ? (
+                    <Td className="max-w-48 font-mono text-xs">
+                      {(ratingsByUser.get(m.user_id) ?? [])
+                        .map((id) => typeCode.get(id))
+                        .filter(Boolean)
+                        .sort()
+                        .join(' ') || <span className="font-sans text-muted">Ninguna</span>}
+                    </Td>
+                  ) : null}
                   <Td>
                     {view === 'pending' ? (
                       formatLocalDate(m.requested_at)
@@ -282,7 +396,14 @@ function PilotsView({ airline }: { airline: Airline }) {
                     )}
                   </Td>
                   <Td className="text-right">
-                    <MemberActions member={m} permissions={permissions} onEditRoles={() => setEditing(m)} />
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                      {m.status === 'active' && types.data ? (
+                        <Button size="sm" variant="secondary" onClick={() => setRating(m)}>
+                          Habilitaciones
+                        </Button>
+                      ) : null}
+                      <MemberActions member={m} permissions={permissions} onEditRoles={() => setEditing(m)} />
+                    </div>
                   </Td>
                 </tr>
               ))
@@ -292,6 +413,16 @@ function PilotsView({ airline }: { airline: Airline }) {
       )}
 
       {editing ? <RolesDialog member={editing} permissions={permissions} onClose={() => setEditing(null)} /> : null}
+      {rating && types.data ? (
+        <RatingsDialog
+          member={rating}
+          types={types.data}
+          fleetTypeIds={fleetTypeIds}
+          current={ratingsByUser.get(rating.user_id) ?? []}
+          canEdit={rating.user_id !== user?.id || permissions.isOrgAdmin}
+          onClose={() => setRating(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -301,7 +432,7 @@ export function PilotsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Pilots"
-        description="Aprueba solicitudes de ingreso y administra los roles de los pilotos de la aerolínea seleccionada."
+        description="Aprueba solicitudes de ingreso y administra roles y habilitaciones de tipo de los pilotos de la aerolínea seleccionada."
       />
       <ScopeRequired>{(airline) => <PilotsView airline={airline} />}</ScopeRequired>
     </div>

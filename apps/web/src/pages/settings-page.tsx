@@ -70,7 +70,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
     }
   }
 
-  const simbriefHint = 'Se usará en la Fase 3 para importar tu plan de vuelo.';
+  const simbriefHint = 'Tu usuario o alias de SimBrief. Con él importas el plan de vuelo en My Flights.';
   const primaryHint =
     activeAirlines.length === 0 ? 'Disponible cuando tengas una membresía activa.' : 'La que se muestra por defecto.';
 

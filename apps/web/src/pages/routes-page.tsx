@@ -613,7 +613,7 @@ function RoutesView({ airline }: { airline: Airline }) {
                             size="sm"
                             variant="ghost"
                             title={`Eliminar ${code}${r.flight_number}`}
-                            message="La ruta deja de existir. Si ya tiene vuelos registrados, la base de datos no permitirá borrarla; desactívala."
+                            message="La ruta deja de existir. Los vuelos ya reservados conservan sus datos. Si solo quieres dejar de ofrecerla, desactívala."
                             confirmLabel="Eliminar"
                             onConfirm={async () => {
                               try {

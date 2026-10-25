@@ -8,6 +8,8 @@ export interface AirlinePermissions {
   /** Puede supervisar (administrador o jefe de operaciones). */
   canStaff: boolean;
   isMember: boolean;
+  /** Tiene membresía activa propia (requisito para reservar, aun siendo superadministrador). */
+  hasMembership: boolean;
 }
 
 /**
@@ -27,5 +29,6 @@ export function useAirlinePermissions(airlineId: string | null | undefined): Air
     canManage: isOrgAdmin || isAdmin,
     canStaff: isOrgAdmin || isAdmin || roles.includes('ops_chief'),
     isMember: isOrgAdmin || Boolean(membership),
+    hasMembership: Boolean(membership),
   };
 }

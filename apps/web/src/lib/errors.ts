@@ -9,6 +9,9 @@ export function describeError(error: unknown): string {
   if (/rate limit/i.test(raw) || code === '429') return 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.';
   if (/same.*password|different from the old/i.test(raw)) return 'La nueva contraseña debe ser distinta a la actual.';
   if (/Failed to fetch|NetworkError/i.test(raw)) return 'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.';
+  // Reglas de reserva y SimBrief: la base de datos ya da el motivo en español.
+  const hint = error && typeof error === 'object' && 'hint' in error ? String((error as { hint: unknown }).hint ?? '') : '';
+  if (hint && /^[a-z_]+$/.test(hint) && raw) return raw;
   if (code === '42501') return 'No tienes permiso para hacer esto.';
   if (code === '23514' && /principal/i.test(raw)) return 'Solo puedes elegir como principal una aerolínea donde tu membresía esté activa.';
   if (code === '23505') return 'Ese registro ya existe.';

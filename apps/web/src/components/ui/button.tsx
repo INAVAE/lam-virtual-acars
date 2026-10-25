@@ -17,6 +17,14 @@ const sizes: Record<Size, string> = {
   md: 'h-10 px-4 text-[15px] gap-2',
 };
 
+const base =
+  'inline-flex shrink-0 items-center justify-center rounded-md font-medium transition-[background-color,border-color,filter] disabled:cursor-not-allowed disabled:opacity-55';
+
+/** Clases de botón para enlaces que deben verse como botón. */
+export function buttonClasses(variant: Variant = 'primary', size: Size = 'md', className?: string): string {
+  return cn(base, variants[variant], sizes[size], className);
+}
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
@@ -38,12 +46,7 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-md font-medium transition-[background-color,border-color,filter] disabled:cursor-not-allowed disabled:opacity-55',
-        variants[variant],
-        sizes[size],
-        className,
-      )}
+      className={buttonClasses(variant, size, className)}
       {...props}
     >
       {loading ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : null}

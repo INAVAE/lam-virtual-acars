@@ -11,8 +11,10 @@ import { AdministrationPage } from '@/pages/administration-page';
 import { AirlineDetailPage } from '@/pages/airline-detail-page';
 import { AirlinesPage } from '@/pages/airlines-page';
 import { AirportsPage } from '@/pages/airports-page';
+import { BookingPage } from '@/pages/booking-page';
 import { DashboardPage } from '@/pages/dashboard-page';
 import { FleetPage } from '@/pages/fleet-page';
+import { MyFlightsPage } from '@/pages/my-flights-page';
 import { NotFoundPage } from '@/pages/not-found-page';
 import { PilotsPage } from '@/pages/pilots-page';
 import { PublicHomePage } from '@/pages/public-home-page';
@@ -41,6 +43,8 @@ export function App() {
           }
         >
           <Route index element={<DashboardPage />} />
+          <Route path="booking" element={<BookingPage />} />
+          <Route path="my-flights" element={<MyFlightsPage />} />
           <Route path="airlines" element={<AirlinesPage />} />
           <Route path="airlines/:slug" element={<AirlineDetailPage />} />
           <Route path="pilots" element={<PilotsPage />} />
