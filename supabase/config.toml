@@ -40,3 +40,6 @@ secure_password_change = false
 
 [functions.import-airports]
 verify_jwt = true
+
+[functions.simbrief-ofp]
+verify_jwt = true

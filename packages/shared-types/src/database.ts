@@ -14,6 +14,8 @@ export type AirlineRole = Enums<'airline_role'>;
 export type MembershipStatus = Enums<'membership_status'>;
 export type AccountStatus = Enums<'account_status'>;
 export type AircraftStatus = Enums<'aircraft_status'>;
+export type BookingStatus = Enums<'booking_status'>;
+export type FlightStatus = Enums<'flight_status'>;
 
 /** Valores permitidos por las restricciones CHECK (la generación los tipa como string). */
 export const AIRLINE_NETWORKS = ['IVAO', 'VATSIM', 'OFFLINE'] as const;
@@ -43,6 +45,8 @@ export interface DashboardSummary {
   pilots_active_members: number;
   pending_requests: number;
   profiles_total: number | null;
+  bookings_active: number;
+  my_bookings_active: number;
 }
 
 /** Fila de entrada de import_routes (CSV convertido). */
@@ -68,3 +72,36 @@ export interface RouteImportResult {
 }
 
 export type PublicFunctions = Database['public']['Functions'];
+
+/** Motivos por los que route_aircraft_options y book_flight bloquean una reserva. */
+export const BOOKING_BLOCK_REASONS = [
+  'route_inactive',
+  'aircraft_other_airline',
+  'aircraft_unavailable',
+  'type_not_allowed',
+  'operation_mismatch',
+  'no_rating',
+  'not_at_origin',
+  'max_bookings',
+  'not_member',
+  'invalid_callsign',
+] as const;
+export type BookingBlockReason = (typeof BOOKING_BLOCK_REASONS)[number];
+
+/** Fila de route_aircraft_options. */
+export type RouteAircraftOption = Database['public']['Functions']['route_aircraft_options']['Returns'][number];
+
+/** Respuesta de book_flight. */
+export interface BookFlightResult {
+  booking_id: string;
+  flight_id: string;
+  expires_at: string;
+}
+
+/** Diferencia entre el OFP de SimBrief y el vuelo reservado (calculada por el servidor). */
+export interface OfpMismatch {
+  field: 'origin' | 'destination' | 'aircraft_type' | 'registration' | 'callsign' | 'generated_at';
+  expected: string | null;
+  actual: string | null;
+  severity: 'high' | 'low';
+}

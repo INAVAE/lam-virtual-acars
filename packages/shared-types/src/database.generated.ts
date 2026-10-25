@@ -215,6 +215,7 @@ export type Database = {
           max_active_bookings: number
           public_tracking: boolean
           require_aircraft_at_origin: boolean
+          require_type_rating: boolean
           updated_at: string
           updated_by: string | null
         }
@@ -226,6 +227,7 @@ export type Database = {
           max_active_bookings?: number
           public_tracking?: boolean
           require_aircraft_at_origin?: boolean
+          require_type_rating?: boolean
           updated_at?: string
           updated_by?: string | null
         }
@@ -237,6 +239,7 @@ export type Database = {
           max_active_bookings?: number
           public_tracking?: boolean
           require_aircraft_at_origin?: boolean
+          require_type_rating?: boolean
           updated_at?: string
           updated_by?: string | null
         }
@@ -415,6 +418,222 @@ export type Database = {
         }
         Relationships: []
       }
+      flight_bookings: {
+        Row: {
+          aircraft_id: string | null
+          airline_id: string
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          route_id: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+          user_id: string
+        }
+        Insert: {
+          aircraft_id?: string | null
+          airline_id: string
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          route_id?: string | null
+          status?: Database["public"]["Enums"]["booking_status"]
+          user_id: string
+        }
+        Update: {
+          aircraft_id?: string | null
+          airline_id?: string
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          route_id?: string | null
+          status?: Database["public"]["Enums"]["booking_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_bookings_aircraft_id_fkey"
+            columns: ["aircraft_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flights: {
+        Row: {
+          aircraft_id: string | null
+          aircraft_registration: string
+          aircraft_type_id: number
+          airline_icao: string
+          airline_id: string
+          booking_id: string | null
+          callsign: string
+          cancelled_at: string | null
+          completed_at: string | null
+          created_at: string
+          destination_airport_id: number
+          flight_number: string
+          flight_plan_remarks: string | null
+          id: string
+          network: string
+          operation_type: string
+          origin_airport_id: number
+          planned_distance_nm: number
+          planned_minutes: number
+          route_id: string | null
+          scheduled_departure_at: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["flight_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aircraft_id?: string | null
+          aircraft_registration: string
+          aircraft_type_id: number
+          airline_icao: string
+          airline_id: string
+          booking_id?: string | null
+          callsign: string
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          destination_airport_id: number
+          flight_number: string
+          flight_plan_remarks?: string | null
+          id?: string
+          network: string
+          operation_type: string
+          origin_airport_id: number
+          planned_distance_nm: number
+          planned_minutes: number
+          route_id?: string | null
+          scheduled_departure_at?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["flight_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aircraft_id?: string | null
+          aircraft_registration?: string
+          aircraft_type_id?: number
+          airline_icao?: string
+          airline_id?: string
+          booking_id?: string | null
+          callsign?: string
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          destination_airport_id?: number
+          flight_number?: string
+          flight_plan_remarks?: string | null
+          id?: string
+          network?: string
+          operation_type?: string
+          origin_airport_id?: number
+          planned_distance_nm?: number
+          planned_minutes?: number
+          route_id?: string | null
+          scheduled_departure_at?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["flight_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flights_aircraft_id_fkey"
+            columns: ["aircraft_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flights_aircraft_type_id_fkey"
+            columns: ["aircraft_type_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flights_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flights_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "flight_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flights_destination_airport_id_fkey"
+            columns: ["destination_airport_id"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flights_origin_airport_id_fkey"
+            columns: ["origin_airport_id"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flights_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flights_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -484,6 +703,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pilot_type_ratings: {
+        Row: {
+          aircraft_type_id: number
+          airline_id: string
+          granted_at: string
+          granted_by: string | null
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          aircraft_type_id: number
+          airline_id: string
+          granted_at?: string
+          granted_by?: string | null
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          aircraft_type_id?: number
+          airline_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilot_type_ratings_aircraft_type_id_fkey"
+            columns: ["aircraft_type_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilot_type_ratings_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilot_type_ratings_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilot_type_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -638,15 +913,158 @@ export type Database = {
           },
         ]
       }
+      simbrief_ofps: {
+        Row: {
+          air_distance_nm: number | null
+          aircraft_icao: string | null
+          airline_icao: string | null
+          airline_id: string
+          alternate_icao: string | null
+          atc_callsign: string | null
+          block_fuel: number | null
+          cargo: number | null
+          cruise_altitude_ft: number | null
+          destination_icao: string
+          est_block_minutes: number | null
+          est_enroute_minutes: number | null
+          fetched_at: string
+          flight_id: string
+          flight_number: string | null
+          fuel_units: string | null
+          generated_at: string | null
+          ldw: number | null
+          mismatches: Json
+          origin_icao: string
+          pax_count: number | null
+          pdf_url: string | null
+          registration: string | null
+          request_id: string
+          reserve_fuel: number | null
+          route: string | null
+          static_id: string | null
+          tow: number | null
+          trip_fuel: number | null
+          user_id: string
+          zfw: number | null
+        }
+        Insert: {
+          air_distance_nm?: number | null
+          aircraft_icao?: string | null
+          airline_icao?: string | null
+          airline_id: string
+          alternate_icao?: string | null
+          atc_callsign?: string | null
+          block_fuel?: number | null
+          cargo?: number | null
+          cruise_altitude_ft?: number | null
+          destination_icao: string
+          est_block_minutes?: number | null
+          est_enroute_minutes?: number | null
+          fetched_at?: string
+          flight_id: string
+          flight_number?: string | null
+          fuel_units?: string | null
+          generated_at?: string | null
+          ldw?: number | null
+          mismatches?: Json
+          origin_icao: string
+          pax_count?: number | null
+          pdf_url?: string | null
+          registration?: string | null
+          request_id: string
+          reserve_fuel?: number | null
+          route?: string | null
+          static_id?: string | null
+          tow?: number | null
+          trip_fuel?: number | null
+          user_id: string
+          zfw?: number | null
+        }
+        Update: {
+          air_distance_nm?: number | null
+          aircraft_icao?: string | null
+          airline_icao?: string | null
+          airline_id?: string
+          alternate_icao?: string | null
+          atc_callsign?: string | null
+          block_fuel?: number | null
+          cargo?: number | null
+          cruise_altitude_ft?: number | null
+          destination_icao?: string
+          est_block_minutes?: number | null
+          est_enroute_minutes?: number | null
+          fetched_at?: string
+          flight_id?: string
+          flight_number?: string | null
+          fuel_units?: string | null
+          generated_at?: string | null
+          ldw?: number | null
+          mismatches?: Json
+          origin_icao?: string
+          pax_count?: number | null
+          pdf_url?: string | null
+          registration?: string | null
+          request_id?: string
+          reserve_fuel?: number | null
+          route?: string | null
+          static_id?: string | null
+          tow?: number | null
+          trip_fuel?: number | null
+          user_id?: string
+          zfw?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simbrief_ofps_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simbrief_ofps_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: true
+            referencedRelation: "flights"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simbrief_ofps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      book_flight: {
+        Args: { p_aircraft_id: string; p_callsign: string; p_route_id: string }
+        Returns: Json
+      }
+      cancel_booking: { Args: { p_booking_id: string }; Returns: undefined }
       get_dashboard_summary: { Args: { p_airline_id?: string }; Returns: Json }
       import_routes: {
         Args: { p_airline_id: string; p_dry_run?: boolean; p_rows: Json }
         Returns: Json
+      }
+      route_aircraft_options: {
+        Args: { p_route_id: string }
+        Returns: {
+          aircraft_id: string
+          aircraft_type_id: number
+          block_reason: string | null
+          fleet_number: string | null
+          location_icao: string | null
+          registration: string
+          status: Database["public"]["Enums"]["aircraft_status"]
+          type_icao: string
+          type_model: string
+        }[]
       }
     }
     Enums: {
@@ -658,6 +1076,8 @@ export type Database = {
         | "maintenance"
         | "out_of_service"
       airline_role: "airline_admin" | "ops_chief" | "pilot"
+      booking_status: "active" | "completed" | "cancelled" | "expired"
+      flight_status: "scheduled" | "in_progress" | "completed" | "cancelled"
       membership_status: "pending" | "active" | "suspended" | "rejected"
       org_role: "superadmin"
     }
