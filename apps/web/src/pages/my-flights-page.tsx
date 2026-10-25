@@ -26,6 +26,7 @@ import {
 } from '@/lib/booking';
 import { describeError } from '@/lib/errors';
 import { formatLocalDateTime, formatNumber, operationTypeLabel } from '@/lib/format';
+import { phaseLabel } from '@/lib/phases';
 import { formatDuration } from '@/lib/schedule';
 
 type Ofp = NonNullable<MyFlight['ofp']>;
@@ -111,6 +112,50 @@ function OfpSummary({ ofp }: { ofp: Ofp }) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Estado ACARS de un vuelo en curso
+// -----------------------------------------------------------------------------
+const SIGNAL_LOST_MS = 2 * 60_000;
+
+function AcarsStatus({ flight }: { flight: MyFlight }) {
+  const session = flight.session;
+  const live = flight.live;
+  if (!session) return null;
+  const lastContact = new Date(session.last_contact_at).getTime();
+  const lost = Date.now() - lastContact > SIGNAL_LOST_MS;
+
+  return (
+    <section aria-label="ACARS" className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line bg-bg/60 px-4 py-3">
+      <div className="flex items-center gap-2">
+        <span className={lost ? 'size-2.5 rounded-full bg-warn' : 'size-2.5 animate-pulse rounded-full bg-ok'} aria-hidden />
+        <span className="font-medium">{lost ? 'Sin señal de ACARS' : 'ACARS en línea'}</span>
+      </div>
+      <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+        <div>
+          <dt className="inline text-muted">Fase </dt>
+          <dd className="inline font-medium">{phaseLabel(session.phase)}</dd>
+        </div>
+        {live ? (
+          <>
+            <div>
+              <dt className="inline text-muted">Altitud </dt>
+              <dd className="inline font-mono">{formatNumber(live.altitude_ft)} ft</dd>
+            </div>
+            <div>
+              <dt className="inline text-muted">GS </dt>
+              <dd className="inline font-mono">{live.gs_kt ?? '—'} kt</dd>
+            </div>
+          </>
+        ) : null}
+        <div>
+          <dt className="inline text-muted">Último contacto </dt>
+          <dd className="inline">{formatLocalDateTime(session.last_contact_at)}</dd>
+        </div>
+      </dl>
+    </section>
   );
 }
 
@@ -241,10 +286,13 @@ function UpcomingFlight({ flight, hasSimbriefUser }: { flight: MyFlight; hasSimb
         </section>
       </div>
 
+      {flight.status === 'in_progress' ? <AcarsStatus flight={flight} /> : null}
+
       {scheduled && booking ? (
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-2.5">
           <p className="text-sm text-muted">
-            Reservado el {formatLocalDateTime(flight.created_at)} · El vuelo se inicia desde LAM ACARS (Fase 4)
+            Reservado el {formatLocalDateTime(flight.created_at)} ·{' '}
+            {ofp ? 'Listo para iniciar en LAM ACARS' : 'Importa el plan de SimBrief para poder iniciar en LAM ACARS'}
           </p>
           <ConfirmButton
             size="sm"

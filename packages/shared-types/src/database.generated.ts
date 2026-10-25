@@ -17,6 +17,129 @@ export type Database = {
   }
   public: {
     Tables: {
+      acars_devices: {
+        Row: {
+          app_version: string | null
+          created_at: string
+          id: string
+          last_used_at: string | null
+          name: string
+          rate_count: number
+          rate_window_start: string
+          revoked_at: string | null
+          revoked_by: string | null
+          token_hash: string
+          token_prefix: string
+          user_id: string
+        }
+        Insert: {
+          app_version?: string | null
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          name: string
+          rate_count?: number
+          rate_window_start?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          token_hash: string
+          token_prefix: string
+          user_id: string
+        }
+        Update: {
+          app_version?: string | null
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          rate_count?: number
+          rate_window_start?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          token_hash?: string
+          token_prefix?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acars_devices_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acars_devices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acars_link_codes: {
+        Row: {
+          app_version: string | null
+          approved_at: string | null
+          code: string
+          consumed_at: string | null
+          created_at: string
+          device_id: string | null
+          device_name: string
+          expires_at: string
+          id: string
+          ip_hash: string | null
+          poll_secret_hash: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          app_version?: string | null
+          approved_at?: string | null
+          code: string
+          consumed_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          device_name: string
+          expires_at?: string
+          id?: string
+          ip_hash?: string | null
+          poll_secret_hash: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          app_version?: string | null
+          approved_at?: string | null
+          code?: string
+          consumed_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          device_name?: string
+          expires_at?: string
+          id?: string
+          ip_hash?: string | null
+          poll_secret_hash?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acars_link_codes_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "acars_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acars_link_codes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aircraft: {
         Row: {
           aircraft_type_id: number
@@ -492,6 +615,319 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      flight_events: {
+        Row: {
+          airline_id: string
+          altitude_ft: number | null
+          data: Json
+          flight_id: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          occurred_at: string
+          phase: string
+          received_at: string
+          seq: number
+          session_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          airline_id: string
+          altitude_ft?: number | null
+          data?: Json
+          flight_id: string
+          id: string
+          latitude?: number | null
+          longitude?: number | null
+          occurred_at: string
+          phase: string
+          received_at?: string
+          seq: number
+          session_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          airline_id?: string
+          altitude_ft?: number | null
+          data?: Json
+          flight_id?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          occurred_at?: string
+          phase?: string
+          received_at?: string
+          seq?: number
+          session_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_events_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_events_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: false
+            referencedRelation: "flights"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "flight_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flight_positions_live: {
+        Row: {
+          agl_ft: number | null
+          airline_id: string
+          altitude_ft: number
+          flight_id: string
+          gs_kt: number | null
+          heading_deg: number | null
+          ias_kt: number | null
+          latitude: number
+          longitude: number
+          on_ground: boolean
+          phase: string
+          sampled_at: string
+          session_id: string
+          updated_at: string
+          user_id: string
+          vs_fpm: number | null
+        }
+        Insert: {
+          agl_ft?: number | null
+          airline_id: string
+          altitude_ft: number
+          flight_id: string
+          gs_kt?: number | null
+          heading_deg?: number | null
+          ias_kt?: number | null
+          latitude: number
+          longitude: number
+          on_ground?: boolean
+          phase: string
+          sampled_at: string
+          session_id: string
+          updated_at?: string
+          user_id: string
+          vs_fpm?: number | null
+        }
+        Update: {
+          agl_ft?: number | null
+          airline_id?: string
+          altitude_ft?: number
+          flight_id?: string
+          gs_kt?: number | null
+          heading_deg?: number | null
+          ias_kt?: number | null
+          latitude?: number
+          longitude?: number
+          on_ground?: boolean
+          phase?: string
+          sampled_at?: string
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+          vs_fpm?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_positions_live_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_positions_live_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: true
+            referencedRelation: "flights"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_positions_live_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "flight_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_positions_live_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flight_sessions: {
+        Row: {
+          airline_id: string
+          client_version: string | null
+          device_id: string | null
+          end_reason: string | null
+          ended_at: string | null
+          final_airport_id: number | null
+          flight_id: string
+          id: string
+          last_contact_at: string
+          phase: string
+          sim_aircraft_icao: string | null
+          sim_aircraft_title: string | null
+          sim_registration: string | null
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          airline_id: string
+          client_version?: string | null
+          device_id?: string | null
+          end_reason?: string | null
+          ended_at?: string | null
+          final_airport_id?: number | null
+          flight_id: string
+          id?: string
+          last_contact_at?: string
+          phase?: string
+          sim_aircraft_icao?: string | null
+          sim_aircraft_title?: string | null
+          sim_registration?: string | null
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          airline_id?: string
+          client_version?: string | null
+          device_id?: string | null
+          end_reason?: string | null
+          ended_at?: string | null
+          final_airport_id?: number | null
+          flight_id?: string
+          id?: string
+          last_contact_at?: string
+          phase?: string
+          sim_aircraft_icao?: string | null
+          sim_aircraft_title?: string | null
+          sim_registration?: string | null
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_sessions_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_sessions_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "acars_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_sessions_final_airport_id_fkey"
+            columns: ["final_airport_id"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_sessions_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: true
+            referencedRelation: "flights"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flight_track_points: {
+        Row: {
+          airline_id: string
+          altitude_ft: number
+          flight_id: string
+          gs_kt: number | null
+          heading_deg: number | null
+          ias_kt: number | null
+          latitude: number
+          longitude: number
+          on_ground: boolean
+          phase: string
+          sampled_at: string
+          seq: number
+          session_id: string
+          user_id: string
+          vs_fpm: number | null
+        }
+        Insert: {
+          airline_id: string
+          altitude_ft: number
+          flight_id: string
+          gs_kt?: number | null
+          heading_deg?: number | null
+          ias_kt?: number | null
+          latitude: number
+          longitude: number
+          on_ground?: boolean
+          phase: string
+          sampled_at: string
+          seq: number
+          session_id: string
+          user_id: string
+          vs_fpm?: number | null
+        }
+        Update: {
+          airline_id?: string
+          altitude_ft?: number
+          flight_id?: string
+          gs_kt?: number | null
+          heading_deg?: number | null
+          ias_kt?: number | null
+          latitude?: number
+          longitude?: number
+          on_ground?: boolean
+          phase?: string
+          sampled_at?: string
+          seq?: number
+          session_id?: string
+          user_id?: string
+          vs_fpm?: number | null
+        }
+        Relationships: []
       }
       flights: {
         Row: {
@@ -1042,6 +1478,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_acars_link: { Args: { p_code: string }; Returns: Json }
       book_flight: {
         Args: { p_aircraft_id: string; p_callsign: string; p_route_id: string }
         Returns: Json
@@ -1052,6 +1489,7 @@ export type Database = {
         Args: { p_airline_id: string; p_dry_run?: boolean; p_rows: Json }
         Returns: Json
       }
+      revoke_acars_device: { Args: { p_device_id: string }; Returns: undefined }
       route_aircraft_options: {
         Args: { p_route_id: string }
         Returns: {

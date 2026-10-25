@@ -51,7 +51,7 @@ export function useCancelBooking() {
 }
 
 const FLIGHT_SELECT =
-  'id, booking_id, airline_id, user_id, aircraft_id, aircraft_registration, airline_icao, flight_number, callsign, planned_distance_nm, planned_minutes, scheduled_departure_at, operation_type, network, flight_plan_remarks, status, created_at, started_at, completed_at, cancelled_at, airline:airlines!flights_airline_id_fkey(name, slug, logo_path, brand_primary_color), type:aircraft_types!flights_aircraft_type_id_fkey(icao_code, manufacturer, model), origin:airports!flights_origin_airport_id_fkey(icao_code, name, city), destination:airports!flights_destination_airport_id_fkey(icao_code, name, city), booking:flight_bookings!flights_booking_id_fkey(id, status, expires_at, closed_at), ofp:simbrief_ofps(*)' as const;
+  'id, booking_id, airline_id, user_id, aircraft_id, aircraft_registration, airline_icao, flight_number, callsign, planned_distance_nm, planned_minutes, scheduled_departure_at, operation_type, network, flight_plan_remarks, status, created_at, started_at, completed_at, cancelled_at, airline:airlines!flights_airline_id_fkey(name, slug, logo_path, brand_primary_color), type:aircraft_types!flights_aircraft_type_id_fkey(icao_code, manufacturer, model), origin:airports!flights_origin_airport_id_fkey(icao_code, name, city), destination:airports!flights_destination_airport_id_fkey(icao_code, name, city), booking:flight_bookings!flights_booking_id_fkey(id, status, expires_at, closed_at), ofp:simbrief_ofps!simbrief_ofps_flight_id_fkey(*), session:flight_sessions!flight_sessions_flight_id_fkey(id, status, phase, started_at, last_contact_at, sim_aircraft_title, end_reason), live:flight_positions_live!flight_positions_live_flight_id_fkey(altitude_ft, gs_kt, ias_kt, vs_fpm, on_ground, sampled_at)' as const;
 
 export type FlightView = 'upcoming' | 'history';
 
@@ -61,6 +61,9 @@ export function useMyFlights(view: FlightView, airlineId: string | null) {
   return useQuery({
     queryKey: ['my-flights', user?.id, view, airlineId],
     enabled: Boolean(user),
+    // Con un vuelo en curso, la fase y la posición se refrescan cada 15 s.
+    refetchInterval: (query) =>
+      view === 'upcoming' && (query.state.data ?? []).some((f) => f.status === 'in_progress') ? 15_000 : false,
     queryFn: async () => {
       let query = getSupabase()
         .from('flights')

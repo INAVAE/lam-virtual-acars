@@ -247,10 +247,17 @@ const flight = (n, callsign, fn, o, d, typeId, reg, status, extra = {}) => ({
   destination: { icao_code: d, name: ap(d).name, city: ap(d).city },
   booking: { id: id(800 + n), status: status === 'scheduled' ? 'active' : 'cancelled', expires_at: inHours(19), closed_at: null },
   ofp: null,
+  session: null,
+  live: null,
   pilot: { display_name: PROFILE.display_name, pilot_number: PROFILE.pilot_number },
   ...extra,
 });
 const FLIGHTS = [
+  flight(4, 'MXL350', '350', 'MMMX', 'MMUN', 2, 'XA-MXB', 'in_progress', {
+    started_at: now,
+    session: { id: id(900), status: 'active', phase: 'cruise', started_at: now, last_contact_at: new Date().toISOString(), sim_aircraft_title: 'Boeing 737-800', end_reason: null },
+    live: { altitude_ft: 36000, gs_kt: 462, ias_kt: 268, vs_fpm: 0, on_ground: false, sampled_at: now },
+  }),
   flight(1, 'MXL100', '100', 'MMMX', 'MMGL', 2, 'XA-MXA', 'scheduled', {
     ofp: {
       flight_id: id(701),
@@ -331,6 +338,11 @@ function rowsFor(url) {
       const status = url.searchParams.get('status') ?? '';
       return status.includes('scheduled') ? FLIGHTS : HISTORY;
     }
+    case 'acars_devices':
+      return [
+        { id: id(950), name: 'PC-SIMULADOR', token_prefix: 'lamd_Q7xK', app_version: '0.1.0', created_at: now, last_used_at: now, revoked_at: null },
+        { id: id(951), name: 'LAPTOP-VIEJA', token_prefix: 'lamd_a9Bc', app_version: '0.1.0', created_at: now, last_used_at: null, revoked_at: now },
+      ];
     case 'airline_settings':
       return [{ airline_id: eqParam(url, 'airline_id'), max_active_bookings: 3, booking_expiry_hours: 24, require_aircraft_at_origin: false, require_type_rating: true, auto_approve_pireps: false, public_tracking: true, delay_tolerance_minutes: 30, updated_at: now, updated_by: null }];
     case 'airports': {
@@ -517,6 +529,7 @@ await shoot('20-pilot-ratings', 'pilots', {
   },
 });
 await shoot('21-my-flights-light', 'my-flights', { theme: 'light', waitFor: 'MXL21K' });
+await shoot('22-settings-acars', 'settings', { waitFor: 'PC-SIMULADOR' });
 
 await browser.close();
 

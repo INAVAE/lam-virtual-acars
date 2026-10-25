@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Field, fieldAria } from '@/components/ui/field';
 import { Input, Select } from '@/components/ui/input';
 import { Panel } from '@/components/ui/panel';
+import { AcarsDevicesPanel } from '@/components/acars-devices-panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAirlines, useMyMemberships, useProfile, useUpdateProfile, type Profile } from '@/hooks/use-lam-data';
 import { countryOptions } from '@/lib/countries';
@@ -249,6 +250,12 @@ export function SettingsPage() {
         </>
       )}
 
+      <Panel
+        title="Dispositivos ACARS"
+        description="Equipos donde instalaste LAM ACARS. Cada uno envía datos solo de tus vuelos y puedes revocarlo en cualquier momento."
+      >
+        <AcarsDevicesPanel />
+      </Panel>
       <Panel title="Contraseña">
         <PasswordForm />
       </Panel>
