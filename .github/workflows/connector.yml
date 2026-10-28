@@ -43,10 +43,17 @@ jobs:
           dotnet-version: 8.0.x
       - name: Pruebas
         run: |
-          set -o pipefail
-          scripts/ci-run.sh "Pruebas del conector" dotnet test apps/acars-connector/tests/LamAcars.Core.Tests -c Release --logger "console;verbosity=normal" | tee test.log
-          summary=$(grep -E 'Total tests|^ *Passed: |^ *Failed: |Passed!|Failed!' test.log | sed 's/^ *//' | tr '\n' ' ' || true)
+          status=0
+          dotnet test apps/acars-connector/tests/LamAcars.Core.Tests -c Release --logger "console;verbosity=normal" > test.log 2>&1 || status=$?
+          cat test.log
+          summary=$(grep -E 'Total tests|^ *Passed: |^ *Failed: ' test.log | sed 's/^ *//' | tr '\n' ' ' || true)
           echo "::notice title=Pruebas del conector::${summary:-sin resumen}"
+          if [ "$status" -ne 0 ]; then
+            # Solo los bloques de las pruebas que fallaron (o los errores de compilación).
+            details=$( (grep -E -A 14 '^ *Failed [A-Za-z]' test.log || grep -E 'error CS|error MSB' test.log || tail -n 40 test.log) | head -n 120 | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Pruebas del conector::$details"
+            exit "$status"
+          fi
           warnings=$( (grep -oE 'warning CS[0-9]+[^[]*' test.log || true) | sort -u | head -20 | awk '{printf "%s%%0A", $0}')
           if [ -n "$warnings" ]; then echo "::warning title=Avisos del compilador::$warnings"; fi
 
