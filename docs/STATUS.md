@@ -2,7 +2,7 @@
 
 Última actualización: 2026-10-25
 
-## Fase 4, LAM ACARS Connector (construida; falta la prueba en MSFS 2024)
+## Fase 4, LAM ACARS Connector (primer vuelo real hecho; faltan corte de internet y revocación)
 
 ### Hecho
 
@@ -16,15 +16,15 @@
 ### Para cerrar la Fase 4
 
 - [x] Subir `SimConnect.dll` al borrador `deps-simconnect` y publicar la primera versión del conector (connector-v0.1.5, 2026-10-27).
-- [ ] Vincular el conector desde Settings.
-- [ ] Vuelo real con aeronave predeterminada que registre todas las fases en orden.
+- [x] Vincular el conector desde Settings (PC_IVAN, 2026-10-28).
+- [x] Vuelo real con aeronave predeterminada (MXL106 MMMX-MMAA, 737-800, 2026-10-28): 21 eventos y 618 puntos sin huecos, aterrizaje en MMAA, aeronave disponible en MMAA. Ajustes en 0.1.9: fase Motores encendidos tras un pushback con motores apagados, aterrizaje con las variables tardías de MSFS (−294 fpm), tipo deducido del título y borrado de la posición viva.
 - [ ] Cortar internet a mitad del vuelo y comprobar que no se pierde ni se duplica ningún evento.
 - [ ] Revocar el dispositivo y comprobar que la ingesta se detiene en el siguiente envío.
 - [ ] Adaptadores PMDG y Fenix (después de la prueba con el genérico).
 
 ### Criterios de aceptación
 
-- [ ] Un vuelo real en MSFS 2024 con aeronave predeterminada registra todas las fases en orden (probado con el vuelo sintético en xUnit).
+- [x] Un vuelo real en MSFS 2024 con aeronave predeterminada registra todas las fases en orden (la grabación real reproduce las 15 fases con 0.1.9; prueba xUnit).
 - [ ] Al cortar internet a mitad de vuelo no se pierde ni se duplica ningún evento (probado en xUnit y pgTAP; falta en real).
 - [ ] Revocar el dispositivo detiene la ingesta en el siguiente envío (probado en pgTAP y xUnit; falta en real).
 
