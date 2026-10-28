@@ -15,7 +15,7 @@
 
 ### Para cerrar la Fase 4
 
-- [ ] Subir `SimConnect.dll` (SDK de MSFS 2024) a un borrador de publicación `deps-simconnect` y publicar la primera versión del conector.
+- [x] Subir `SimConnect.dll` al borrador `deps-simconnect` y publicar la primera versión del conector (connector-v0.1.5, 2026-10-27).
 - [ ] Vincular el conector desde Settings.
 - [ ] Vuelo real con aeronave predeterminada que registre todas las fases en orden.
 - [ ] Cortar internet a mitad del vuelo y comprobar que no se pierde ni se duplica ningún evento.
