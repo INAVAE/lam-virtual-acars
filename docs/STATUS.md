@@ -2,7 +2,7 @@
 
 Última actualización: 2026-10-25
 
-## Fase 4, LAM ACARS Connector (primer vuelo real hecho; faltan corte de internet y revocación)
+## Fase 4, LAM ACARS Connector (terminada; adaptadores PMDG y Fenix pendientes)
 
 ### Hecho
 
@@ -18,15 +18,15 @@
 - [x] Subir `SimConnect.dll` al borrador `deps-simconnect` y publicar la primera versión del conector (connector-v0.1.5, 2026-10-27).
 - [x] Vincular el conector desde Settings (PC_IVAN, 2026-10-28).
 - [x] Vuelo real con aeronave predeterminada (MXL106 MMMX-MMAA, 737-800, 2026-10-28): 21 eventos y 618 puntos sin huecos, aterrizaje en MMAA, aeronave disponible en MMAA. Ajustes en 0.1.9: fase Motores encendidos tras un pushback con motores apagados, aterrizaje con las variables tardías de MSFS (−294 fpm), tipo deducido del título y borrado de la posición viva.
-- [ ] Cortar internet a mitad del vuelo y comprobar que no se pierde ni se duplica ningún evento.
-- [ ] Revocar el dispositivo y comprobar que la ingesta se detiene en el siguiente envío.
+- [x] Cortar internet a mitad del vuelo (2026-10-28, ascenso a FL120, 07:57:27-07:57:55 UTC): el evento generado sin conexión llegó 18 s después, secuencias 0-11 sin huecos ni duplicados, 95 puntos sin huecos.
+- [x] Revocar el dispositivo desde la web con el vuelo en curso (07:58:06 UTC): el siguiente envío recibió 401 `device_revoked`, el conector pidió vincular de nuevo y la base no recibió nada más (último contacto 07:57:55).
 - [ ] Adaptadores PMDG y Fenix (después de la prueba con el genérico).
 
 ### Criterios de aceptación
 
 - [x] Un vuelo real en MSFS 2024 con aeronave predeterminada registra todas las fases en orden (la grabación real reproduce las 15 fases con 0.1.9; prueba xUnit).
-- [ ] Al cortar internet a mitad de vuelo no se pierde ni se duplica ningún evento (probado en xUnit y pgTAP; falta en real).
-- [ ] Revocar el dispositivo detiene la ingesta en el siguiente envío (probado en pgTAP y xUnit; falta en real).
+- [x] Al cortar internet a mitad de vuelo no se pierde ni se duplica ningún evento (real, xUnit y pgTAP).
+- [x] Revocar el dispositivo detiene la ingesta en el siguiente envío (real, pgTAP y xUnit).
 
 ## Fase 3, Reservas y SimBrief (verificada con datos reales el 2026-10-24)
 
@@ -114,4 +114,4 @@
 
 ## Siguiente paso
 
-Prueba real de la Fase 4 en MSFS 2024 (guía en `apps/acars-connector/INSTALAR.txt`). Después, adaptadores PMDG y Fenix y la Fase 5 (PIREP).
+Adaptadores PMDG y Fenix para el conector, y la Fase 5: PIREP automático a partir de eventos y traza, métricas, puntuación configurable, revisión y estadísticas del piloto.
