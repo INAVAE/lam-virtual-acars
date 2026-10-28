@@ -22,11 +22,13 @@ public sealed class PhaseMachine
     public const double DescentVsFpm = -500;
 
     private readonly Dictionary<string, DateTimeOffset> _since = new();
+    private readonly HashSet<FlightPhase> _visited = new();
     private readonly double? _plannedCruiseFt;
 
     public PhaseMachine(FlightPhase initial = FlightPhase.AircraftConnected, double? plannedCruiseFt = null)
     {
         Phase = initial;
+        _visited.Add(initial);
         _plannedCruiseFt = plannedCruiseFt is > 0 ? plannedCruiseFt : null;
     }
 
@@ -49,6 +51,7 @@ public sealed class PhaseMachine
             if (next is null) break;
             transitions.Add(new PhaseTransition(Phase, next.Value.Phase, s.Time, s, next.Value.Reason));
             Phase = next.Value.Phase;
+            _visited.Add(Phase);
             _since.Clear();
         }
         return transitions;
@@ -97,14 +100,16 @@ public sealed class PhaseMachine
                 break;
 
             case FlightPhase.EnginesStarted:
-                if (Held("pushback", pushing && s.OnGround, t, 2)) return (FlightPhase.Pushback, null);
+                if (!_visited.Contains(FlightPhase.Pushback) && Held("pushback", pushing && s.OnGround, t, 2)) return (FlightPhase.Pushback, null);
                 if (Held("taxi", s.OnGround && s.GsKt > TaxiSpeedKt && !pushing, t, 5)) return (FlightPhase.TaxiOut, null);
                 if (Held("off", s.EnginesRunning == 0, t, 10)) return (FlightPhase.Preflight, "engines_off_before_departure");
                 break;
 
             case FlightPhase.Pushback:
+                // Lo habitual en aerolínea: pushback con motores apagados y arranque durante o después del empuje.
+                if (!_visited.Contains(FlightPhase.EnginesStarted) && Held("engines", s.EnginesRunning > 0 && !pushing, t, 5))
+                    return (FlightPhase.EnginesStarted, "engines_after_pushback");
                 if (Held("taxi", s.OnGround && s.GsKt > TaxiSpeedKt && !pushing && s.EnginesRunning > 0, t, 5)) return (FlightPhase.TaxiOut, null);
-                // Pushback con motores apagados: se queda aquí hasta que arranquen y rueden.
                 break;
 
             case FlightPhase.TaxiOut:

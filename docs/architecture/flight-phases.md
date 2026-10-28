@@ -18,7 +18,8 @@ LAM ACARS detecta las fases en el conector, con las lecturas del simulador (unas
 | Aeronave conectada | Ascenso / Crucero / Descenso / Aproximación | En el aire (reanudación): por VS y altura sobre el terreno | Inmediata |
 | Prevuelo | Motores encendidos | Al menos un motor con combustión | 5 s |
 | Prevuelo | Pushback | Pushback activo o retroceso con motores apagados | 2 s |
-| Motores encendidos | Pushback | `PUSHBACK STATE` ≠ 3 o retroceso (`VELOCITY BODY Z` < −0.8 ft/s) | 2 s |
+| Motores encendidos | Pushback | `PUSHBACK STATE` ≠ 3 o retroceso (`VELOCITY BODY Z` < −0.8 ft/s), si aún no hubo pushback | 2 s |
+| Pushback | Motores encendidos | Pushback con motores apagados (lo habitual): termina el empuje con al menos un motor encendido | 5 s |
 | Motores encendidos | Rodaje de salida | En tierra, GS > 5 kt, sin pushback | 5 s |
 | Motores encendidos | Prevuelo | Todos los motores apagados | 10 s |
 | Pushback | Rodaje de salida | En tierra, GS > 5 kt, sin pushback, con motores | 5 s |
@@ -41,6 +42,8 @@ LAM ACARS detecta las fases en el conector, con las lecturas del simulador (unas
 
 Al llegar a **Vuelo completado**, el conector cierra la sesión sola (`session/end` con `completed`). El piloto también puede terminar o abandonar el vuelo desde el conector.
 
+El orden de las fases normalmente es el de la lista. La única variación válida es la de la operación de aerolínea: **pushback antes de encender motores** (Prevuelo → Pushback → Motores encendidos → Rodaje de salida).
+
 ## Eventos
 
 | Evento | Cuándo |
@@ -61,9 +64,9 @@ Al llegar a **Vuelo completado**, el conector cierra la sesión sola (`session/e
 
 | Dato | Fuente |
 | --- | --- |
-| Velocidad vertical | `PLANE TOUCHDOWN NORMAL VELOCITY` (ft/s × 60, negativa). Si la aeronave no la expone, la VS más negativa de los 2 s anteriores al contacto (`vs_source` lo indica) |
+| Velocidad vertical | `PLANE TOUCHDOWN NORMAL VELOCITY` (ft/s × 60, negativa). MSFS la actualiza ~1 s después del contacto y antes conserva el valor del aterrizaje anterior: se toma el primer valor nuevo dentro de la ventana. Si la aeronave no la expone, la última VS en el aire (`vs_source` lo indica) |
 | Fuerza G | Máxima de `G FORCE` entre 1 s antes y 2.5 s después del contacto |
-| Cabeceo y alabeo | `PLANE TOUCHDOWN PITCH/BANK DEGREES` o, si faltan, los de la lectura del contacto. El cabeceo se reporta positivo con la nariz arriba |
+| Cabeceo y alabeo | `PLANE TOUCHDOWN PITCH/BANK DEGREES` (con el mismo criterio de valor nuevo) o, si faltan, los de la lectura del contacto. El cabeceo se reporta positivo con la nariz arriba |
 | IAS, GS y rumbo | Lectura del contacto |
 | Rebotes | Despegues de más de 0.3 s y nuevo contacto mientras dura el aterrizaje |
 
@@ -86,5 +89,6 @@ También hay un punto en cada cambio de fase. La posición viva se envía cada 1
 | Archivo | Contenido |
 | --- | --- |
 | `synthetic-mmmx-mmgl.jsonl` | Vuelo sintético de 65 min (generado por `packages/flight-engine/scripts/synthetic_flight.py`) que recorre las 15 fases en orden, con aterrizaje de −152 fpm y 1.25 G |
+| `real-msfs2024-b738-mmmx-mmaa.jsonl` | Primer vuelo real (2026-10-28, MXL106, 737-800 predeterminado, conector 0.1.5): pushback con motores apagados, arranque durante el empuje, aterrizaje de −294 fpm según MSFS |
 
 Cuando haya vuelos reales, el conector guarda una lectura por segundo en `%LOCALAPPDATA%\LamAcars\recordings`. Esas grabaciones se agregan aquí para probar con datos reales.

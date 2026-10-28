@@ -90,21 +90,27 @@ public sealed class LandingAnalyzer
     private LandingMetrics Compute(SimSample td)
     {
         var window = _buffer.Where(x => x.Time >= td.Time - Before && x.Time <= td.Time + After).ToList();
+        var after = window.Where(x => x.Time >= td.Time).ToList();
         var gMax = window.Where(x => x.GForce.HasValue).Select(x => x.GForce!.Value).DefaultIfEmpty().Max();
         var hasG = window.Any(x => x.GForce.HasValue);
 
-        // Preferimos la variable del simulador; si no existe, la última lectura en el aire.
+        // MSFS actualiza las variables PLANE TOUCHDOWN * un instante después del contacto y,
+        // antes, conservan el valor del aterrizaje anterior: solo cuentan si cambiaron.
+        var before = _lastAirborne;
+        double? Fresh(Func<SimSample, double?> get) =>
+            after.Select(get).FirstOrDefault(v => v is { } x && Math.Abs(x) > 0.001 && (before is null || get(before) is not { } old || Math.Abs(old - x) > 0.001));
+
         double vs;
         string source;
-        if (td.TouchdownVsFpm is { } tdv && Math.Abs(tdv) > 0.01)
+        if (Fresh(x => x.TouchdownVsFpm) is { } tdv)
         {
             vs = -Math.Abs(tdv);
             source = "touchdown_normal_velocity";
         }
         else
         {
-            var airborne = _buffer.Where(x => !x.OnGround && x.Time <= td.Time && td.Time - x.Time <= TimeSpan.FromSeconds(2)).ToList();
-            vs = airborne.Count > 0 ? airborne.Min(x => x.VsFpm) : (_lastAirborne?.VsFpm ?? td.VsFpm);
+            // Sin la variable del simulador: la última velocidad vertical en el aire.
+            vs = _buffer.LastOrDefault(x => !x.OnGround && x.Time <= td.Time)?.VsFpm ?? td.VsFpm;
             source = "vertical_speed";
         }
 
@@ -116,8 +122,8 @@ public sealed class LandingAnalyzer
             vs,
             source,
             hasG ? gMax : null,
-            td.TouchdownPitchDeg ?? td.PitchDeg,
-            td.TouchdownBankDeg ?? td.BankDeg,
+            Fresh(x => x.TouchdownPitchDeg) ?? td.PitchDeg,
+            Fresh(x => x.TouchdownBankDeg) ?? td.BankDeg,
             td.IasKt,
             td.GsKt,
             td.HeadingDeg);

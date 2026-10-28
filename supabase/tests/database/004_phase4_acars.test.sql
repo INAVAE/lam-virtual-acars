@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(42);
+select plan(43);
 
 -- -----------------------------------------------------------------------------
 -- Escenario: un piloto con un vuelo reservado
@@ -301,6 +301,11 @@ select is(
 select is(
   (select row(a.status::text, ap.icao_code)::text from aircraft a join airports ap on ap.id = a.current_airport_id where a.registration = 'XA-QE1'),
   '(available,MMGL)', 'La aeronave queda disponible en el aeropuerto de llegada'
+);
+
+select ok(
+  has_table_privilege('service_role', 'public.flight_positions_live', 'DELETE'),
+  'La Edge Function puede borrar la posición viva al cerrar la sesión'
 );
 
 select * from finish();

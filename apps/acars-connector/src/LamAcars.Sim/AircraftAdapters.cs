@@ -21,7 +21,7 @@ public sealed record AircraftIdentity(string Title, string? AtcId, string? AtcMo
             if (code.Length is >= 2 and <= 4) return code.ToUpperInvariant();
         }
         if (model.Length is >= 3 and <= 4 && model.All(char.IsLetterOrDigit)) return model.ToUpperInvariant();
-        return null;
+        return AircraftTypeGuesser.FromTitle(Title);
     }
 }
 
