@@ -66,8 +66,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release download deps-simconnect -p SimConnect.dll -D apps/acars-connector/lib --clobber 2>/dev/null; then
-            echo "SimConnect.dll incluida"
+          # Los borradores no se encuentran por etiqueta: se busca en la lista de publicaciones.
+          asset=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=50" \
+            --jq '[.[] | select(.tag_name == "deps-simconnect") | .assets[] | select(.name == "SimConnect.dll") | .id][0] // empty')
+          if [ -n "$asset" ]; then
+            mkdir -p apps/acars-connector/lib
+            gh api -H "Accept: application/octet-stream" "repos/$GITHUB_REPOSITORY/releases/assets/$asset" > apps/acars-connector/lib/SimConnect.dll
+            size=$(stat -c %s apps/acars-connector/lib/SimConnect.dll 2>/dev/null || wc -c < apps/acars-connector/lib/SimConnect.dll)
+            echo "SimConnect.dll incluida ($size bytes)"
             echo "SIMCONNECT=si" >> "$GITHUB_ENV"
           else
             echo "::warning title=SimConnect::No se encontró SimConnect.dll en el borrador 'deps-simconnect'. El paquete pedirá copiarla junto a LamAcars.exe."
@@ -83,6 +89,9 @@ jobs:
             echo "Este paquete NO incluye SimConnect.dll: copiala desde el SDK de MSFS 2024 junto a LamAcars.exe." >> out/LamAcars/LEEME.txt
           fi
           ls -la out/LamAcars
+          if [ "$SIMCONNECT" = "si" ] && [ ! -f out/LamAcars/SimConnect.dll ]; then
+            echo "::error title=Paquete::SimConnect.dll no quedó junto a LamAcars.exe"; exit 1
+          fi
           cd out
           7z a -tzip "LamAcars-$VERSION-win-x64.zip" LamAcars > /dev/null
           sha256sum "LamAcars-$VERSION-win-x64.zip" | tee "LamAcars-$VERSION-win-x64.zip.sha256"
