@@ -145,10 +145,11 @@ public sealed class FlightRecorder
     private void DetectSimEvents(SimSample? prev, SimSample s)
     {
         if (prev is null) return;
-        if (s.EnginesRunning > prev.EnginesRunning)
-            Emit(FlightEventTypes.EngineStart, _machine.Phase, s, new Dictionary<string, object?> { ["running"] = s.EnginesRunning, ["count"] = s.EngineCount });
-        if (s.EnginesRunning < prev.EnginesRunning)
-            Emit(FlightEventTypes.EngineShutdown, _machine.Phase, s, new Dictionary<string, object?> { ["running"] = s.EnginesRunning, ["count"] = s.EngineCount, ["on_ground"] = s.OnGround });
+        // Un evento por motor, aunque dos cambien entre una lectura y otra.
+        for (var running = prev.EnginesRunning + 1; running <= s.EnginesRunning; running++)
+            Emit(FlightEventTypes.EngineStart, _machine.Phase, s, new Dictionary<string, object?> { ["running"] = running, ["count"] = s.EngineCount });
+        for (var running = prev.EnginesRunning - 1; running >= s.EnginesRunning; running--)
+            Emit(FlightEventTypes.EngineShutdown, _machine.Phase, s, new Dictionary<string, object?> { ["running"] = running, ["count"] = s.EngineCount, ["on_ground"] = s.OnGround });
         if (s.Paused != prev.Paused)
             Emit(s.Paused ? FlightEventTypes.SimPaused : FlightEventTypes.SimResumed, _machine.Phase, s, new Dictionary<string, object?>());
         if (s.Slew && !prev.Slew)
