@@ -13,7 +13,7 @@
 
 ### Para cerrar la Fase 5
 
-- [ ] Revisar en la web el PIREP de MXL106 y aceptarlo (debe sumar 0:56 a XA-… y a las horas del piloto).
+- [ ] Revisar en la web el PIREP de MXL106 y aceptarlo (debe sumar 56 min y un ciclo a FVA106, hoy en 0, y a las horas del piloto).
 - [ ] Volar un vuelo completo con el conector 0.1.15 y comprobar el PIREP generado al cerrar (flaps y tren en el aterrizaje).
 - [ ] Probar la aprobación automática en una aerolínea con el ajuste activado.
 
