@@ -7,6 +7,7 @@ import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { AirlineLogo } from '@/components/airline-logo';
+import { ScoringRulesPanel } from '@/components/scoring-rules-panel';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -304,6 +305,7 @@ const settingsSchema = z.object({
   require_aircraft_at_origin: z.boolean(),
   require_type_rating: z.boolean(),
   auto_approve_pireps: z.boolean(),
+  pirep_min_score: z.coerce.number().int().min(0, 'Mínimo 0').max(100, 'Máximo 100'),
   public_tracking: z.boolean(),
 });
 type SettingsForm = z.infer<typeof settingsSchema>;
@@ -316,6 +318,7 @@ function toSettingsForm(s: AirlineSettings): SettingsForm {
     require_aircraft_at_origin: s.require_aircraft_at_origin,
     require_type_rating: s.require_type_rating,
     auto_approve_pireps: s.auto_approve_pireps,
+    pirep_min_score: s.pirep_min_score,
     public_tracking: s.public_tracking,
   };
 }
@@ -348,7 +351,7 @@ function SettingsPanel({ airlineId, canManage }: { airlineId: string; canManage:
   if (!settings.data) return <Alert>Solo los miembros de la aerolínea ven sus políticas.</Alert>;
 
   return (
-    <Panel title="Políticas operacionales" description="Se aplican a las reservas y, desde la Fase 5, a los PIREP.">
+    <Panel title="Políticas operacionales" description="Se aplican a las reservas y a los PIREP.">
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <fieldset disabled={!canManage} className="grid gap-4">
           <Field id="st-bookings" label="Reservas activas por piloto" error={errors.max_active_bookings?.message}>
@@ -375,9 +378,12 @@ function SettingsPanel({ airlineId, canManage }: { airlineId: string; canManage:
           <Checkbox
             id="st-auto"
             label="Aprobar PIREP automáticamente"
-            hint="Si cumple las reglas de la aerolínea, sin revisión manual."
+            hint="Se aceptan solos los PIREP con el puntaje mínimo y sin faltas graves (choque, slew, desvío, cambio de aeronave, vuelo incompleto)."
             {...register('auto_approve_pireps')}
           />
+          <Field id="st-min-score" label="Puntaje mínimo para aprobar solo" error={errors.pirep_min_score?.message}>
+            <Input type="number" min={0} max={100} {...fieldAria('st-min-score', errors.pirep_min_score?.message)} {...register('pirep_min_score')} />
+          </Field>
           <Checkbox id="st-public" label="Seguimiento público" hint="Los vuelos aparecen en el mapa público." {...register('public_tracking')} />
         </fieldset>
         {canManage ? (
@@ -431,6 +437,7 @@ export function AirlineDetailPage() {
               <SettingsPanel airlineId={airline.data.id} canManage={permissions.canManage} />
             </div>
           </div>
+          <ScoringRulesPanel airlineId={airline.data.id} canManage={permissions.canManage} />
         </>
       )}
     </div>

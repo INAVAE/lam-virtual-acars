@@ -297,7 +297,132 @@ const FLIGHTS = [
 ];
 const HISTORY = [
   flight(3, 'MXL801', '801', 'MMTJ', 'MMMX', 3, 'XA-MXD', 'cancelled', { cancelled_at: now, booking: { id: id(803), status: 'expired', expires_at: now, closed_at: now } }),
+  flight(5, 'MXL106', '106', 'MMMX', 'MMAA', 2, 'XA-MXB', 'completed', { completed_at: now, pirep: { id: id(1200), status: 'pending', score: 95 } }),
 ];
+
+// PIREP de ejemplo: MMMX → MMAA con traza sintética.
+const PIREP_ID = id(1200);
+const t0 = Date.now() - 3 * 3600_000;
+const at = (min) => new Date(t0 + min * 60_000).toISOString();
+const TRACK = Array.from({ length: 80 }, (_, i) => {
+  const f = i / 79;
+  const alt = f < 0.1 ? 7316 : f < 0.35 ? 7316 + ((f - 0.1) / 0.25) * 17700 : f < 0.6 ? 25000 : f < 0.95 ? 25000 - ((f - 0.6) / 0.35) * 24980 : 16;
+  return {
+    seq: i,
+    sampled_at: at(f * 56),
+    latitude: 19.436 - f * 2.68 + Math.sin(f * Math.PI) * 0.25,
+    longitude: -99.072 - f * 0.68,
+    altitude_ft: Math.round(alt),
+    gs_kt: f < 0.1 || f > 0.95 ? 18 : 420,
+    ias_kt: f < 0.1 || f > 0.95 ? 18 : 280,
+    vs_fpm: 0,
+    on_ground: f < 0.1 || f > 0.95,
+    phase: f < 0.1 ? 'taxi_out' : f < 0.35 ? 'climb' : f < 0.6 ? 'cruise' : f < 0.95 ? 'descent' : 'taxi_in',
+  };
+});
+const EVENTS = [
+  ['note', 'aircraft_connected', 0, { kind: 'adapter', adapter: 'PMDG 737', sdk: true }],
+  ['phase_change', 'preflight', 0, { from: 'aircraft_connected', to: 'preflight' }],
+  ['block_off', 'pushback', 3, { fuel_kg: 6129 }],
+  ['engine_start', 'pushback', 5, { running: 1, count: 2 }],
+  ['engine_start', 'pushback', 6, { running: 2, count: 2 }],
+  ['takeoff', 'initial_climb', 13, { ias_kt: 153, pitch_deg: 8.3, flaps_deg: 5 }],
+  ['phase_change', 'cruise', 23, { from: 'climb', to: 'cruise' }],
+  ['touchdown', 'landing', 52, { vs_fpm: -294, g_force: 1.25, flaps_deg: 30 }],
+  ['block_on', 'taxi_in', 56, { fuel_kg: 4061 }],
+].map(([type, phase, min, data], i) => ({ id: id(1300 + i), seq: i, type, phase, occurred_at: at(min), altitude_ft: null, data }));
+const pirepRow = (n, callsign, status, score, extra = {}) => ({
+  id: n === 0 ? PIREP_ID : id(1200 + n),
+  airline_id: MXL.id,
+  user_id: USER_ID,
+  flight_id: id(1250 + n),
+  session_id: id(1270 + n),
+  aircraft_id: id(300),
+  aircraft_type_id: 2,
+  aircraft_registration: 'XA-MXB',
+  callsign,
+  flight_number: callsign.slice(3),
+  origin_airport_id: 1,
+  destination_airport_id: 2,
+  arrival_airport_id: 2,
+  diverted: false,
+  block_off_at: at(3),
+  takeoff_at: at(13),
+  landing_at: at(52),
+  block_on_at: at(56),
+  block_minutes: 53,
+  flight_minutes: 39,
+  distance_nm: 207,
+  planned_distance_nm: 165,
+  fuel_used_kg: 2068,
+  max_altitude_ft: 25024,
+  landing_vs_fpm: -294,
+  landing_g: 1.25,
+  landing_bounces: 0,
+  score,
+  findings: [{ code: 'taxi_speed', label: 'Rodaje rápido', penalty: 5, critical: false, value: 32, threshold: 30, unit: 'kt' }],
+  metrics: {
+    block_estimated: false,
+    fuel_block_off_kg: 6129,
+    fuel_block_on_kg: 4061,
+    takeoff: { ias_kt: 153, pitch_deg: 8.3, flaps_deg: 5 },
+    touchdown: { vs_fpm: -294, g_force: 1.25, pitch_deg: 3.1, bank_deg: 1.6, ias_kt: 141, bounces: 0, flaps_deg: 30, gear_down: true, vs_source: 'touchdown_normal_velocity' },
+    max_taxi_gs_kt: 32,
+    sim_aircraft_title: '737-800BCF BW',
+    sim_aircraft_icao: 'B738',
+    client_version: '0.1.15',
+  },
+  has_critical: false,
+  status,
+  auto_approved: false,
+  pilot_comment: null,
+  review_comment: status === 'rejected' ? 'Desvío sin justificar' : null,
+  reviewed_by: status === 'pending' ? null : USER_ID,
+  reviewed_at: status === 'pending' ? null : now,
+  created_at: at(56),
+  updated_at: now,
+  airline: { name: MXL.name, icao_code: 'MXL', slug: MXL.slug, logo_path: MXL.logo_path, brand_primary_color: MXL.brand_primary_color },
+  pilot: { display_name: PROFILE.display_name, pilot_number: PROFILE.pilot_number },
+  reviewer: status === 'pending' ? null : { display_name: PROFILE.display_name },
+  type: { icao_code: 'B738', manufacturer: 'Boeing', model: '737-800' },
+  origin: { icao_code: 'MMMX', name: 'Aeropuerto Internacional de la Ciudad de México', city: 'Ciudad de México' },
+  destination: { icao_code: 'MMAA', name: 'Aeropuerto Internacional de Acapulco', city: 'Acapulco' },
+  arrival: { icao_code: 'MMAA', name: 'Aeropuerto Internacional de Acapulco', city: 'Acapulco' },
+  ...extra,
+});
+const PIREPS = [
+  pirepRow(0, 'MXL106', 'pending', 95),
+  pirepRow(1, 'MXL350', 'accepted', 100, { findings: [], landing_vs_fpm: -162, block_minutes: 128 }),
+  pirepRow(2, 'MXL801', 'rejected', 55, {
+    diverted: true,
+    has_critical: true,
+    arrival: { icao_code: 'MMPR', name: 'Puerto Vallarta', city: 'Puerto Vallarta' },
+    landing_vs_fpm: -712,
+    findings: [
+      { code: 'landing_hard', label: 'Aterrizaje duro', penalty: 25, critical: false, value: -712, threshold: 600, unit: 'fpm' },
+      { code: 'diversion', label: 'Desvío', penalty: 0, critical: true, value: null, threshold: null, unit: null },
+    ],
+  }),
+];
+const RULE_DEFS = [
+  ['landing_hard', 'Aterrizaje duro', 'Velocidad vertical al tocar pista más fuerte que el umbral.', 'fpm', 20, 600, false],
+  ['landing_firm', 'Aterrizaje firme', 'Velocidad vertical al tocar pista más fuerte que el umbral (sin llegar a duro).', 'fpm', 5, 400, false],
+  ['taxi_speed', 'Rodaje rápido', 'Velocidad sobre el suelo mayor que el umbral durante el rodaje.', 'kt', 5, 30, false],
+  ['sim_paused', 'Simulador en pausa', 'El simulador estuvo en pausa durante el vuelo (informativo).', null, 0, null, false],
+  ['diversion', 'Desvío', 'Llegó a un aeropuerto distinto al destino.', null, 0, null, true],
+  ['crash', 'Choque', 'El simulador registró un choque.', null, 100, null, true],
+];
+const SCORING_RULES = RULE_DEFS.map(([code, label, description, unit, penalty, threshold, critical], i) => ({
+  airline_id: MXL.id,
+  rule_code: code,
+  enabled: code !== 'sim_paused',
+  penalty,
+  threshold,
+  critical,
+  updated_at: now,
+  updated_by: null,
+  definition: { code, label, description, threshold_unit: unit, default_enabled: true, default_penalty: penalty, default_threshold: threshold, default_critical: critical, sort_order: i * 10 },
+}));
 
 const AUDIT = [
   { id: 3, occurred_at: now, actor_id: USER_ID, airline_id: MXL.id, action: 'update', entity_type: 'airlines', entity_id: MXL.id, old_data: { name: 'LAM', is_active: false }, new_data: { name: 'Líneas Aéreas Mexicanas', is_active: true } },
@@ -344,7 +469,7 @@ function rowsFor(url) {
         { id: id(951), name: 'LAPTOP-VIEJA', token_prefix: 'lamd_a9Bc', app_version: '0.1.0', created_at: now, last_used_at: null, revoked_at: now },
       ];
     case 'airline_settings':
-      return [{ airline_id: eqParam(url, 'airline_id'), max_active_bookings: 3, booking_expiry_hours: 24, require_aircraft_at_origin: false, require_type_rating: true, auto_approve_pireps: false, public_tracking: true, delay_tolerance_minutes: 30, updated_at: now, updated_by: null }];
+      return [{ airline_id: eqParam(url, 'airline_id'), max_active_bookings: 3, booking_expiry_hours: 24, require_aircraft_at_origin: false, require_type_rating: true, auto_approve_pireps: false, pirep_min_score: 80, public_tracking: true, delay_tolerance_minutes: 30, updated_at: now, updated_by: null }];
     case 'airports': {
       const one = eqParam(url, 'id');
       return one ? AIRPORTS.filter((a) => String(a.id) === one) : AIRPORTS;
@@ -359,6 +484,20 @@ function rowsFor(url) {
       return [];
     case 'audit_logs':
       return AUDIT;
+    case 'pireps': {
+      const one = eqParam(url, 'id');
+      if (one) return PIREPS.filter((p) => p.id === one);
+      const status = eqParam(url, 'status');
+      return status ? PIREPS.filter((p) => p.status === status) : PIREPS;
+    }
+    case 'flight_track_points':
+      return TRACK;
+    case 'flight_events':
+      return EVENTS;
+    case 'pilot_statistics':
+      return [{ airline_id: MXL.id, user_id: USER_ID, pireps_total: 3, pireps_accepted: 1, pireps_pending: 1, pireps_rejected: 1, block_minutes: 128, flight_minutes: 104, distance_nm: 642, fuel_used_kg: 5210, average_score: 100, average_landing_vs_fpm: -162, best_landing_vs_fpm: -162, last_flight_at: now }];
+    case 'pirep_scoring_rules':
+      return SCORING_RULES;
     default:
       return [];
   }
@@ -385,7 +524,7 @@ async function handleSupabase(route) {
     return route.fulfill({
       status: 200,
       headers: CORS,
-      json: { scope: 'organization', airlines_total: 5, airlines_active: 5, pilots_active_members: 3, pending_requests: 2, profiles_total: 6, bookings_active: 4, my_bookings_active: 2 },
+      json: { scope: 'organization', airlines_total: 5, airlines_active: 5, pilots_active_members: 3, pending_requests: 2, profiles_total: 6, bookings_active: 4, my_bookings_active: 2, pireps_pending_review: 1, my_pireps_pending: 1, my_block_minutes: 128, my_flights_accepted: 1 },
     });
   }
   if (url.pathname === '/rest/v1/rpc/route_aircraft_options') {
@@ -530,6 +669,19 @@ await shoot('20-pilot-ratings', 'pilots', {
 });
 await shoot('21-my-flights-light', 'my-flights', { theme: 'light', waitFor: 'MXL21K' });
 await shoot('22-settings-acars', 'settings', { waitFor: 'PC-SIMULADOR' });
+await shoot('23-pireps', 'pireps', { waitFor: 'MXL350' });
+await shoot('24-pireps-review', 'pireps', {
+  airlineId: MXL.id,
+  waitFor: 'MXL106',
+  action: async (page) => {
+    await page.getByRole('tab', { name: /Por revisar/ }).click();
+    await page.getByText('MXL106').first().waitFor();
+  },
+});
+await shoot('25-pirep-detail', `pireps/${PIREP_ID}`, { waitFor: 'Rodaje rápido' });
+await shoot('26-pirep-detail-mobile', `pireps/${PIREP_ID}`, { viewport: { width: 390, height: 844 }, waitFor: 'Rodaje rápido' });
+await shoot('27-pirep-detail-light', `pireps/${PIREP_ID}`, { theme: 'light', waitFor: 'Rodaje rápido' });
+await shoot('28-airline-scoring', `airlines/${MXL.slug}`, { airlineId: MXL.id, waitFor: 'Puntuación de PIREP' });
 
 await browser.close();
 

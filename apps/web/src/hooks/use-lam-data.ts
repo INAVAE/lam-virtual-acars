@@ -122,6 +122,10 @@ function toSummary(value: unknown): DashboardSummary {
     profiles_total: v.profiles_total === null || v.profiles_total === undefined ? null : num(v.profiles_total),
     bookings_active: num(v.bookings_active),
     my_bookings_active: num(v.my_bookings_active),
+    pireps_pending_review: num(v.pireps_pending_review),
+    my_pireps_pending: num(v.my_pireps_pending),
+    my_block_minutes: num(v.my_block_minutes),
+    my_flights_accepted: num(v.my_flights_accepted),
   };
 }
 

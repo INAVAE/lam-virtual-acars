@@ -15,6 +15,8 @@ import { BookingPage } from '@/pages/booking-page';
 import { DashboardPage } from '@/pages/dashboard-page';
 import { FleetPage } from '@/pages/fleet-page';
 import { MyFlightsPage } from '@/pages/my-flights-page';
+import { PirepDetailPage } from '@/pages/pirep-detail-page';
+import { PirepsPage } from '@/pages/pireps-page';
 import { NotFoundPage } from '@/pages/not-found-page';
 import { PilotsPage } from '@/pages/pilots-page';
 import { PublicHomePage } from '@/pages/public-home-page';
@@ -45,6 +47,8 @@ export function App() {
           <Route index element={<DashboardPage />} />
           <Route path="booking" element={<BookingPage />} />
           <Route path="my-flights" element={<MyFlightsPage />} />
+          <Route path="pireps" element={<PirepsPage />} />
+          <Route path="pireps/:id" element={<PirepDetailPage />} />
           <Route path="airlines" element={<AirlinesPage />} />
           <Route path="airlines/:slug" element={<AirlineDetailPage />} />
           <Route path="pilots" element={<PilotsPage />} />

@@ -16,6 +16,7 @@ export type AccountStatus = Enums<'account_status'>;
 export type AircraftStatus = Enums<'aircraft_status'>;
 export type BookingStatus = Enums<'booking_status'>;
 export type FlightStatus = Enums<'flight_status'>;
+export type PirepStatus = Enums<'pirep_status'>;
 
 /** Valores permitidos por las restricciones CHECK (la generación los tipa como string). */
 export const AIRLINE_NETWORKS = ['IVAO', 'VATSIM', 'OFFLINE'] as const;
@@ -47,6 +48,10 @@ export interface DashboardSummary {
   profiles_total: number | null;
   bookings_active: number;
   my_bookings_active: number;
+  pireps_pending_review: number;
+  my_pireps_pending: number;
+  my_block_minutes: number;
+  my_flights_accepted: number;
 }
 
 /** Fila de entrada de import_routes (CSV convertido). */
@@ -104,4 +109,33 @@ export interface OfpMismatch {
   expected: string | null;
   actual: string | null;
   severity: 'high' | 'low';
+}
+
+/** Regla que se cumplió en un PIREP (columna pireps.findings). */
+export interface PirepFinding {
+  code: string;
+  label: string;
+  penalty: number;
+  critical: boolean;
+  value: number | null;
+  threshold: number | null;
+  unit: string | null;
+}
+
+/** Datos adicionales del PIREP (columna pireps.metrics). */
+export interface PirepMetrics {
+  block_estimated?: boolean;
+  fuel_block_off_kg?: number;
+  fuel_block_on_kg?: number;
+  takeoff?: Record<string, number | string | boolean | null>;
+  touchdown?: Record<string, number | string | boolean | null>;
+  max_taxi_gs_kt?: number;
+  max_ias_below_fl100_kt?: number;
+  engines_running_at_start?: boolean;
+  engine_starts?: number;
+  pauses?: number;
+  go_arounds?: number;
+  sim_aircraft_title?: string;
+  sim_aircraft_icao?: string;
+  client_version?: string;
 }

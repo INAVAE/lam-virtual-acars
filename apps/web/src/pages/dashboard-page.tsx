@@ -19,6 +19,7 @@ import {
 } from '@/hooks/use-lam-data';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
+import { formatHours } from '@/lib/pirep';
 import { displayDomain, formatPilotNumber, formatRoles, operationTypeLabel, statusLabels } from '@/lib/format';
 
 // -----------------------------------------------------------------------------
@@ -113,7 +114,7 @@ interface Metric {
   phase?: number;
 }
 
-function buildMetrics(summary: DashboardSummary | undefined, canManage: boolean): Metric[] {
+function buildMetrics(summary: DashboardSummary | undefined, canManage: boolean, canStaff: boolean): Metric[] {
   const live: Metric[] = [
     {
       label: 'Aerolíneas activas',
@@ -128,7 +129,19 @@ function buildMetrics(summary: DashboardSummary | undefined, canManage: boolean)
       label: 'Tus reservas activas',
       value: summary ? String(summary.my_bookings_active) : null,
     },
+    {
+      label: 'Tus horas de vuelo',
+      value: summary ? formatHours(summary.my_block_minutes) : null,
+      detail: summary ? `${summary.my_flights_accepted} vuelos aceptados` : undefined,
+    },
+    {
+      label: 'Tus PIREP en revisión',
+      value: summary ? String(summary.my_pireps_pending) : null,
+    },
   ];
+  if (canStaff) {
+    live.push({ label: 'PIREP por revisar', value: summary ? String(summary.pireps_pending_review) : null, detail: 'de la aerolínea' });
+  }
   if (canManage) {
     live.push({ label: 'Reservas activas', value: summary ? String(summary.bookings_active) : null, detail: 'de todos los pilotos' });
   }
@@ -143,10 +156,8 @@ function buildMetrics(summary: DashboardSummary | undefined, canManage: boolean)
   }
 
   const upcoming: Metric[] = [
-    { label: 'Vuelos activos', value: null, phase: 4 },
-    { label: 'Vuelos del mes', value: null, phase: 5 },
-    { label: 'Horas acumuladas', value: null, phase: 5 },
-    { label: 'PIREP pendientes', value: null, phase: 5 },
+    { label: 'Vuelos en el aire', value: null, phase: 6 },
+    { label: 'Estadísticas de la aerolínea', value: null, phase: 6 },
   ];
   return [...live, ...upcoming];
 }
@@ -369,8 +380,8 @@ const modules: { name: string; phase: number; done: boolean }[] = [
   { name: 'Cuentas, roles y aerolíneas', phase: 1, done: true },
   { name: 'Administración de pilotos, flota, aeropuertos y rutas', phase: 2, done: true },
   { name: 'Reservas e integración con SimBrief', phase: 3, done: true },
-  { name: 'LAM ACARS Connector para MSFS 2024', phase: 4, done: false },
-  { name: 'PIREP automático y evaluación', phase: 5, done: false },
+  { name: 'LAM ACARS Connector para MSFS 2024', phase: 4, done: true },
+  { name: 'PIREP automático y evaluación', phase: 5, done: true },
   { name: 'Mapa en vivo y Operations Center', phase: 6, done: false },
 ];
 
@@ -406,7 +417,16 @@ export function DashboardPage() {
         (selected === null || m.airline_id === selected.id),
     );
 
-  const metrics = buildMetrics(summary.data, canManage);
+  const canStaff =
+    isOrgAdmin ||
+    (memberships.data ?? []).some(
+      (m) =>
+        m.status === 'active' &&
+        (m.roles.includes('airline_admin') || m.roles.includes('ops_chief')) &&
+        (selected === null || m.airline_id === selected.id),
+    );
+
+  const metrics = buildMetrics(summary.data, canManage, canStaff);
 
   return (
     <div className="space-y-6">

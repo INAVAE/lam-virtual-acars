@@ -38,7 +38,7 @@ export const navigation: NavGroup[] = [
       { label: 'Live Flights', icon: Radar, phase: 6 },
       { label: 'Flight Booking', icon: CalendarPlus, to: '/booking' },
       { label: 'My Flights', icon: PlaneTakeoff, to: '/my-flights' },
-      { label: 'PIREP', icon: FileText, phase: 5 },
+      { label: 'PIREP', icon: FileText, to: '/pireps' },
     ],
   },
   {

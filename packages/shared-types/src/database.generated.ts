@@ -333,6 +333,7 @@ export type Database = {
         Row: {
           airline_id: string
           auto_approve_pireps: boolean
+          pirep_min_score: number
           booking_expiry_hours: number
           delay_tolerance_minutes: number
           max_active_bookings: number
@@ -345,6 +346,7 @@ export type Database = {
         Insert: {
           airline_id: string
           auto_approve_pireps?: boolean
+          pirep_min_score?: number
           booking_expiry_hours?: number
           delay_tolerance_minutes?: number
           max_active_bookings?: number
@@ -357,6 +359,7 @@ export type Database = {
         Update: {
           airline_id?: string
           auto_approve_pireps?: boolean
+          pirep_min_score?: number
           booking_expiry_hours?: number
           delay_tolerance_minutes?: number
           max_active_bookings?: number
@@ -1196,6 +1199,296 @@ export type Database = {
           },
         ]
       }
+      pirep_rule_definitions: {
+        Row: {
+          code: string
+          default_critical: boolean
+          default_enabled: boolean
+          default_penalty: number
+          default_threshold: number | null
+          description: string
+          label: string
+          sort_order: number
+          threshold_unit: string | null
+        }
+        Insert: {
+          code: string
+          default_critical?: boolean
+          default_enabled?: boolean
+          default_penalty: number
+          default_threshold?: number | null
+          description: string
+          label: string
+          sort_order: number
+          threshold_unit?: string | null
+        }
+        Update: {
+          code?: string
+          default_critical?: boolean
+          default_enabled?: boolean
+          default_penalty?: number
+          default_threshold?: number | null
+          description?: string
+          label?: string
+          sort_order?: number
+          threshold_unit?: string | null
+        }
+        Relationships: [
+
+        ]
+      }
+      pirep_scoring_rules: {
+        Row: {
+          airline_id: string
+          critical: boolean
+          enabled: boolean
+          penalty: number
+          rule_code: string
+          threshold: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          airline_id: string
+          critical: boolean
+          enabled: boolean
+          penalty: number
+          rule_code: string
+          threshold?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          airline_id?: string
+          critical?: boolean
+          enabled?: boolean
+          penalty?: number
+          rule_code?: string
+          threshold?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pirep_scoring_rules_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pirep_scoring_rules_rule_code_fkey"
+            columns: ["rule_code"]
+            isOneToOne: false
+            referencedRelation: "pirep_rule_definitions"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "pirep_scoring_rules_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pireps: {
+        Row: {
+          aircraft_id: string | null
+          aircraft_registration: string
+          aircraft_type_id: number
+          airline_id: string
+          arrival_airport_id: number | null
+          auto_approved: boolean
+          block_minutes: number
+          block_off_at: string | null
+          block_on_at: string | null
+          callsign: string
+          created_at: string
+          destination_airport_id: number
+          distance_nm: number | null
+          diverted: boolean
+          findings: Json
+          flight_id: string
+          flight_minutes: number | null
+          flight_number: string
+          fuel_used_kg: number | null
+          has_critical: boolean
+          id: string
+          landing_at: string | null
+          landing_bounces: number | null
+          landing_g: number | null
+          landing_vs_fpm: number | null
+          max_altitude_ft: number | null
+          metrics: Json
+          origin_airport_id: number
+          pilot_comment: string | null
+          planned_distance_nm: number | null
+          review_comment: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          score: number
+          session_id: string
+          status: Database["public"]["Enums"]["pirep_status"]
+          takeoff_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aircraft_id?: string | null
+          aircraft_registration: string
+          aircraft_type_id: number
+          airline_id: string
+          arrival_airport_id?: number | null
+          auto_approved?: boolean
+          block_minutes: number
+          block_off_at?: string | null
+          block_on_at?: string | null
+          callsign: string
+          created_at?: string
+          destination_airport_id: number
+          distance_nm?: number | null
+          diverted?: boolean
+          findings?: Json
+          flight_id: string
+          flight_minutes?: number | null
+          flight_number: string
+          fuel_used_kg?: number | null
+          has_critical?: boolean
+          id?: string
+          landing_at?: string | null
+          landing_bounces?: number | null
+          landing_g?: number | null
+          landing_vs_fpm?: number | null
+          max_altitude_ft?: number | null
+          metrics?: Json
+          origin_airport_id: number
+          pilot_comment?: string | null
+          planned_distance_nm?: number | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          score: number
+          session_id: string
+          status?: Database["public"]["Enums"]["pirep_status"]
+          takeoff_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aircraft_id?: string | null
+          aircraft_registration?: string
+          aircraft_type_id?: number
+          airline_id?: string
+          arrival_airport_id?: number | null
+          auto_approved?: boolean
+          block_minutes?: number
+          block_off_at?: string | null
+          block_on_at?: string | null
+          callsign?: string
+          created_at?: string
+          destination_airport_id?: number
+          distance_nm?: number | null
+          diverted?: boolean
+          findings?: Json
+          flight_id?: string
+          flight_minutes?: number | null
+          flight_number?: string
+          fuel_used_kg?: number | null
+          has_critical?: boolean
+          id?: string
+          landing_at?: string | null
+          landing_bounces?: number | null
+          landing_g?: number | null
+          landing_vs_fpm?: number | null
+          max_altitude_ft?: number | null
+          metrics?: Json
+          origin_airport_id?: number
+          pilot_comment?: string | null
+          planned_distance_nm?: number | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          score?: number
+          session_id?: string
+          status?: Database["public"]["Enums"]["pirep_status"]
+          takeoff_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pireps_aircraft_id_fkey"
+            columns: ["aircraft_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pireps_aircraft_type_id_fkey"
+            columns: ["aircraft_type_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pireps_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pireps_arrival_airport_id_fkey"
+            columns: ["arrival_airport_id"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pireps_destination_airport_id_fkey"
+            columns: ["destination_airport_id"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pireps_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: true
+            referencedRelation: "flights"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pireps_origin_airport_id_fkey"
+            columns: ["origin_airport_id"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pireps_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pireps_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "flight_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pireps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_status: Database["public"]["Enums"]["account_status"]
@@ -1475,7 +1768,25 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      pilot_statistics: {
+        Row: {
+          airline_id: string | null
+          average_landing_vs_fpm: number | null
+          average_score: number | null
+          best_landing_vs_fpm: number | null
+          block_minutes: number | null
+          distance_nm: number | null
+          flight_minutes: number | null
+          fuel_used_kg: number | null
+          last_flight_at: string | null
+          pireps_accepted: number | null
+          pireps_pending: number | null
+          pireps_rejected: number | null
+          pireps_total: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       approve_acars_link: { Args: { p_code: string }; Returns: Json }
@@ -1484,10 +1795,22 @@ export type Database = {
         Returns: Json
       }
       cancel_booking: { Args: { p_booking_id: string }; Returns: undefined }
+      comment_pirep: {
+        Args: { p_comment: string; p_pirep_id: string }
+        Returns: Database["public"]["Tables"]["pireps"]["Row"]
+      }
       get_dashboard_summary: { Args: { p_airline_id?: string }; Returns: Json }
       import_routes: {
         Args: { p_airline_id: string; p_dry_run?: boolean; p_rows: Json }
         Returns: Json
+      }
+      review_pirep: {
+        Args: {
+          p_comment?: string
+          p_decision: Database["public"]["Enums"]["pirep_status"]
+          p_pirep_id: string
+        }
+        Returns: Database["public"]["Tables"]["pireps"]["Row"]
       }
       revoke_acars_device: { Args: { p_device_id: string }; Returns: undefined }
       route_aircraft_options: {
@@ -1518,6 +1841,7 @@ export type Database = {
       flight_status: "scheduled" | "in_progress" | "completed" | "cancelled"
       membership_status: "pending" | "active" | "suspended" | "rejected"
       org_role: "superadmin"
+      pirep_status: "pending" | "accepted" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never

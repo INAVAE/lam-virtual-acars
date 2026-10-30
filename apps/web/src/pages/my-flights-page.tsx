@@ -27,6 +27,7 @@ import {
 import { describeError } from '@/lib/errors';
 import { formatLocalDateTime, formatNumber, operationTypeLabel } from '@/lib/format';
 import { phaseLabel } from '@/lib/phases';
+import { pirepStatusLabels, pirepStatusTone } from '@/lib/pirep';
 import { formatDuration } from '@/lib/schedule';
 
 type Ofp = NonNullable<MyFlight['ofp']>;
@@ -321,7 +322,7 @@ function UpcomingFlight({ flight, hasSimbriefUser }: { flight: MyFlight; hasSimb
 // -----------------------------------------------------------------------------
 function History({ flights }: { flights: MyFlight[] }) {
   return (
-    <Table minWidth="52rem">
+    <Table minWidth="60rem">
       <thead>
         <tr>
           <Th>Fecha</Th>
@@ -330,11 +331,12 @@ function History({ flights }: { flights: MyFlight[] }) {
           <Th>Aeronave</Th>
           <Th className="text-right">Distancia</Th>
           <Th>Estado</Th>
+          <Th>PIREP</Th>
         </tr>
       </thead>
       <tbody>
         {flights.length === 0 ? (
-          <EmptyRow colSpan={6}>Aún no hay vuelos cerrados. Aquí aparecerán los completados y las reservas canceladas o vencidas.</EmptyRow>
+          <EmptyRow colSpan={7}>Aún no hay vuelos cerrados. Aquí aparecerán los completados y las reservas canceladas o vencidas.</EmptyRow>
         ) : (
           flights.map((f) => (
             <tr key={f.id}>
@@ -355,6 +357,16 @@ function History({ flights }: { flights: MyFlight[] }) {
                   <Badge tone="warn">{bookingStatusLabels.expired}</Badge>
                 ) : (
                   <Badge tone={flightStatusTone[f.status]}>{flightStatusLabels[f.status]}</Badge>
+                )}
+              </Td>
+              <Td>
+                {f.pirep ? (
+                  <Link to={`/pireps/${f.pirep.id}`} className="inline-flex items-center gap-1.5 underline-offset-2 hover:underline">
+                    <span className="font-mono tabular-nums">{f.pirep.score}</span>
+                    <Badge tone={pirepStatusTone[f.pirep.status]}>{pirepStatusLabels[f.pirep.status]}</Badge>
+                  </Link>
+                ) : (
+                  <span className="text-muted">—</span>
                 )}
               </Td>
             </tr>
