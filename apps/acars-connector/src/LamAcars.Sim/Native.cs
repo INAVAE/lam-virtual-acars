@@ -46,6 +46,16 @@ internal static class Native
         Tagged = 2,
     }
 
+    /// <summary>SIMCONNECT_CLIENT_DATA_PERIOD (distinto de SIMCONNECT_PERIOD: el 3 es ON_SET).</summary>
+    public enum ClientDataPeriod : uint
+    {
+        Never = 0,
+        Once = 1,
+        VisualFrame = 2,
+        OnSet = 3,
+        Second = 4,
+    }
+
     public enum RecvId : uint
     {
         Null = 0,
@@ -55,6 +65,7 @@ internal static class Native
         Event = 4,
         SimObjectData = 8,
         SystemState = 15,
+        ClientData = 16,
     }
 
     // Desplazamientos dentro de los mensajes (SIMCONNECT_RECV mide 12 bytes).
@@ -85,6 +96,15 @@ internal static class Native
 
     [DllImport(Dll, CharSet = CharSet.Ansi, ExactSpelling = true)]
     public static extern int SimConnect_RequestSystemState(IntPtr hSimConnect, uint requestId, string state);
+
+    [DllImport(Dll, CharSet = CharSet.Ansi, ExactSpelling = true)]
+    public static extern int SimConnect_MapClientDataNameToID(IntPtr hSimConnect, string clientDataName, uint clientDataId);
+
+    [DllImport(Dll, ExactSpelling = true)]
+    public static extern int SimConnect_AddToClientDataDefinition(IntPtr hSimConnect, uint defineId, uint offset, uint sizeOrType, float epsilon, uint datumId);
+
+    [DllImport(Dll, ExactSpelling = true)]
+    public static extern int SimConnect_RequestClientData(IntPtr hSimConnect, uint clientDataId, uint requestId, uint defineId, ClientDataPeriod period, RequestFlags flags, uint origin, uint interval, uint limit);
 
     [DllImport(Dll, ExactSpelling = true)]
     public static extern int SimConnect_GetNextDispatch(IntPtr hSimConnect, out IntPtr ppData, out uint pcbData);

@@ -49,6 +49,7 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
         _sim.SampleReceived += OnSample;
         _sim.Crashed += () => AddFlightEvent(FlightEventTypes.Crash, new Dictionary<string, object?>());
         _sim.Log += _log.Write;
+        _sim.ClientDataMissing += _ => CheckPmdgSetup();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -83,6 +84,7 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
     {
         _log.Write($"LAM ACARS {AppPaths.Version} · API {_settings.ApiBaseUrl}");
         _sim.Start();
+        CheckPmdgSetup();
         _ = Task.Run(() => _sync.RunAsync(_cts.Token));
         _ = Task.Run(PendingLoop);
         if (IsLinked) await RefreshAsync(resume: true);
@@ -223,7 +225,7 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
             var aircraft = _sim.Aircraft;
             var response = await _api.SessionStartAsync(new SessionStartRequest(
                 flight.FlightId,
-                new SimAircraft(aircraft?.Title, aircraft?.GuessIcao(), aircraft?.AtcId),
+                new SimAircraft(aircraft?.Title, _sim.AircraftIcao, aircraft?.AtcId),
                 AppPaths.Version), _cts.Token);
 
             var previous = _outbox.GetSession(response.SessionId);
@@ -267,10 +269,11 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
                 ["kind"] = "adapter",
                 ["adapter"] = _sim.Adapter.Name,
                 ["title"] = aircraft?.Title,
-                ["icao"] = aircraft?.GuessIcao(),
+                ["icao"] = _sim.AircraftIcao,
+                ["sdk"] = _sim.Adapter is IClientDataAdapter ? _sim.ClientDataActive : null,
                 ["unavailable"] = _sim.Adapter.Unavailable.ToArray(),
             });
-            if (aircraft?.GuessIcao() is { } icao && !string.Equals(icao, flight.Aircraft.Icao, StringComparison.OrdinalIgnoreCase))
+            if (_sim.AircraftIcao is { } icao && !string.Equals(icao, flight.Aircraft.Icao, StringComparison.OrdinalIgnoreCase))
                 _log.Write($"Aviso: el simulador reporta {icao} y la reserva es {flight.Aircraft.Icao}");
         }
         catch (AcarsApiException e) when (e.IsAuthFailure)
@@ -361,7 +364,55 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
         Set(nameof(AircraftText), () => AircraftText = $"{aircraft.Title}{(aircraft.AtcId is { } id ? $" · {id}" : string.Empty)}");
         _log.Write($"Aeronave: {aircraft.Title} ({aircraft.GuessIcao() ?? "tipo sin identificar"}, adaptador {_sim.Adapter.Name})");
         if (InFlight)
-            AddFlightEvent(FlightEventTypes.AircraftChanged, new Dictionary<string, object?> { ["title"] = aircraft.Title, ["icao"] = aircraft.GuessIcao() });
+            AddFlightEvent(FlightEventTypes.AircraftChanged, new Dictionary<string, object?> { ["title"] = aircraft.Title, ["icao"] = _sim.AircraftIcao });
+        if (_sim.Adapter is PmdgAdapter) CheckPmdgSetup();
+    }
+
+    // ------------------------------------------------------------------------
+    // SDK de PMDG
+    // ------------------------------------------------------------------------
+
+    /// <summary>Texto del aviso cuando hay aviones PMDG sin la publicación de datos activada (vacío si no hace falta).</summary>
+    public string PmdgSetupText { get; private set; } = string.Empty;
+    public bool PmdgSetupNeeded => PmdgSetupText.Length > 0;
+
+    public void CheckPmdgSetup()
+    {
+        try
+        {
+            var pending = PmdgSdkSetup.Find(PmdgSdkSetup.DefaultRoots()).Where(f => !f.Enabled).ToList();
+            var text = pending.Count == 0
+                ? string.Empty
+                : $"PMDG: falta activar los datos del SDK en {string.Join(", ", pending.Select(f => f.Package).Distinct())}. Sin ellos se usan las variables estándar.";
+            Set(nameof(PmdgSetupText), () => PmdgSetupText = text);
+            OnPropertyChanged(nameof(PmdgSetupNeeded));
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            _log.Write($"No se pudieron revisar las opciones de PMDG: {e.Message}");
+        }
+    }
+
+    /// <summary>Escribe EnableDataBroadcast=1 en los aviones PMDG instalados.</summary>
+    public void EnablePmdgSdk()
+    {
+        try
+        {
+            var files = PmdgSdkSetup.Find(PmdgSdkSetup.DefaultRoots());
+            if (files.Count == 0)
+            {
+                _log.Write("No se encontró ningún *_Options.ini de PMDG. Carga el avión una vez en MSFS y vuelve a intentar.");
+                return;
+            }
+            var changed = PmdgSdkSetup.EnableAll(files);
+            foreach (var f in changed) _log.Write($"PMDG: datos del SDK activados en {f.Path} (copia en .lam-backup)");
+            if (changed.Count > 0) _log.Write("Reinicia MSFS (o vuelve a cargar el avión) para que PMDG empiece a publicar los datos.");
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            _log.Write($"No se pudo activar el SDK de PMDG: {e.Message}");
+        }
+        CheckPmdgSetup();
     }
 
     private void OnSimStatus(SimStatus status)

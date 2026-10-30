@@ -1,8 +1,8 @@
 # Estado del proyecto
 
-Última actualización: 2026-10-25
+Última actualización: 2026-10-29
 
-## Fase 4, LAM ACARS Connector (terminada; adaptadores PMDG y Fenix pendientes)
+## Fase 4, LAM ACARS Connector (terminada; adaptadores listos, falta probarlos en vuelo)
 
 ### Hecho
 
@@ -20,7 +20,8 @@
 - [x] Vuelo real con aeronave predeterminada (MXL106 MMMX-MMAA, 737-800, 2026-10-28): 21 eventos y 618 puntos sin huecos, aterrizaje en MMAA, aeronave disponible en MMAA. Ajustes en 0.1.9: fase Motores encendidos tras un pushback con motores apagados, aterrizaje con las variables tardías de MSFS (−294 fpm), tipo deducido del título y borrado de la posición viva.
 - [x] Cortar internet a mitad del vuelo (2026-10-28, ascenso a FL120, 07:57:27-07:57:55 UTC): el evento generado sin conexión llegó 18 s después, secuencias 0-11 sin huecos ni duplicados, 95 puntos sin huecos.
 - [x] Revocar el dispositivo desde la web con el vuelo en curso (07:58:06 UTC): el siguiente envío recibió 401 `device_revoked`, el conector pidió vincular de nuevo y la base no recibió nada más (último contacto 07:57:55).
-- [ ] Adaptadores PMDG y Fenix (después de la prueba con el genérico).
+- [x] Adaptadores Fenix, PMDG 737 y PMDG 777 (`docs/integrations/aircraft-adapters.md`). PMDG lee el bloque ClientData del SDK (desplazamientos calculados sobre los encabezados) y el conector activa `EnableDataBroadcast=1` con un botón. Flaps en grados y tren en los eventos de despegue y aterrizaje.
+- [ ] Probar en vuelo: Fenix (L: del freno y calzos) y PMDG 737/777 (bloque del SDK), con la bitácora del conector.
 
 ### Criterios de aceptación
 
@@ -114,4 +115,4 @@
 
 ## Siguiente paso
 
-Adaptadores PMDG y Fenix para el conector, y la Fase 5: PIREP automático a partir de eventos y traza, métricas, puntuación configurable, revisión y estadísticas del piloto.
+Probar los adaptadores en vuelo y seguir con la Fase 5: PIREP automático a partir de eventos y traza, métricas, puntuación configurable, revisión y estadísticas del piloto.

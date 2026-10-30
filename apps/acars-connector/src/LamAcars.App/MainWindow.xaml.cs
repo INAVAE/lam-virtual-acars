@@ -38,6 +38,14 @@ public partial class MainWindow : Window
 
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await _controller.RefreshAsync();
 
+    private void EnablePmdg_Click(object sender, RoutedEventArgs e)
+    {
+        if (MessageBox.Show("Se agregará [SDK] EnableDataBroadcast=1 a las opciones de tus aviones PMDG (se guarda una copia .lam-backup). " +
+                            "Así ACARS lee el freno, el tren, los flaps y la variante directo del avión. ¿Continuar?",
+                "LAM ACARS", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            _controller.EnablePmdgSdk();
+    }
+
     private void Unlink_Click(object sender, RoutedEventArgs e)
     {
         if (MessageBox.Show("Este equipo dejará de enviar vuelos. Revócalo también en la web (Settings → Dispositivos ACARS). ¿Continuar?",

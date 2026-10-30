@@ -26,6 +26,7 @@ public sealed class SimConnectClient : IDisposable
     private const uint ReqNumeric = 1;
     private const uint ReqStrings = 2;
     private const uint ReqAircraftLoaded = 3;
+    private const uint ReqClientDataBase = 100;
     private const uint EvtPause = 1;
     private const uint EvtSim = 2;
     private const uint EvtCrashed = 3;
@@ -49,15 +50,33 @@ public sealed class SimConnectClient : IDisposable
     private readonly string?[] _strings = new string?[StringVars.Length];
     private bool _paused;
 
+    // Datos de cliente (SDK de PMDG): último bloque recibido por área y conteo para identificar la aeronave por sus datos.
+    private static readonly IReadOnlyList<ClientDataArea> Areas = AdapterRegistry.ClientDataAreas;
+    private readonly Dictionary<string, byte[]> _clientBytes = new();
+    private readonly Dictionary<string, (long First, int Count)> _clientHits = new();
+    private long _adapterSince = Environment.TickCount64;
+    private bool _clientDataNoticeLogged;
+    private volatile bool _clientDataActive;
+    private volatile IReadOnlyDictionary<string, double> _lastValues = new Dictionary<string, double>();
+
     public SimStatus Status { get; private set; } = SimStatus.Disconnected;
     public AircraftIdentity? Aircraft { get; private set; }
     public IAircraftAdapter Adapter => _adapter;
+
+    /// <summary>Tipo ICAO: el que reporta la aeronave (variante del SDK de PMDG) o el deducido del título.</summary>
+    public string? AircraftIcao => _adapter.IdentifyIcao(_lastValues) ?? Aircraft?.GuessIcao();
+
+    /// <summary>La aeronave usa un SDK de datos (PMDG) y ya llegaron sus datos.</summary>
+    public bool ClientDataActive => _clientDataActive;
 
     public event Action<SimStatus>? StatusChanged;
     public event Action<SimSample>? SampleReceived;
     public event Action<AircraftIdentity>? AircraftChanged;
     public event Action? Crashed;
     public event Action<string>? Log;
+
+    /// <summary>La aeronave tiene SDK de datos pero no llegan (PMDG sin EnableDataBroadcast=1).</summary>
+    public event Action<IAircraftAdapter>? ClientDataMissing;
 
     public void Start()
     {
@@ -122,6 +141,7 @@ public sealed class SimConnectClient : IDisposable
                 return false;
             }
             _handle = handle;
+            _adapterSince = Environment.TickCount64;
             Configure();
             Log?.Invoke("Conectado a MSFS por SimConnect");
             SetStatus(SimStatus.Connected);
@@ -158,6 +178,16 @@ public sealed class SimConnectClient : IDisposable
         Native.SimConnect_RequestDataOnSimObject(_handle, ReqStrings, DefStrings, Native.USER_OBJECT, Native.Period.Second,
             Native.RequestFlags.Tagged | Native.RequestFlags.Changed, 0, 0, 0);
 
+        // SDK de PMDG: se piden siempre las áreas conocidas; solo llegan datos si el avión está cargado y las publica.
+        for (var i = 0; i < Areas.Count; i++)
+        {
+            var area = Areas[i];
+            Native.SimConnect_MapClientDataNameToID(_handle, area.Name, area.Id);
+            Native.SimConnect_AddToClientDataDefinition(_handle, area.DefinitionId, 0, (uint)area.Size, 0, Native.UNUSED);
+            Native.SimConnect_RequestClientData(_handle, area.Id, ReqClientDataBase + (uint)i, area.DefinitionId,
+                Native.ClientDataPeriod.OnSet, Native.RequestFlags.Default, 0, 0, 0);
+        }
+
         Native.SimConnect_SubscribeToSystemEvent(_handle, EvtPause, "Pause");
         Native.SimConnect_SubscribeToSystemEvent(_handle, EvtSim, "Sim");
         Native.SimConnect_SubscribeToSystemEvent(_handle, EvtCrashed, "Crashed");
@@ -172,6 +202,9 @@ public sealed class SimConnectClient : IDisposable
         {
             case Native.RecvId.SimObjectData:
                 HandleData(data, size);
+                break;
+            case Native.RecvId.ClientData:
+                HandleClientData(data, size);
                 break;
             case Native.RecvId.Event:
             {
@@ -211,14 +244,32 @@ public sealed class SimConnectClient : IDisposable
                 offset += 12;
                 if (datum >= 0 && datum < vars.Count) _values[vars[datum].Name] = BitConverter.Int64BitsToDouble(bits);
             }
+            IReadOnlyDictionary<string, double> values = _values;
+            if (_adapter is IClientDataAdapter cda)
+            {
+                if (_clientBytes.TryGetValue(cda.ClientData.Name, out var block))
+                {
+                    var merged = new Dictionary<string, double>(_values);
+                    cda.Read(block, merged);
+                    values = merged;
+                }
+                else if (!_clientDataNoticeLogged && Environment.TickCount64 - _adapterSince > 20_000)
+                {
+                    _clientDataNoticeLogged = true;
+                    Log?.Invoke($"{_adapter.Name}: no llegan datos del SDK; se usan las variables estándar. Actívalo con EnableDataBroadcast=1 (botón en esta ventana) y recarga el avión.");
+                    ClientDataMissing?.Invoke(_adapter);
+                }
+            }
+            _lastValues = values;
+
             foreach (var name in _adapter.Diagnostics)
             {
-                if (!_values.TryGetValue(name, out var value)) continue;
+                if (!values.TryGetValue(name, out var value)) continue;
                 if (_diagnostics.TryGetValue(name, out var last) && Math.Abs(last - value) < 0.0001) continue;
                 _diagnostics[name] = value;
                 Log?.Invoke($"{_adapter.Name}: {name} = {value:0.###}");
             }
-            var sample = _adapter.Map(_values, DateTimeOffset.UtcNow, _paused);
+            var sample = _adapter.Map(values, DateTimeOffset.UtcNow, _paused);
             SampleReceived?.Invoke(sample);
         }
         else if (request == ReqStrings)
@@ -245,14 +296,62 @@ public sealed class SimConnectClient : IDisposable
                 if (adapter.GetType() != _adapter.GetType())
                 {
                     // Otro adaptador puede leer variables distintas: se vuelve a configurar la conexión.
-                    _adapter = adapter;
-                    _values.Clear();
-                    _diagnostics.Clear();
+                    UseAdapter(adapter);
                     Close();
                 }
                 AircraftChanged?.Invoke(identity);
             }
         }
+    }
+
+    private void HandleClientData(IntPtr data, uint size)
+    {
+        var request = (uint)Marshal.ReadInt32(data, Native.OffsetRequestId);
+        var index = (int)(request - ReqClientDataBase);
+        if (index < 0 || index >= Areas.Count) return;
+        var area = Areas[index];
+        var length = (int)size - Native.SimObjectDataHeaderSize;
+        if (length < area.Size) return;
+
+        if (!_clientBytes.TryGetValue(area.Name, out var block))
+        {
+            block = new byte[area.Size];
+        }
+        Marshal.Copy(data + Native.SimObjectDataHeaderSize, block, 0, area.Size);
+
+        if (_adapter is IClientDataAdapter current && current.ClientData.Name == area.Name)
+        {
+            if (!_clientBytes.ContainsKey(area.Name)) Log?.Invoke($"{_adapter.Name}: recibiendo datos del SDK");
+            _clientBytes[area.Name] = block;
+            _clientDataActive = true;
+            return;
+        }
+
+        // Datos de una aeronave que el título no identificó: tras varias publicaciones seguidas se cambia de adaptador.
+        var now = Environment.TickCount64;
+        var hits = _clientHits.TryGetValue(area.Name, out var h) && now - h.First < 5000 ? (h.First, h.Count + 1) : (now, 1);
+        _clientHits[area.Name] = hits;
+        if (hits.Item2 < 3 || AdapterRegistry.ForClientData(area.Name) is not { } adapter) return;
+
+        Log?.Invoke($"Datos del SDK {area.Name} detectados: se usa el adaptador {adapter.Name}");
+        var sameVariables = adapter.Variables.Select(v => v.Name).SequenceEqual(_adapter.Variables.Select(v => v.Name));
+        UseAdapter(adapter);
+        _clientBytes[area.Name] = block;
+        _clientDataActive = true;
+        if (!sameVariables) Close();
+    }
+
+    private void UseAdapter(IAircraftAdapter adapter)
+    {
+        _adapter = adapter;
+        _values.Clear();
+        _diagnostics.Clear();
+        _clientBytes.Clear();
+        _clientHits.Clear();
+        _clientDataNoticeLogged = false;
+        _clientDataActive = false;
+        _adapterSince = Environment.TickCount64;
+        _lastValues = new Dictionary<string, double>();
     }
 
     private static string? Blank(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;

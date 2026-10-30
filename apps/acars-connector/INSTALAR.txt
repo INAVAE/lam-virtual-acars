@@ -25,6 +25,12 @@ Volar
 4. Vuela normalmente. El conector detecta las fases solo.
 5. Al llegar, apaga motores y pon el freno de estacionamiento: el vuelo se cierra solo.
 
+PMDG 737 y 777
+El conector lee el freno, el tren, los flaps y la variante directo del avión si
+PMDG publica sus datos (SDK). Si ves el aviso "PMDG: falta activar los datos del
+SDK", pulsa "Activar" y vuelve a cargar el avión en MSFS. Sin ese ajuste el
+conector funciona igual con las variables estándar.
+
 Si se cae internet, el conector guarda todo y lo envía al recuperar la conexión.
 Si cierras el conector a mitad del vuelo, al abrirlo de nuevo el vuelo se reanuda.
 

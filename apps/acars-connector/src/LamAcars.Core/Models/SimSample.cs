@@ -26,6 +26,8 @@ public sealed record SimSample
     public bool ParkingBrake { get; init; }
     public bool? GearDown { get; init; }
     public double? FlapsRatio { get; init; }
+    /// <summary>Flaps de borde de salida en grados (posición real, o el retén de la palanca si la aeronave solo da eso).</summary>
+    public double? FlapsDeg { get; init; }
     public double? FuelTotalKg { get; init; }
     public double? GForce { get; init; }
     public double? PitchDeg { get; init; }

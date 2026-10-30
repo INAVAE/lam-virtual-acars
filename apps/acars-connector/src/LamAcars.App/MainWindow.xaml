@@ -57,6 +57,13 @@
         </DockPanel>
         <TextBlock Text="{Binding AircraftText}" Foreground="{StaticResource Muted}" Margin="0,4,0,0" />
 
+        <!-- SDK de PMDG sin activar -->
+        <DockPanel Margin="0,10,0,0" Visibility="{Binding PmdgSetupNeeded, Converter={StaticResource Show}}">
+          <Button DockPanel.Dock="Right" Style="{StaticResource Secondary}" Content="Activar" Padding="10,4" Margin="8,0,0,0"
+                  VerticalAlignment="Center" Click="EnablePmdg_Click" />
+          <TextBlock Text="{Binding PmdgSetupText}" TextWrapping="Wrap" Foreground="{StaticResource Gold}" FontSize="12" />
+        </DockPanel>
+
         <!-- Vincular -->
         <StackPanel Visibility="{Binding IsLinked, Converter={StaticResource Hide}}" Margin="0,12,0,0">
           <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Muted}"

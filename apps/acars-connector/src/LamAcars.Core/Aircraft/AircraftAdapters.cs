@@ -40,6 +40,9 @@ public interface IAircraftAdapter
     IReadOnlyList<string> Diagnostics { get; }
 
     SimSample Map(IReadOnlyDictionary<string, double> values, DateTimeOffset time, bool paused);
+
+    /// <summary>Designador ICAO que la propia aeronave reporta (por ejemplo, la variante en el SDK de PMDG); null si no lo da.</summary>
+    string? IdentifyIcao(IReadOnlyDictionary<string, double> values);
 }
 
 /// <summary>Variables estándar de SimConnect: aeronaves predeterminadas de MSFS 2024 y la mayoría de terceros.</summary>
@@ -54,6 +57,8 @@ public class GenericAdapter : IAircraftAdapter
     public virtual IReadOnlyCollection<string> Unavailable { get; } = Array.Empty<string>();
 
     public virtual IReadOnlyList<string> Diagnostics { get; } = Array.Empty<string>();
+
+    public virtual string? IdentifyIcao(IReadOnlyDictionary<string, double> values) => null;
 
     public virtual IReadOnlyList<SimVar> Variables { get; } = new SimVar[]
     {
@@ -77,6 +82,7 @@ public class GenericAdapter : IAircraftAdapter
         new("BRAKE PARKING POSITION", "position"),
         new("GEAR HANDLE POSITION", "bool"),
         new("FLAPS HANDLE PERCENT", "percent over 100"),
+        new("TRAILING EDGE FLAPS LEFT ANGLE", "degrees"),
         new("FUEL TOTAL QUANTITY WEIGHT", "pounds"),
         new("G FORCE", "GForce"),
         new("PLANE PITCH DEGREES", "degrees"),
@@ -128,6 +134,7 @@ public class GenericAdapter : IAircraftAdapter
             ParkingBrake = Get("BRAKE PARKING POSITION") is > 0.5,
             GearDown = Get("GEAR HANDLE POSITION") is { } gear ? gear > 0.5 : null,
             FlapsRatio = Get("FLAPS HANDLE PERCENT"),
+            FlapsDeg = Get("TRAILING EDGE FLAPS LEFT ANGLE") is { } fd ? Math.Round(fd, 1) : null,
             FuelTotalKg = Get("FUEL TOTAL QUANTITY WEIGHT") is { } lb ? lb * LbToKg : null,
             GForce = Get("G FORCE"),
             PitchDeg = pitch,
@@ -182,7 +189,21 @@ public sealed class FenixAdapter : GenericAdapter
 /// <summary>Elige el adaptador según la aeronave: el primero que coincide, el genérico al final.</summary>
 public static class AdapterRegistry
 {
-    private static readonly IAircraftAdapter[] Adapters = { new FenixAdapter(), new GenericAdapter() };
+    private static readonly IAircraftAdapter[] Adapters =
+    {
+        new FenixAdapter(),
+        new Pmdg737Adapter(),
+        new Pmdg777Adapter(),
+        new GenericAdapter(),
+    };
 
     public static IAircraftAdapter For(AircraftIdentity aircraft) => Adapters.First(a => a.Matches(aircraft));
+
+    /// <summary>Áreas de ClientData que el conector pide siempre: si llegan datos, la aeronave se identifica por ellos.</summary>
+    public static IReadOnlyList<ClientDataArea> ClientDataAreas { get; } =
+        Adapters.OfType<IClientDataAdapter>().Select(a => a.ClientData).ToArray();
+
+    /// <summary>Adaptador dueño de un área de ClientData.</summary>
+    public static IClientDataAdapter? ForClientData(string areaName) =>
+        Adapters.OfType<IClientDataAdapter>().FirstOrDefault(a => a.ClientData.Name == areaName);
 }

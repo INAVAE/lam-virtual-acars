@@ -15,7 +15,9 @@ public sealed record LandingMetrics(
     double? BankDeg,
     double? IasKt,
     double GsKt,
-    double? HeadingDeg)
+    double? HeadingDeg,
+    double? FlapsDeg = null,
+    bool? GearDown = null)
 {
     public IReadOnlyDictionary<string, object?> ToData(int bounces) => new Dictionary<string, object?>
     {
@@ -28,6 +30,8 @@ public sealed record LandingMetrics(
         ["gs_kt"] = Math.Round(GsKt),
         ["heading_deg"] = HeadingDeg is { } h ? Math.Round(h) : null,
         ["bounces"] = bounces,
+        ["flaps_deg"] = FlapsDeg is { } f ? Math.Round(f, 1) : null,
+        ["gear_down"] = GearDown,
     };
 }
 
@@ -126,6 +130,8 @@ public sealed class LandingAnalyzer
             Fresh(x => x.TouchdownBankDeg) ?? td.BankDeg,
             td.IasKt,
             td.GsKt,
-            td.HeadingDeg);
+            td.HeadingDeg,
+            td.FlapsDeg,
+            td.GearDown);
     }
 }

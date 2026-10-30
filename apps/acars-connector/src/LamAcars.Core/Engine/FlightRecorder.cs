@@ -78,7 +78,7 @@ public sealed class FlightRecorder
                 Emit(FlightEventTypes.Takeoff, tr.To, lo, new Dictionary<string, object?>
                 {
                     ["ias_kt"] = Round(lo.IasKt), ["gs_kt"] = Math.Round(lo.GsKt), ["pitch_deg"] = Round(lo.PitchDeg, 1), ["heading_deg"] = Round(lo.HeadingDeg),
-                    ["fuel_kg"] = Round(lo.FuelTotalKg),
+                    ["fuel_kg"] = Round(lo.FuelTotalKg), ["flaps_deg"] = Round(lo.FlapsDeg, 1),
                 });
             }
             if (tr.To == FlightPhase.Landing) _landing.Reset();
