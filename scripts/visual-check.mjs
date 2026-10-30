@@ -297,7 +297,7 @@ const FLIGHTS = [
 ];
 const HISTORY = [
   flight(3, 'MXL801', '801', 'MMTJ', 'MMMX', 3, 'XA-MXD', 'cancelled', { cancelled_at: now, booking: { id: id(803), status: 'expired', expires_at: now, closed_at: now } }),
-  flight(5, 'MXL106', '106', 'MMMX', 'MMAA', 2, 'XA-MXB', 'completed', { completed_at: now, pirep: { id: id(1200), status: 'pending', score: 95 } }),
+  flight(5, 'MXL106', '106', 'MMMX', 'MMGL', 2, 'XA-MXB', 'completed', { completed_at: now, pirep: { id: id(1200), status: 'pending', score: 95 } }),
 ];
 
 // PIREP de ejemplo: MMMX → MMAA con traza sintética.
