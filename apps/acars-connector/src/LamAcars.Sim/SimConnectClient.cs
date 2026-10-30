@@ -47,6 +47,7 @@ public sealed class SimConnectClient : IDisposable
     private IAircraftAdapter _adapter = new GenericAdapter();
     private readonly Dictionary<string, double> _values = new();
     private readonly Dictionary<string, double> _diagnostics = new();
+    private readonly Dictionary<string, (double Value, long Since)> _diagnosticsPending = new();
     private readonly string?[] _strings = new string?[StringVars.Length];
     private bool _paused;
 
@@ -262,10 +263,23 @@ public sealed class SimConnectClient : IDisposable
             }
             _lastValues = values;
 
+            // Bitácora de variables propias: solo el valor ya estable (1 s sin cambiar), no cada paso de una aguja en movimiento.
+            var tick = Environment.TickCount64;
             foreach (var name in _adapter.Diagnostics)
             {
                 if (!values.TryGetValue(name, out var value)) continue;
-                if (_diagnostics.TryGetValue(name, out var last) && Math.Abs(last - value) < 0.0001) continue;
+                if (_diagnostics.TryGetValue(name, out var last) && Math.Abs(last - value) < 0.0001)
+                {
+                    _diagnosticsPending.Remove(name);
+                    continue;
+                }
+                if (!_diagnosticsPending.TryGetValue(name, out var pending) || Math.Abs(pending.Value - value) >= 0.0001)
+                {
+                    _diagnosticsPending[name] = (value, tick);
+                    continue;
+                }
+                if (tick - pending.Since < 1000) continue;
+                _diagnosticsPending.Remove(name);
                 _diagnostics[name] = value;
                 Log?.Invoke($"{_adapter.Name}: {name} = {value:0.###}");
             }
@@ -346,6 +360,7 @@ public sealed class SimConnectClient : IDisposable
         _adapter = adapter;
         _values.Clear();
         _diagnostics.Clear();
+        _diagnosticsPending.Clear();
         _clientBytes.Clear();
         _clientHits.Clear();
         _clientDataNoticeLogged = false;
