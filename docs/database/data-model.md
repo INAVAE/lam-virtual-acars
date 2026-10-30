@@ -156,6 +156,17 @@ Cada fase diseña en detalle sus tablas al empezar, para no fijar decisiones ant
 | Traza | Lotes cada 60 s, puntos reducidos por fase | `flight_track_points` (particionada por mes) | 90 días |
 | Eventos | Inmediato, con idempotencia | `flight_events` | Permanente |
 
+## PIREP (Fase 5)
+
+| Tabla | Qué guarda |
+| --- | --- |
+| `pireps` | Un reporte por vuelo completado: tiempos (block y en vuelo), distancia, combustible, aterrizaje, puntaje, faltas (`findings`), métricas (`metrics`), estado y revisión |
+| `pirep_rule_definitions` | Catálogo de reglas de LAM con sus valores por omisión |
+| `pirep_scoring_rules` | Reglas de cada aerolínea: activa, umbral, penalización, grave |
+| `pilot_statistics` (vista) | Horas, vuelos, distancia y promedios por piloto y aerolínea, a partir de los PIREP aceptados |
+
+Detalle en `docs/architecture/pirep.md`.
+
 ## Aerolíneas registradas
 
 | Aerolínea | ICAO | Operación | RMK | Sitio | Estado |

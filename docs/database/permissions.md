@@ -100,5 +100,16 @@ Una aeronave reservada queda en estado Asignada; mientras lo esté, nadie puede 
 | Aviso | Motivo |
 | --- | --- |
 | `authenticated_security_definer_function_executable` en `get_dashboard_summary` | Intencional: exige sesión, valida el acceso a la aerolínea pedida y devuelve solo conteos, sin datos personales |
+| `authenticated_security_definer_function_executable` en `review_pirep` y `comment_pirep` | Intencional: son la única vía para decidir o comentar un PIREP; validan rol de staff (o dueño), estado pendiente y longitud del comentario |
 | `authenticated_security_definer_function_executable` en `book_flight` y `cancel_booking` | Intencional: son la única vía para escribir reservas y vuelos; validan identidad, membresía y todas las reglas antes de escribir |
 | `multiple_permissive_policies` en el INSERT de `airline_memberships` | Dos políticas (solicitud propia y alta por administrador). Impacto nulo con el volumen actual; unirlas requiere un DROP desde el SQL Editor |
+
+## PIREP (Fase 5)
+
+| Tabla o vista | Piloto | Jefe de operaciones | Administrador de aerolínea | Superadministrador |
+| --- | --- | --- | --- | --- |
+| `pireps` | Lee los suyos; comenta mientras están en revisión | Lee los de su aerolínea; acepta o rechaza (no los suyos) | Igual que el jefe de operaciones | Todo, incluso revisar los suyos |
+| `pirep_scoring_rules` | Lee las de su aerolínea | Lee | Cambia activación, umbral, penalización y gravedad | Todo |
+| `pilot_statistics` | Sus filas | Su aerolínea | Su aerolínea | Todo |
+
+Nadie inserta ni edita PIREPs desde la API: los genera `private.build_pirep` al cerrar la sesión.
