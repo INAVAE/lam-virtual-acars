@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using LamAcars.Core.Aircraft;
 using LamAcars.Core.Models;
 
 namespace LamAcars.Sim;
@@ -44,6 +45,7 @@ public sealed class SimConnectClient : IDisposable
     private IntPtr _handle = IntPtr.Zero;
     private IAircraftAdapter _adapter = new GenericAdapter();
     private readonly Dictionary<string, double> _values = new();
+    private readonly Dictionary<string, double> _diagnostics = new();
     private readonly string?[] _strings = new string?[StringVars.Length];
     private bool _paused;
 
@@ -209,6 +211,13 @@ public sealed class SimConnectClient : IDisposable
                 offset += 12;
                 if (datum >= 0 && datum < vars.Count) _values[vars[datum].Name] = BitConverter.Int64BitsToDouble(bits);
             }
+            foreach (var name in _adapter.Diagnostics)
+            {
+                if (!_values.TryGetValue(name, out var value)) continue;
+                if (_diagnostics.TryGetValue(name, out var last) && Math.Abs(last - value) < 0.0001) continue;
+                _diagnostics[name] = value;
+                Log?.Invoke($"{_adapter.Name}: {name} = {value:0.###}");
+            }
             var sample = _adapter.Map(_values, DateTimeOffset.UtcNow, _paused);
             SampleReceived?.Invoke(sample);
         }
@@ -238,6 +247,7 @@ public sealed class SimConnectClient : IDisposable
                     // Otro adaptador puede leer variables distintas: se vuelve a configurar la conexión.
                     _adapter = adapter;
                     _values.Clear();
+                    _diagnostics.Clear();
                     Close();
                 }
                 AircraftChanged?.Invoke(identity);

@@ -1,6 +1,6 @@
 using LamAcars.Core.Models;
 
-namespace LamAcars.Sim;
+namespace LamAcars.Core.Aircraft;
 
 /// <summary>Variable del simulador (nombre y unidades de SimConnect).</summary>
 public sealed record SimVar(string Name, string Units);
@@ -35,6 +35,10 @@ public interface IAircraftAdapter
     bool Matches(AircraftIdentity aircraft);
     IReadOnlyList<SimVar> Variables { get; }
     IReadOnlyCollection<string> Unavailable { get; }
+
+    /// <summary>Variables cuyo cambio se escribe en la bitácora (para verificar variables propias de una aeronave).</summary>
+    IReadOnlyList<string> Diagnostics { get; }
+
     SimSample Map(IReadOnlyDictionary<string, double> values, DateTimeOffset time, bool paused);
 }
 
@@ -48,6 +52,8 @@ public class GenericAdapter : IAircraftAdapter
     public virtual bool Matches(AircraftIdentity aircraft) => true;
 
     public virtual IReadOnlyCollection<string> Unavailable { get; } = Array.Empty<string>();
+
+    public virtual IReadOnlyList<string> Diagnostics { get; } = Array.Empty<string>();
 
     public virtual IReadOnlyList<SimVar> Variables { get; } = new SimVar[]
     {
@@ -137,10 +143,46 @@ public class GenericAdapter : IAircraftAdapter
     }
 }
 
-/// <summary>Elige el adaptador según la aeronave. Los adaptadores de PMDG y Fenix se agregan después.</summary>
+/// <summary>
+/// Fenix A319/A320/A321. Usa las variables estándar y agrega las propias del
+/// avión: el freno de estacionamiento del Fenix no siempre se refleja en
+/// BRAKE PARKING POSITION, y con calzos puestos el avión ya está asegurado en
+/// la posición aunque se suelte el freno (procedimiento normal).
+/// </summary>
+public sealed class FenixAdapter : GenericAdapter
+{
+    public const string ParkingBrakeLever = "L:S_MIP_PARKING_BRAKE";
+    public const string Chocks = "L:B_CONFIG_CHOCKS";
+
+    private static readonly SimVar[] Extra =
+    {
+        new(ParkingBrakeLever, "number"),
+        new(Chocks, "number"),
+    };
+
+    public override string Name => "Fenix A32x";
+
+    public override bool Matches(AircraftIdentity aircraft) =>
+        aircraft.Title.Contains("Fenix", StringComparison.OrdinalIgnoreCase)
+        || (aircraft.AtcType?.Contains("Fenix", StringComparison.OrdinalIgnoreCase) ?? false);
+
+    public override IReadOnlyList<SimVar> Variables { get; } = new GenericAdapter().Variables.Concat(Extra).ToArray();
+
+    public override IReadOnlyList<string> Diagnostics { get; } = new[] { ParkingBrakeLever, Chocks, "BRAKE PARKING POSITION" };
+
+    public override SimSample Map(IReadOnlyDictionary<string, double> values, DateTimeOffset time, bool paused)
+    {
+        var sample = base.Map(values, time, paused);
+        var lever = values.TryGetValue(ParkingBrakeLever, out var l) && l > 0.5;
+        var chocks = values.TryGetValue(Chocks, out var c) && c > 0.5;
+        return sample with { ParkingBrake = sample.ParkingBrake || lever || chocks };
+    }
+}
+
+/// <summary>Elige el adaptador según la aeronave: el primero que coincide, el genérico al final.</summary>
 public static class AdapterRegistry
 {
-    private static readonly IAircraftAdapter[] Adapters = { new GenericAdapter() };
+    private static readonly IAircraftAdapter[] Adapters = { new FenixAdapter(), new GenericAdapter() };
 
     public static IAircraftAdapter For(AircraftIdentity aircraft) => Adapters.First(a => a.Matches(aircraft));
 }

@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using LamAcars.Core.Aircraft;
 using LamAcars.Core.Api;
 using LamAcars.Core.Engine;
 using LamAcars.Core.Models;
@@ -260,6 +261,15 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
             _log.Write(response.Resumed
                 ? $"Sesión reanudada: {flight.Display}"
                 : $"ACARS iniciado: {flight.Display}");
+            // Qué adaptador se usó y qué no puede medir: el PIREP no evaluará lo que no se midió.
+            AddFlightEvent(FlightEventTypes.Note, new Dictionary<string, object?>
+            {
+                ["kind"] = "adapter",
+                ["adapter"] = _sim.Adapter.Name,
+                ["title"] = aircraft?.Title,
+                ["icao"] = aircraft?.GuessIcao(),
+                ["unavailable"] = _sim.Adapter.Unavailable.ToArray(),
+            });
             if (aircraft?.GuessIcao() is { } icao && !string.Equals(icao, flight.Aircraft.Icao, StringComparison.OrdinalIgnoreCase))
                 _log.Write($"Aviso: el simulador reporta {icao} y la reserva es {flight.Aircraft.Icao}");
         }
