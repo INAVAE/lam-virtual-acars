@@ -1,6 +1,15 @@
 # Estado del proyecto
 
-Última actualización: 2026-10-29
+Última actualización: 2026-10-31
+
+## Fase 7, mapa al estilo IVAO, Eventos y Tours (pendiente; detalle en docs/roadmap/fase-7-mapa-eventos-tours.md)
+
+- [ ] 7.1 Figura del avión en el mapa según tamaño y tipo (ligero, turbohélice, regional, pasillo único, fuselaje ancho, cuatrimotor).
+- [ ] 7.2 Al elegir un avión: su trayectoria volada con fases y parámetros (como en el PIREP) y la ruta faltante al destino en línea roja punteada, actualizándose hasta la llegada.
+- [ ] 7.3 Selección de varios aviones, con sus rutas visibles a la vez.
+- [ ] 7.4 Eventos con tres escenarios (mismo origen y destino; cualquier origen a un destino; un origen a varios destinos), registro aprobado por el creador, PIREP para la aerolínea de cada piloto y color, nombre, folio y duración del evento en el mapa.
+- [ ] 7.5 Tours por aerolínea con legs y tipos de aeronave permitidos; color propio en el mapa y "Tour · Leg n/N" en el vuelo activo.
+- [ ] Resolver las preguntas abiertas del documento antes de construir.
 
 ## Fase 5, PIREP automático (construida; falta revisar un PIREP real en la web)
 
@@ -146,4 +155,4 @@
 
 ## Siguiente paso
 
-Cerrar la Fase 5 con un PIREP real revisado y seguir con la Fase 6 (mapa en vivo, Operations Center y estadísticas). Antes: PIREP automático a partir de eventos y traza, métricas, puntuación configurable, revisión y estadísticas del piloto.
+Fase 7 (siguiente sesión): mapa al estilo IVAO (figuras por tipo, trayectoria y ruta faltante, selección múltiple), Tours y Eventos. Antes: probar la Fase 6 con un vuelo real usando el conector 0.1.21.
