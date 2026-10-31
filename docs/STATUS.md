@@ -12,6 +12,7 @@
 - Análisis del vuelo (2026-10-30): mapa Leaflet con OpenStreetMap, ruta por etapa o por altitud, gráficas de altitud, velocidad y combustible con cursor sincronizado y recuadro de datos.
 - Combustible (2026-10-30): `flight_track_points.fuel_kg`, resumen en `pireps.metrics.fuel` (consumo por etapa, plan de SimBrief), regla opcional de reserva y panel en la web. Conector 0.1.16 (combustible en traza y aterrizaje, rodaje cada 3 s; 78 pruebas). 211 pruebas pgTAP.
 - APU (2026-10-30): conector 0.1.17 registra encendido y apagado de la APU (88 pruebas); el PIREP muestra la franja de APU, minutos en marcha y combustible antes de los motores. 213 pruebas pgTAP.
+- Hora local (2026-10-30): zona horaria en el perfil (`profiles.time_zone`, Settings → Hora; automática = la del navegador) y hora principal UTC o local (clic en el reloj o en Settings). Toda hora Zulu muestra también la local: reloj, salidas programadas, horarios de ruta, PIREP, bitácora, mapa y gráficas; las fechas locales usan la zona elegida.
 - Documento: `docs/architecture/pirep.md`.
 
 ### Para cerrar la Fase 5

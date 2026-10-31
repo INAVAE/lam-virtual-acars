@@ -1504,6 +1504,7 @@ export type Database = {
           pilot_number: number
           primary_airline_id: string | null
           simbrief_username: string | null
+          time_zone: string | null
           updated_at: string
         }
         Insert: {
@@ -1517,6 +1518,7 @@ export type Database = {
           pilot_number?: never
           primary_airline_id?: string | null
           simbrief_username?: string | null
+          time_zone?: string | null
           updated_at?: string
         }
         Update: {
@@ -1530,6 +1532,7 @@ export type Database = {
           pilot_number?: never
           primary_airline_id?: string | null
           simbrief_username?: string | null
+          time_zone?: string | null
           updated_at?: string
         }
         Relationships: [

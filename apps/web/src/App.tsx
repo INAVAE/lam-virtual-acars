@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router';
 import { AppShell } from '@/components/layout/app-shell';
 import { GuestOnly, RequireAuth } from '@/components/route-guards';
 import { AirlineScopeProvider } from '@/lib/airline-scope';
+import { TimeProvider } from '@/lib/time-context';
 import { AuthCallbackPage } from '@/pages/auth/auth-callback-page';
 import { ForgotPasswordPage } from '@/pages/auth/forgot-password-page';
 import { ResetPasswordPage } from '@/pages/auth/reset-password-page';
@@ -40,7 +41,9 @@ export function App() {
         <Route
           element={
             <AirlineScopeProvider>
-              <AppShell />
+              <TimeProvider>
+                <AppShell />
+              </TimeProvider>
             </AirlineScopeProvider>
           }
         >

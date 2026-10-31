@@ -34,7 +34,8 @@ import { csvCell, csvToObjects } from '@/lib/csv';
 import { describeError } from '@/lib/errors';
 import { formatNumber, operationTypeLabel, operationTypeLabels } from '@/lib/format';
 import { useAirlinePermissions } from '@/lib/permissions';
-import { ALL_DAYS, WEEKDAYS, formatDays, formatDuration, formatUtcTime } from '@/lib/schedule';
+import { ALL_DAYS, WEEKDAYS, formatDays, formatDuration } from '@/lib/schedule';
+import { ScheduleTimeText } from '@/lib/time-context';
 
 const PAGE_SIZE = 50;
 
@@ -597,7 +598,7 @@ function RoutesView({ airline }: { airline: Airline }) {
                     </Td>
                     <Td className="text-right tabular-nums">{formatNumber(r.distance_nm)} NM</Td>
                     <Td className="text-right tabular-nums">{formatDuration(r.estimated_minutes)}</Td>
-                    <Td className="font-mono">{formatUtcTime(r.departure_time_utc) ?? <span className="font-sans text-muted">Libre</span>}</Td>
+                    <Td className="whitespace-nowrap">{r.departure_time_utc ? <ScheduleTimeText value={r.departure_time_utc} inline={false} /> : <span className="text-muted">Libre</span>}</Td>
                     <Td>{formatDays(r.days_of_week)}</Td>
                     <Td className="font-mono text-xs">
                       {r.route_aircraft_types.map((t) => t.aircraft_types?.icao_code).filter(Boolean).join(' ')}

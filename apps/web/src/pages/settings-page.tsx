@@ -22,6 +22,8 @@ import { countryOptions } from '@/lib/countries';
 import { describeError } from '@/lib/errors';
 import { formatLocalDate, formatPilotNumber } from '@/lib/format';
 import { getSupabase } from '@/lib/supabase';
+import { browserTimeZone, dualTime, isValidTimeZone, supportedTimeZones, zoneAbbreviation } from '@/lib/time';
+import { useTimePrefs } from '@/lib/time-context';
 
 function toFormValues(profile: Profile): ProfileUpdateInput {
   return {
@@ -117,6 +119,83 @@ function ProfileForm({ profile }: { profile: Profile }) {
         </Button>
       </div>
     </form>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Hora: zona horaria (en el perfil) y hora principal (en este navegador)
+// -----------------------------------------------------------------------------
+function TimeSettings({ profile }: { profile: Profile }) {
+  const update = useUpdateProfile();
+  const { primary, setPrimary } = useTimePrefs();
+  const zones = useMemo(() => supportedTimeZones(), []);
+  const detected = browserTimeZone();
+  const [value, setValue] = useState(profile.time_zone ?? '');
+  useEffect(() => setValue(profile.time_zone ?? ''), [profile.time_zone]);
+  const now = new Date();
+  const preview = dualTime(now, value || detected, primary, { seconds: false });
+
+  async function save() {
+    if (value && !isValidTimeZone(value)) {
+      toast.error('Zona horaria no válida');
+      return;
+    }
+    try {
+      await update.mutateAsync({ time_zone: value || null });
+      toast.success(value ? `Zona horaria: ${value}` : `Zona horaria automática (${detected})`);
+    } catch (error) {
+      toast.error(describeError(error));
+    }
+  }
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field id="timeZone" label="Zona horaria" hint={`Se guarda en tu perfil. Automática usa la de este equipo: ${detected}.`}>
+        <Select id="timeZone" aria-describedby="timeZone-hint" value={value} onChange={(e) => setValue(e.target.value)}>
+          <option value="">Automática ({detected})</option>
+          {zones.map((z) => (
+            <option key={z} value={z}>
+              {z.replaceAll('_', ' ')} · {zoneAbbreviation(z, now)}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <fieldset>
+        <legend className="text-sm font-medium text-ink">Hora principal</legend>
+        <div className="mt-1.5 inline-flex rounded-md border border-line p-0.5" role="radiogroup" aria-label="Hora principal">
+          {(
+            [
+              ['utc', 'UTC (Zulu)'],
+              ['local', 'Local'],
+            ] as const
+          ).map(([v, label]) => (
+            <button
+              key={v}
+              type="button"
+              role="radio"
+              aria-checked={primary === v}
+              onClick={() => setPrimary(v)}
+              className={
+                primary === v ? 'rounded bg-accent px-3 py-1.5 text-sm text-accent-ink' : 'rounded px-3 py-1.5 text-sm text-muted hover:text-ink'
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1.5 text-sm text-muted">La otra se muestra al lado en tono tenue. También cambia con un clic en el reloj de arriba.</p>
+      </fieldset>
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2">
+        <p className="text-sm text-muted">
+          Así se verá ahora: <span className="font-mono text-ink">{preview.primary}</span>
+          {preview.secondary ? <span className="font-mono"> · {preview.secondary}</span> : null}
+          {(profile.time_zone ?? '') !== value ? <span> (sin guardar)</span> : null}
+        </p>
+        <Button onClick={save} loading={update.isPending} disabled={(profile.time_zone ?? '') === value}>
+          Guardar zona horaria
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -246,6 +325,9 @@ export function SettingsPage() {
           </Panel>
           <Panel title="Perfil de piloto">
             <ProfileForm profile={profile.data} />
+          </Panel>
+          <Panel title="Hora" description="La operación usa UTC (Zulu). Elige tu zona para ver también la hora local en todo el sitio, incluidas las gráficas.">
+            <TimeSettings profile={profile.data} />
           </Panel>
         </>
       )}

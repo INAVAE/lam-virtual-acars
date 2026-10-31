@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerE
 import {
   formatElapsed,
   formatLatLon,
-  formatZuluTime,
   fuelFlowAt,
   nearestIndexByTime,
   niceTicks,
@@ -16,6 +15,7 @@ import {
 } from '@/lib/flight-analysis';
 import { formatNumber } from '@/lib/format';
 import { phaseLabel } from '@/lib/phases';
+import { useTimePrefs } from '@/lib/time-context';
 
 interface FlightProfileChartProps {
   points: readonly AnalysisPoint[];
@@ -88,8 +88,10 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
 
   const hasFuel = fuel.values.some((v) => v !== null);
   const bottom = hasFuel ? FUEL.top + FUEL.h : SPD.top + SPD.h;
+  const { dual } = useTimePrefs();
+  const hasSecondaryTime = dual(0).secondary !== '';
   const AXIS_Y = bottom + 18;
-  const HEIGHT = AXIS_Y + 8;
+  const HEIGHT = AXIS_Y + (hasSecondaryTime ? 20 : 8);
   const t0 = times[0] ?? 0;
   const t1 = times[times.length - 1] ?? 1;
   const plotW = width - LEFT - RIGHT;
@@ -224,8 +226,13 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
           <g key={`t${t}`}>
             <line x1={x(t)} x2={x(t)} y1={ALT.top} y2={bottom} stroke="var(--border)" strokeOpacity={0.5} />
             <text x={x(t)} y={AXIS_Y} textAnchor="middle" className="fill-muted font-mono text-[10px]">
-              {formatZuluTime(t).slice(0, 5)}Z
+              {dual(t).primary}
             </text>
+            {hasSecondaryTime ? (
+              <text x={x(t)} y={AXIS_Y + 12} textAnchor="middle" className="fill-muted font-mono text-[9px]" opacity={0.7}>
+                {dual(t).secondary}
+              </text>
+            ) : null}
           </g>
         ))}
 
@@ -266,7 +273,8 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
                 {apu.map((r, i) => (
                   <rect key={`apu${i}`} x={x(r.start)} y={FUEL.top - 16} width={Math.max(2, x(r.end) - x(r.start))} height={6} rx={3} fill={APU_COLOR}>
                     <title>
-                      APU en marcha {formatZuluTime(r.start).slice(0, 5)}Z–{formatZuluTime(r.end).slice(0, 5)}Z ({Math.round((r.end - r.start) / 60_000)} min)
+                      APU en marcha {dual(r.start).primary}–{dual(r.end).primary}
+                      {dual(r.start).secondary ? ` (${dual(r.start).secondary}–${dual(r.end).secondary})` : ''} · {Math.round((r.end - r.start) / 60_000)} min
                     </title>
                   </rect>
                 ))}
@@ -376,9 +384,12 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
           role="status"
         >
           <p className="flex items-baseline justify-between font-mono text-sm font-semibold">
-            {formatZuluTime(active.sampled_at)}
+            {dual(active.sampled_at, { seconds: true }).primary}
             <span className="text-xs font-normal text-muted">{formatElapsed(times[activeIndex!]! - t0)}</span>
           </p>
+          {dual(active.sampled_at).secondary ? (
+            <p className="font-mono text-[11px] text-muted">{dual(active.sampled_at, { seconds: true }).secondary}</p>
+          ) : null}
           <p className="mt-1 flex items-center gap-1.5 font-medium">
             <span className="size-2.5 rounded-full" style={{ background: phaseColor(active.phase) }} aria-hidden />
             {phaseLabel(active.phase)}
@@ -451,7 +462,8 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
             {hoveredMarker.label}
           </p>
           <p className="font-mono text-muted">
-            {formatZuluTime(hoveredMarker.time)}
+            {dual(hoveredMarker.time).primary}
+            {dual(hoveredMarker.time).secondary ? ` · ${dual(hoveredMarker.time).secondary}` : ''}
             {hoveredMarker.detail ? ` · ${hoveredMarker.detail}` : ''}
           </p>
         </div>

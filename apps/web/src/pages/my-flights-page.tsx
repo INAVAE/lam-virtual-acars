@@ -19,7 +19,6 @@ import {
   flightStatusLabels,
   flightStatusTone,
   formatTimeLeft,
-  formatZuluDateTime,
   mismatchLabels,
   parseMismatches,
   simbriefDispatchUrl,
@@ -27,6 +26,7 @@ import {
 import { describeError } from '@/lib/errors';
 import { formatLocalDateTime, formatNumber, operationTypeLabel } from '@/lib/format';
 import { phaseLabel } from '@/lib/phases';
+import { DualTimeText } from '@/lib/time-context';
 import { pirepStatusLabels, pirepStatusTone } from '@/lib/pirep';
 import { formatDuration } from '@/lib/schedule';
 
@@ -238,7 +238,7 @@ function UpcomingFlight({ flight, hasSimbriefUser }: { flight: MyFlight; hasSimb
               {flight.type?.icao_code} · {flight.aircraft_registration}
             </Fact>
             <Fact label="Salida programada" mono>
-              {flight.scheduled_departure_at ? formatZuluDateTime(flight.scheduled_departure_at) : 'Libre'}
+              {flight.scheduled_departure_at ? <DualTimeText value={flight.scheduled_departure_at} withDate /> : 'Libre'}
             </Fact>
             <Fact label="Distancia">{formatNumber(flight.planned_distance_nm)} NM</Fact>
             <Fact label="Duración estimada">{formatDuration(flight.planned_minutes)}</Fact>

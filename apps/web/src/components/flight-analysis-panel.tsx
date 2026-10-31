@@ -12,7 +12,6 @@ import {
   cumulativeDistance,
   eventMarkers,
   flightExtremes,
-  formatZuluTime,
   fuelSeries,
   PHASE_GROUPS,
   phaseGroup,
@@ -23,6 +22,7 @@ import {
 } from '@/lib/flight-analysis';
 import { formatNumber } from '@/lib/format';
 import { useTheme } from '@/lib/theme';
+import { useTimePrefs } from '@/lib/time-context';
 
 interface FlightAnalysisPanelProps {
   points: readonly AnalysisPoint[];
@@ -40,6 +40,7 @@ interface FlightAnalysisPanelProps {
  */
 export function FlightAnalysisPanel({ points, events, airports, loading, reserveKg = null }: FlightAnalysisPanelProps) {
   const { theme } = useTheme();
+  const { dual } = useTimePrefs();
   const [colorMode, setColorMode] = useState<ColorMode>('phase');
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [pinnedIndex, setPinnedIndex] = useState<number | null>(null);
@@ -160,7 +161,7 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
             {pinnedIndex !== null ? (
               <Button size="sm" variant="ghost" onClick={() => setFocus((f) => ({ target: 'point', index: pinnedIndex, nonce: f.nonce + 1 }))}>
                 <Crosshair className="size-4" aria-hidden />
-                Punto fijado ({formatZuluTime(points[pinnedIndex]!.sampled_at).slice(0, 5)}Z)
+                Punto fijado ({dual(points[pinnedIndex]!.sampled_at).primary})
               </Button>
             ) : null}
             <Button size="sm" variant="ghost" className="ml-auto" onClick={toggleFullscreen} aria-pressed={fullscreen}>

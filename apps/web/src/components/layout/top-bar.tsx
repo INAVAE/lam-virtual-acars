@@ -165,7 +165,7 @@ export function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
       </button>
       <AirlineSwitcher />
       <div className="ml-auto flex items-center gap-1 sm:gap-3">
-        <UtcClock className="hidden md:block" />
+        <UtcClock className="hidden md:flex" />
         <ThemeToggle />
         <UserMenu />
       </div>

@@ -71,6 +71,7 @@ const PROFILE = {
   joined_at: now,
   created_at: now,
   updated_at: now,
+  time_zone: 'America/Mexico_City',
 };
 
 const AIRPORTS = [
@@ -788,6 +789,21 @@ await shoot('25c-pirep-apu-hover', `pireps/${PIREP_ID}`, {
 });
 await shoot('26-pirep-detail-mobile', `pireps/${PIREP_ID}`, { viewport: { width: 390, height: 844 }, waitFor: 'Rodaje rápido' });
 await shoot('27-pirep-detail-light', `pireps/${PIREP_ID}`, { theme: 'light', waitFor: 'Rodaje rápido' });
+await shoot('29-pirep-local-first', `pireps/${PIREP_ID}`, {
+  waitFor: 'Análisis del vuelo',
+  action: async (page) => {
+    // Un clic en el reloj pone la hora local primero.
+    await page.getByRole('button', { name: /Hora UTC y local/ }).click();
+    const chart = page.locator('svg[aria-label^="Perfil de altitud"]');
+    await chart.scrollIntoViewIfNeeded();
+    const box = await chart.boundingBox();
+    if (!box) throw new Error('No se encontró la gráfica');
+    await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.4);
+    await page.getByRole('status').filter({ hasText: 'Z' }).first().waitFor();
+    await page.waitForTimeout(800);
+  },
+});
+await shoot('30-settings-time', 'settings', { waitFor: 'Zona horaria' });
 await shoot('28-airline-scoring', `airlines/${MXL.slug}`, { airlineId: MXL.id, waitFor: 'Puntuación de PIREP' });
 
 await browser.close();

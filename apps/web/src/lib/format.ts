@@ -18,10 +18,27 @@ export function formatZuluDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-const dateFormatter = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' });
+// Zona en la que se muestran las fechas locales: la elige el piloto en Settings
+// (TimeProvider la fija al montar la vista). Por omisión, la del navegador.
+let displayTimeZone: string | undefined;
+const zoneFormatters = new Map<string, Intl.DateTimeFormat>();
+
+export function setDisplayTimeZone(timeZone: string | undefined): void {
+  displayTimeZone = timeZone;
+}
+
+function zoned(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = `${displayTimeZone ?? ''}|${JSON.stringify(options)}`;
+  let f = zoneFormatters.get(key);
+  if (!f) {
+    f = new Intl.DateTimeFormat('es-MX', { ...options, timeZone: displayTimeZone });
+    zoneFormatters.set(key, f);
+  }
+  return f;
+}
 
 export function formatLocalDate(iso: string): string {
-  return dateFormatter.format(new Date(iso));
+  return zoned({ dateStyle: 'medium' }).format(new Date(iso));
 }
 
 export const roleLabels: Record<AirlineRole, string> = {
@@ -123,8 +140,6 @@ export function formatNumber(value: number): string {
   return numberFormat.format(value);
 }
 
-const dateTimeFormatter = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
-
 export function formatLocalDateTime(iso: string): string {
-  return dateTimeFormatter.format(new Date(iso));
+  return zoned({ dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso));
 }

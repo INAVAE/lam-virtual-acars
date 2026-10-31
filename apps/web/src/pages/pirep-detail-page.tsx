@@ -22,12 +22,11 @@ import {
 } from '@/hooks/use-pireps';
 import { useAuth } from '@/lib/auth';
 import { useAirlineScope } from '@/lib/airline-scope';
-import { formatZuluDateTime } from '@/lib/booking';
 import { describeError } from '@/lib/errors';
 import { formatLocalDateTime, formatNumber, formatPilotNumber } from '@/lib/format';
 import { useAirlinePermissions } from '@/lib/permissions';
-import { formatZuluTime } from '@/lib/flight-analysis';
 import { phaseLabel } from '@/lib/phases';
+import { DualTimeText, useTimePrefs } from '@/lib/time-context';
 import {
   findingDetail,
   formatMinutes,
@@ -50,8 +49,8 @@ function Fact({ label, children, mono = false }: { label: string; children: Reac
   );
 }
 
-function zulu(iso: string | null): string {
-  return iso ? formatZuluDateTime(iso) : '—';
+function ZTime({ iso }: { iso: string | null }) {
+  return iso ? <DualTimeText value={iso} withDate /> : <>—</>;
 }
 
 function num(value: number | null, suffix: string, digits = 0): string {
@@ -136,8 +135,8 @@ function EventsPanel({ events, loading }: { events: FlightEvent[]; loading: bool
       ) : (
         <ol className="space-y-1.5 text-sm">
           {visible.map((e) => (
-            <li key={e.id} className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3">
-              <span className="font-mono text-muted">{new Date(e.occurred_at).toISOString().slice(11, 19)}Z</span>
+            <li key={e.id} className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3">
+              <DualTimeText value={e.occurred_at} seconds className="text-muted" />
               <span>
                 <span className="font-medium">{isApu(e) ? 'APU' : (eventLabels[e.type] ?? e.type)}</span>
                 {eventDetail(e) ? <span className="text-muted"> · {eventDetail(e)}</span> : null}
@@ -336,6 +335,7 @@ function Delta({ real, plan, lowerIsBetter }: { real: number | undefined; plan: 
 }
 
 function FuelPanel({ fuel }: { fuel: PirepFuel }) {
+  const { dual } = useTimePrefs();
   const plan = fuel.plan;
   const stages = STAGES.filter((s) => fuel.stages?.[s.key]);
   const belowReserve = plan?.reserve_kg !== undefined && fuel.landing_kg !== undefined && fuel.landing_kg < plan.reserve_kg;
@@ -376,7 +376,7 @@ function FuelPanel({ fuel }: { fuel: PirepFuel }) {
             <Fact label="APU en marcha" mono>
               {formatMinutes(Math.round(fuel.apu.minutes))}
               <span className="block font-sans text-xs text-muted">
-                {fuel.apu.running_at_start ? 'ya encendida al iniciar' : fuel.apu.first_on_at ? `desde ${formatZuluTime(fuel.apu.first_on_at).slice(0, 5)}Z` : ''}
+                {fuel.apu.running_at_start ? 'ya encendida al iniciar' : fuel.apu.first_on_at ? `desde ${dual(fuel.apu.first_on_at).primary}` : ''}
                 {fuel.apu.running_at_end ? ' · encendida al cerrar' : ''}
               </span>
             </Fact>
@@ -605,16 +605,16 @@ export function PirepDetailPage() {
             {p.max_altitude_ft !== null ? `${formatNumber(p.max_altitude_ft)} ft` : '—'}
           </Fact>
           <Fact label="Calzos fuera" mono>
-            {zulu(p.block_off_at)}
+            <ZTime iso={p.block_off_at} />
           </Fact>
           <Fact label="Despegue" mono>
-            {zulu(p.takeoff_at)}
+            <ZTime iso={p.takeoff_at} />
           </Fact>
           <Fact label="Aterrizaje" mono>
-            {zulu(p.landing_at)}
+            <ZTime iso={p.landing_at} />
           </Fact>
           <Fact label="Calzos puestos" mono>
-            {zulu(p.block_on_at)}
+            <ZTime iso={p.block_on_at} />
           </Fact>
           <Fact label="Combustible usado" mono>
             {p.fuel_used_kg !== null ? `${formatNumber(p.fuel_used_kg)} kg` : '—'}

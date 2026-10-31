@@ -34,14 +34,14 @@ import {
   flightStatusLabels,
   flightStatusTone,
   formatTimeLeft,
-  formatZuluDateTime,
   normalizeCallsign,
 } from '@/lib/booking';
 import { cn } from '@/lib/cn';
 import { describeError } from '@/lib/errors';
 import { aircraftStatusLabels, formatNumber, formatPilotNumber, operationTypeLabel } from '@/lib/format';
 import { useAirlinePermissions } from '@/lib/permissions';
-import { formatDays, formatDuration, formatUtcTime } from '@/lib/schedule';
+import { formatDays, formatDuration } from '@/lib/schedule';
+import { DualTimeText, ScheduleTimeText } from '@/lib/time-context';
 
 const PAGE_SIZE = 25;
 
@@ -149,7 +149,7 @@ function BookingDialog({ airline, route, onClose }: { airline: Airline; route: R
         <div className="grid gap-3 rounded-md border border-line bg-bg p-3 text-sm sm:grid-cols-3">
           <div>
             <p className="text-muted">Salida</p>
-            <p className="font-mono">{formatUtcTime(route.departure_time_utc) ?? 'Libre'}</p>
+            <p>{route.departure_time_utc ? <ScheduleTimeText value={route.departure_time_utc} /> : 'Libre'}</p>
           </div>
           <div>
             <p className="text-muted">Días</p>
@@ -384,7 +384,7 @@ function RouteSearch({ airline, canBook, atLimit }: { airline: Airline; canBook:
                     </Td>
                     <Td className="text-right tabular-nums">{formatNumber(r.distance_nm)} NM</Td>
                     <Td className="text-right tabular-nums">{formatDuration(r.estimated_minutes)}</Td>
-                    <Td className="font-mono">{formatUtcTime(r.departure_time_utc) ?? <span className="font-sans text-muted">Libre</span>}</Td>
+                    <Td className="whitespace-nowrap">{r.departure_time_utc ? <ScheduleTimeText value={r.departure_time_utc} inline={false} /> : <span className="text-muted">Libre</span>}</Td>
                     <Td>{formatDays(r.days_of_week)}</Td>
                     <Td className="font-mono text-xs">
                       {r.route_aircraft_types.length > 0
@@ -462,7 +462,7 @@ function AirlineBookings({ airline }: { airline: Airline }) {
               <Td className="font-mono">
                 {f.aircraft_registration} <span className="text-muted">{f.type?.icao_code}</span>
               </Td>
-              <Td className="font-mono">{f.scheduled_departure_at ? formatZuluDateTime(f.scheduled_departure_at) : '—'}</Td>
+              <Td className="whitespace-nowrap">{f.scheduled_departure_at ? <DualTimeText value={f.scheduled_departure_at} withDate /> : '—'}</Td>
               <Td>
                 <Badge tone={flightStatusTone[f.status]}>{flightStatusLabels[f.status]}</Badge>
                 {f.status === 'scheduled' && f.booking ? (

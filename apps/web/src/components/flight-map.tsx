@@ -1,8 +1,7 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
-  formatZuluTime,
   nearestIndexByPosition,
   nearestIndexByTime,
   pointColor,
@@ -13,6 +12,7 @@ import {
 } from '@/lib/flight-analysis';
 import { formatNumber } from '@/lib/format';
 import { mapTileConfig } from '@/lib/map-tiles';
+import { useTimePrefs } from '@/lib/time-context';
 import { phaseLabel } from '@/lib/phases';
 
 export interface MapAirport {
@@ -50,9 +50,11 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 }
 
-function pointSummary(p: AnalysisPoint): string {
+type TimeFormat = (value: string | number) => string;
+
+function pointSummary(p: AnalysisPoint, time: TimeFormat): string {
   const rows = [
-    `<strong>${escapeHtml(phaseLabel(p.phase))}</strong> · ${formatZuluTime(p.sampled_at)}`,
+    `<strong>${escapeHtml(phaseLabel(p.phase))}</strong> · ${escapeHtml(time(p.sampled_at))}`,
     `${formatNumber(p.altitude_ft)} ft · VS ${p.vs_fpm === null ? '—' : formatNumber(p.vs_fpm)} fpm`,
     `IAS ${p.ias_kt ?? '—'} kt · GS ${p.gs_kt ?? '—'} kt${p.heading_deg === null ? '' : ` · ${String(Math.round(p.heading_deg)).padStart(3, '0')}°`}`,
   ];
@@ -64,6 +66,14 @@ function pointSummary(p: AnalysisPoint): string {
  * altitud, aeropuertos, eventos y el punto activo sincronizado con las gráficas.
  */
 export function FlightMap({ points, times, markers, airports, colorMode, activeIndex, onHover, onSelect, theme, focus, height }: FlightMapProps) {
+  const { dual } = useTimePrefs();
+  const timeText = useCallback<TimeFormat>(
+    (value) => {
+      const t = dual(value, { seconds: true });
+      return t.secondary ? `${t.primary} · ${t.secondary}` : t.primary;
+    },
+    [dual],
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const tilesRef = useRef<L.TileLayer | null>(null);
@@ -183,7 +193,7 @@ export function FlightMap({ points, times, markers, airports, colorMode, activeI
         keyboard: false,
         zIndexOffset: m.kind === 'takeoff' || m.kind === 'touchdown' ? 500 : 0,
       })
-        .bindTooltip(`<strong>${escapeHtml(m.label)}</strong> · ${formatZuluTime(m.time)}${m.detail ? `<br>${escapeHtml(m.detail)}` : ''}`, {
+        .bindTooltip(`<strong>${escapeHtml(m.label)}</strong><br>${escapeHtml(timeText(m.time))}${m.detail ? `<br>${escapeHtml(m.detail)}` : ''}`, {
           className: 'lam-tip',
           direction: 'top',
           offset: [0, -10],
@@ -194,7 +204,7 @@ export function FlightMap({ points, times, markers, airports, colorMode, activeI
         })
         .addTo(group);
     }
-  }, [airports, markers, points, times]);
+  }, [airports, markers, points, times, timeText]);
 
   // Punto activo (sincronizado con las gráficas)
   useEffect(() => {
@@ -219,8 +229,8 @@ export function FlightMap({ points, times, markers, airports, colorMode, activeI
     } else {
       activeRef.current.setLatLng([p.latitude, p.longitude]).setIcon(icon);
     }
-    activeRef.current.setTooltipContent(pointSummary(p));
-  }, [activeIndex, points, colorMode]);
+    activeRef.current.setTooltipContent(pointSummary(p, timeText));
+  }, [activeIndex, points, colorMode, timeText]);
 
   // Encuadres pedidos por los botones
   useEffect(() => {
