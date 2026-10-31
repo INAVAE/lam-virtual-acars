@@ -737,7 +737,7 @@ await shoot('25c-pirep-apu-hover', `pireps/${PIREP_ID}`, {
     if (!box) throw new Error('No se encontró la gráfica');
     // Minuto 1.5: APU en marcha, motores apagados.
     await page.mouse.move(box.x + 56 + ((box.width - 72) * 1.5) / 56, box.y + box.height * 0.5);
-    await page.getByText('APU en marcha').first().waitFor();
+    await page.getByRole('status').filter({ hasText: 'APU en marcha' }).first().waitFor();
     await page.waitForTimeout(800);
   },
 });
