@@ -104,6 +104,9 @@
 .lam-map.leaflet-container {
   background: var(--bg);
   font: inherit;
+  /* Las capas de Leaflet usan z-index altos: se encierran para no tapar el encabezado fijo. */
+  isolation: isolate;
+  z-index: 0;
 }
 .lam-map .leaflet-control-zoom a,
 .lam-map .leaflet-control-attribution {
