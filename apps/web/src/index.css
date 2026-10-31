@@ -175,3 +175,10 @@
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
   transition: transform 80ms linear;
 }
+/* Teselas: nocturnas en modo oscuro, apagadas en claro para que resalte la ruta. */
+.lam-tiles-dark {
+  filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(85%) saturate(55%);
+}
+.lam-tiles-light {
+  filter: saturate(60%) brightness(102%);
+}

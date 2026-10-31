@@ -683,13 +683,13 @@ await shoot('25-pirep-detail', `pireps/${PIREP_ID}`, { waitFor: 'Rodaje rápido'
 await shoot('25b-pirep-analysis-hover', `pireps/${PIREP_ID}`, {
   waitFor: 'Análisis del vuelo',
   action: async (page) => {
+    await page.getByRole('radio', { name: 'Por altitud' }).click();
     const chart = page.locator('svg[aria-label^="Perfil de altitud"]');
     await chart.scrollIntoViewIfNeeded();
     const box = await chart.boundingBox();
     if (!box) throw new Error('No se encontró la gráfica');
     await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.4);
-    await page.getByText('Recorrido').first().waitFor();
-    await page.getByRole('radio', { name: 'Por altitud' }).click();
+    await page.getByText('En el aire').first().waitFor();
     await page.waitForTimeout(1500);
   },
 });
