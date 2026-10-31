@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   altitudeBand,
   apuIntervals,
+  attitudeNote,
   cumulativeDistance,
   eventMarkers,
   flightExtremes,
+  formatAngle,
   formatElapsed,
   formatLatLon,
   fuelFlowAt,
@@ -12,6 +14,8 @@ import {
   nearestIndexByPosition,
   nearestIndexByTime,
   niceTicks,
+  pathAngleAt,
+  pathAngleLegs,
   phaseGroup,
   phaseSpans,
   segmentsBy,
@@ -158,5 +162,76 @@ describe('flight-analysis', () => {
     expect(m[0]!.detail).toBe('6000 kg a bordo');
     expect(eventMarkers([{ ...apu('d', 0, 'running') }])[0]!.label).toBe('APU ya en marcha al iniciar ACARS');
     expect(eventMarkers([{ ...apu('e', 0, 'start'), data: { kind: 'adapter' } }])).toEqual([]);
+  });
+});
+
+describe('ángulo de trayectoria y actitud', () => {
+  // Latitud en NM: 1 NM = 1/60°.
+  const at = (i: number, phase: string, alt: number, nm: number, extra: Partial<AnalysisPoint> = {}) =>
+    pt(i, phase, alt, 19 + nm / 60, -99, { on_ground: false, ...extra });
+
+  it('calcula el ángulo en un punto con VS y GS', () => {
+    // 3° a 140 kt: VS ≈ 743 fpm.
+    expect(pathAngleAt(pt(0, 'approach', 3000, 19, -99, { gs_kt: 140, vs_fpm: -743 }))).toBeCloseTo(-3, 1);
+    expect(pathAngleAt(pt(0, 'climb', 3000, 19, -99, { gs_kt: 160, vs_fpm: 2000 }))).toBeCloseTo(7.03, 1);
+    expect(pathAngleAt(pt(0, 'taxi_out', 7300))).toBeNull();
+    expect(pathAngleAt(pt(0, 'climb', 3000, 19, -99, { gs_kt: 10 }))).toBeNull();
+  });
+
+  it('promedia ascenso, descenso y aproximación por tramo', () => {
+    const track = [
+      pt(0, 'taxi_out', 0, 19, -99),
+      at(1, 'takeoff', 0, 0),
+      at(2, 'initial_climb', 1000, 2),
+      at(3, 'climb', 6000, 15),
+      at(4, 'cruise', 10000, 30),
+      at(5, 'cruise', 10000, 80),
+      at(6, 'descent', 10000, 100),
+      at(7, 'approach', 3000, 140),
+      at(8, 'landing', 0, 150),
+    ];
+    const legs = pathAngleLegs(track, cumulativeDistance(track));
+    expect(legs.map((l) => l.kind)).toEqual(['climb', 'descent', 'approach']);
+    // Ascenso inicial y ascenso juntos: 0 → 10,000 ft en 30 NM.
+    expect(legs[0]).toMatchObject({ from: 2, to: 4, altitudeFt: 9000 });
+    expect(legs[0]!.angleDeg).toBeCloseTo((Math.atan(9000 / (28 * 6076.12)) * 180) / Math.PI, 1);
+    // Aproximación: 3,000 ft en 10 NM ≈ 2.8°.
+    expect(legs[2]!.angleDeg).toBeCloseTo(-2.83, 1);
+  });
+
+  it('omite tramos sin desplazamiento ni cambio de altitud', () => {
+    const track = [at(0, 'climb', 5000, 0), at(1, 'climb', 5100, 0.1), at(2, 'cruise', 5100, 10)];
+    expect(pathAngleLegs(track, cumulativeDistance(track))).toEqual([]);
+  });
+
+  it('da formato al ángulo con signo', () => {
+    expect(formatAngle(3.04)).toBe('+3.0°');
+    expect(formatAngle(-2.96)).toBe('−3.0°');
+    expect(formatAngle(-0.01)).toBe('0.0°');
+  });
+
+  it('extremos de ángulo de ascenso y descenso', () => {
+    const track = [
+      pt(0, 'climb', 3000, 19, -99, { gs_kt: 160, vs_fpm: 2500, on_ground: false }),
+      pt(1, 'climb', 9000, 19, -99, { gs_kt: 300, vs_fpm: 1800, on_ground: false }),
+      pt(2, 'approach', 2000, 19, -99, { gs_kt: 140, vs_fpm: -800, on_ground: false }),
+    ];
+    const e = flightExtremes(track);
+    expect(e.maxClimbAngle?.index).toBe(0);
+    expect(e.maxDescentAngle?.index).toBe(2);
+  });
+
+  it('describe las excursiones de actitud', () => {
+    expect(attitudeNote({ kind: 'attitude', axis: 'bank', peak_deg: -41.4, seconds: 3, altitude_ft: 12345.6, ias_kt: 250 })).toEqual({
+      label: 'Alabeo 41°',
+      detail: '3 s · 12,346 ft · 250 kt',
+    });
+    expect(attitudeNote({ kind: 'attitude', axis: 'pitch_up', peak_deg: 22.4 })?.label).toBe('Cabeceo +22°');
+    expect(attitudeNote({ kind: 'attitude', axis: 'pitch_down', peak_deg: -8.6 })?.label).toBe('Cabeceo −9°');
+    expect(attitudeNote({ kind: 'apu' })).toBeNull();
+    const m = eventMarkers([
+      { id: 'x', seq: 1, type: 'note', phase: 'climb', occurred_at: '2026-10-28T06:10:00Z', altitude_ft: 9000, data: { kind: 'attitude', axis: 'bank', peak_deg: 38 } },
+    ]);
+    expect(m[0]).toMatchObject({ kind: 'attitude', label: 'Alabeo 38°', glyph: '∠' });
   });
 });

@@ -299,7 +299,7 @@ const FLIGHTS = [
 ];
 const HISTORY = [
   flight(3, 'MXL801', '801', 'MMTJ', 'MMMX', 3, 'XA-MXD', 'cancelled', { cancelled_at: now, booking: { id: id(803), status: 'expired', expires_at: now, closed_at: now } }),
-  flight(5, 'MXL106', '106', 'MMMX', 'MMGL', 2, 'XA-MXB', 'completed', { completed_at: now, pirep: { id: id(1200), status: 'pending', score: 95 } }),
+  flight(5, 'MXL106', '106', 'MMMX', 'MMGL', 2, 'XA-MXB', 'completed', { completed_at: now, pirep: { id: id(1200), status: 'pending', score: 85 } }),
 ];
 
 // PIREP de ejemplo: MMMX → MMAA con traza sintética.
@@ -348,7 +348,9 @@ const EVENTS = [
   ['engine_start', 'pushback', 3.6, { running: 2, count: 2 }],
   ['note', 'taxi_out', 6, { kind: 'apu', state: 'stop', fuel_kg: fuelAt(6) }],
   ['takeoff', 'initial_climb', 9.3, { ias_kt: 153, pitch_deg: 8.3, flaps_deg: 5, fuel_kg: fuelAt(9.3) }],
+  ['note', 'climb', 14, { kind: 'attitude', axis: 'bank', peak_deg: -38.4, seconds: 6, altitude_ft: Math.round(altAt(14)), ias_kt: 280 }],
   ['phase_change', 'cruise', 20, { from: 'climb', to: 'cruise' }],
+  ['note', 'descent', 42, { kind: 'attitude', axis: 'pitch_down', peak_deg: -8.1, seconds: 4, altitude_ft: Math.round(altAt(42)), ias_kt: 280 }],
   ['touchdown', 'landing', 52.8, { vs_fpm: -294, g_force: 1.25, flaps_deg: 30, fuel_kg: fuelAt(52.8) }],
   ['block_on', 'taxi_in', 55.5, { fuel_kg: fuelAt(55.5) }],
 ].map(([type, phase, min, data], i) => ({ id: id(1300 + i), seq: i, type, phase, occurred_at: at(min), latitude: null, longitude: null, altitude_ft: null, data }));
@@ -397,7 +399,11 @@ const pirepRow = (n, callsign, status, score, extra = {}) => ({
   landing_g: 1.25,
   landing_bounces: 0,
   score,
-  findings: [{ code: 'taxi_speed', label: 'Rodaje rápido', penalty: 5, critical: false, value: 32, threshold: 30, unit: 'kt' }],
+  findings: [
+    { code: 'bank_excess', label: 'Alabeo excesivo', penalty: 5, critical: false, value: 38.4, threshold: 35, unit: '°' },
+    { code: 'pitch_down_excess', label: 'Cabeceo excesivo (nariz abajo)', penalty: 5, critical: false, value: -8.1, threshold: 7.5, unit: '°' },
+    { code: 'taxi_speed', label: 'Rodaje rápido', penalty: 5, critical: false, value: 32, threshold: 30, unit: 'kt' },
+  ],
   metrics: {
     block_estimated: false,
     fuel_block_off_kg: MOCK_FUEL.block_off_kg,
@@ -407,8 +413,9 @@ const pirepRow = (n, callsign, status, score, extra = {}) => ({
     max_taxi_gs_kt: 32,
     sim_aircraft_title: '737-800BCF BW',
     sim_aircraft_icao: 'B738',
-    client_version: '0.1.17',
+    client_version: '0.1.18',
     fuel: MOCK_FUEL,
+    attitude: { excursions: 2, max_bank_deg: 38.4, min_pitch_down_deg: -8.1 },
   },
   has_critical: false,
   status,
@@ -429,7 +436,7 @@ const pirepRow = (n, callsign, status, score, extra = {}) => ({
   ...extra,
 });
 const PIREPS = [
-  pirepRow(0, 'MXL106', 'pending', 95),
+  pirepRow(0, 'MXL106', 'pending', 85),
   pirepRow(1, 'MXL350', 'accepted', 100, { findings: [], landing_vs_fpm: -162, block_minutes: 128 }),
   pirepRow(2, 'MXL801', 'rejected', 55, {
     diverted: true,
@@ -784,6 +791,22 @@ await shoot('25c-pirep-apu-hover', `pireps/${PIREP_ID}`, {
     // Minuto 1.5: APU en marcha, motores apagados.
     await page.mouse.move(box.x + 56 + ((box.width - 72) * 1.5) / 56, box.y + box.height * 0.5);
     await page.getByRole('status').filter({ hasText: 'APU en marcha' }).first().waitFor();
+    await page.waitForTimeout(800);
+  },
+});
+await shoot('25d-pirep-attitude-hover', `pireps/${PIREP_ID}`, {
+  waitFor: 'Análisis del vuelo',
+  action: async (page) => {
+    const chart = page.locator('svg[aria-label^="Perfil de altitud"]');
+    await chart.scrollIntoViewIfNeeded();
+    const legs = await page.locator('[data-testid="angle-leg"]').count();
+    if (legs < 2) throw new Error(`Se esperaban ángulos de ascenso y descenso; hay ${legs}`);
+    const box = await chart.boundingBox();
+    if (!box) throw new Error('No se encontró la gráfica');
+    // Minuto 14: alabeo de 38° en el ascenso.
+    await page.mouse.move(box.x + 56 + ((box.width - 72) * 14) / 56, box.y + box.height * 0.3);
+    await page.getByRole('status').filter({ hasText: 'Alabeo 38°' }).first().waitFor();
+    await page.getByRole('status').filter({ hasText: 'Trayectoria' }).first().waitFor();
     await page.waitForTimeout(800);
   },
 });

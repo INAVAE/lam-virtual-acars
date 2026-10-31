@@ -12,6 +12,7 @@ import {
   cumulativeDistance,
   eventMarkers,
   flightExtremes,
+  formatAngle,
   fuelSeries,
   PHASE_GROUPS,
   phaseGroup,
@@ -89,6 +90,8 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
     { label: 'GS máx.', value: extremes.maxGs ? `${extremes.maxGs.value} kt` : '—', index: extremes.maxGs?.index },
     { label: 'Ascenso máx.', value: extremes.maxClimb ? `+${formatNumber(extremes.maxClimb.value)} fpm` : '—', index: extremes.maxClimb?.index },
     { label: 'Descenso máx.', value: extremes.maxDescent ? `${formatNumber(extremes.maxDescent.value)} fpm` : '—', index: extremes.maxDescent?.index },
+    { label: 'Ángulo ascenso máx.', value: extremes.maxClimbAngle ? formatAngle(extremes.maxClimbAngle.value) : '—', index: extremes.maxClimbAngle?.index },
+    { label: 'Ángulo descenso máx.', value: extremes.maxDescentAngle ? formatAngle(extremes.maxDescentAngle.value) : '—', index: extremes.maxDescentAngle?.index },
     { label: 'Recorrido', value: `${formatNumber(Math.round(distances[distances.length - 1] ?? 0))} NM`, index: undefined },
   ];
   const knownFuel = fuel.values.filter((v): v is number => v !== null);
@@ -212,7 +215,7 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
           </ul>
 
           {/* Extremos: un clic lleva al punto */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-2">
             {stats.map((s) => (
               <button
                 key={s.label}
@@ -244,8 +247,9 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
             onPin={setPinnedIndex}
           />
           <p className="text-xs text-muted">
-            Marcadores: B calzos, A APU, M motores, ↗ despegue, ↘ contacto con pista, G motor y al aire, P pausa, ! aviso. Teclado: flechas para recorrer la
-            traza (Mayús para saltar 10 puntos), Esc para soltar.
+            Marcadores: B calzos, A APU, M motores, ↗ despegue, ↘ contacto con pista, G motor y al aire, P pausa, ! aviso, ∠ alabeo o cabeceo
+            excesivo. En la altitud, la línea punteada y su etiqueta dan el ángulo promedio de cada ascenso, descenso y aproximación (en verde si la
+            aproximación queda a 3° ± 0.5°). Teclado: flechas para recorrer la traza (Mayús para saltar 10 puntos), Esc para soltar.
           </p>
         </div>
       )}

@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import {
+  formatAngle,
   formatElapsed,
   formatLatLon,
   fuelFlowAt,
   nearestIndexByTime,
   niceTicks,
+  pathAngleAt,
+  pathAngleLegs,
   PHASE_GROUPS,
   phaseColor,
   segmentsBy,
+  type AngleLegKind,
   type AnalysisPoint,
   type EventMarker,
   type FuelSeries,
@@ -52,6 +56,15 @@ const GS_COLOR = '#94a3b8';
 const FUEL_COLOR = '#a3e635';
 const RESERVE_COLOR = '#ef4444';
 const APU_COLOR = '#06b6d4';
+
+const LEG_TEXT: Record<AngleLegKind, { prefix: string; title: string; color: string }> = {
+  climb: { prefix: '↗', title: 'Ascenso', color: PHASE_GROUPS.climb.color },
+  descent: { prefix: '↘', title: 'Descenso', color: PHASE_GROUPS.descent.color },
+  approach: { prefix: 'APP', title: 'Aproximación', color: PHASE_GROUPS.approach.color },
+};
+/** Senda de referencia de una aproximación de precisión (°) y tolerancia para marcarla en verde. */
+const GLIDE_REF = 3;
+const GLIDE_TOL = 0.5;
 
 function pathFor(xs: number[], ys: (number | null)[], from = 0, to = xs.length - 1): string {
   let d = '';
@@ -125,11 +138,19 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
       altArea: xs.length > 1 ? `${pathFor(xs, altYs)} L${xs[xs.length - 1]!.toFixed(1)} ${ALT.top + ALT.h} L${xs[0]!.toFixed(1)} ${ALT.top + ALT.h} Z` : '',
       ias: pathFor(xs, points.map((p) => (p.ias_kt === null ? null : ySpd(p.ias_kt)))),
       gs: pathFor(xs, points.map((p) => (p.gs_kt === null ? null : ySpd(p.gs_kt)))),
+      // Ángulo promedio de cada tramo de ascenso, descenso y aproximación: cuerda y etiqueta.
+      angleLegs: pathAngleLegs(points, distances).map((l) => ({
+        ...l,
+        x1: xs[l.from]!,
+        y1: altYs[l.from]!,
+        x2: xs[l.to]!,
+        y2: altYs[l.to]!,
+      })),
       boundaries: segmentsBy(points, 'phase')
         .slice(1)
         .map((s) => ({ x: xs[s.from]!, y: altYs[s.from]!, color: s.color, phase: points[s.from]!.phase })),
     };
-  }, [points, times, t0, t1, plotW, fuel, reserveKg]);
+  }, [points, times, distances, t0, t1, plotW, fuel, reserveKg]);
 
   const timeTicks = useMemo(() => {
     const span = t1 - t0;
@@ -168,6 +189,7 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
 
   const active = activeIndex !== null ? points[activeIndex] : undefined;
   const ax = activeIndex !== null ? geo.xs[activeIndex] : undefined;
+  const angle = active ? pathAngleAt(active) : null;
   const flow = activeIndex !== null && hasFuel ? fuelFlowAt(fuel.values, times, activeIndex) : null;
   const apuOn = activeIndex !== null && apu.some((r) => times[activeIndex]! >= r.start && times[activeIndex]! <= r.end);
   const nearMarkers = active ? markers.filter((m) => Math.abs(m.time - times[activeIndex!]!) <= 30_000) : [];
@@ -243,6 +265,31 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
         {geo.altSegments.map((s, i) => (
           <path key={`p${i}`} d={s.d} fill="none" stroke={s.color} strokeWidth={2.25} strokeLinejoin="round" />
         ))}
+        {geo.angleLegs.map((l, i) => {
+          const t = LEG_TEXT[l.kind];
+          const label = `${t.prefix} ${formatAngle(l.angleDeg)}`;
+          const w = label.length * 6.2 + 12;
+          if (l.x2 - l.x1 < Math.min(w, 40)) return null;
+          const mx = Math.min(Math.max((l.x1 + l.x2) / 2, LEFT + w / 2), width - RIGHT - w / 2);
+          // Debajo de la cuerda: en un ascenso la curva real suele quedar arriba.
+          const my = Math.min(Math.max((l.y1 + l.y2) / 2 + 14, ALT.top + 10), ALT.top + ALT.h - 10);
+          const onGlide = l.kind === 'approach' && Math.abs(Math.abs(l.angleDeg) - GLIDE_REF) <= GLIDE_TOL;
+          return (
+            <g key={`leg${i}`} data-testid="angle-leg">
+              <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={t.color} strokeOpacity={0.55} strokeDasharray="2 3" />
+              <g transform={`translate(${mx} ${my})`}>
+                <title>
+                  {`${t.title} promedio ${formatAngle(l.angleDeg)} · ${formatNumber(Math.abs(Math.round(l.altitudeFt)))} ft en ${formatNumber(Math.round(l.distanceNm))} NM`}
+                  {l.kind === 'approach' ? ` · referencia ${GLIDE_REF}°` : ''}
+                </title>
+                <rect x={-w / 2} y={-8} width={w} height={16} rx={8} fill="var(--surface)" fillOpacity={0.92} stroke={t.color} />
+                <text y={3.5} textAnchor="middle" className="font-mono text-[10px] font-semibold" fill={onGlide ? '#22c55e' : 'var(--text)'}>
+                  {label}
+                </text>
+              </g>
+            </g>
+          );
+        })}
         {geo.boundaries.map((b, i) => (
           <circle key={`c${i}`} cx={b.x} cy={b.y} r={3.5} fill={b.color} stroke="var(--surface)" strokeWidth={1.5}>
             <title>{phaseLabel(b.phase)}</title>
@@ -419,8 +466,8 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
               <dd>{active.heading_deg === null ? '—' : `${String(Math.round(active.heading_deg)).padStart(3, '0')}°`}</dd>
             </div>
             <div>
-              <dt className="font-sans text-[10px] uppercase text-muted">Recorrido</dt>
-              <dd>{formatNumber(Math.round(distances[activeIndex!] ?? 0))} NM</dd>
+              <dt className="font-sans text-[10px] uppercase text-muted">Trayectoria</dt>
+              <dd>{angle === null ? '—' : formatAngle(angle)}</dd>
             </div>
             {hasFuel ? (
               <>
@@ -435,7 +482,9 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
               </>
             ) : null}
           </dl>
-          <p className="mt-1.5 font-mono text-[10px] text-muted">{formatLatLon(active.latitude, active.longitude)}</p>
+          <p className="mt-1.5 font-mono text-[10px] text-muted">
+            {formatLatLon(active.latitude, active.longitude)} · {formatNumber(Math.round(distances[activeIndex!] ?? 0))} NM
+          </p>
           {nearMarkers.map((m) => (
             <p key={m.id} className="mt-1 border-t border-line pt-1">
               <span className="font-medium" style={{ color: m.color }}>

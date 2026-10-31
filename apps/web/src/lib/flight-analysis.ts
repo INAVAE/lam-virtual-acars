@@ -192,6 +192,9 @@ export interface FlightExtremes {
   maxGs: { value: number; index: number } | null;
   maxClimb: { value: number; index: number } | null;
   maxDescent: { value: number; index: number } | null;
+  /** Ángulo de trayectoria (°) máximo subiendo y bajando. */
+  maxClimbAngle: { value: number; index: number } | null;
+  maxDescentAngle: { value: number; index: number } | null;
 }
 
 export function flightExtremes(points: readonly AnalysisPoint[]): FlightExtremes {
@@ -209,7 +212,90 @@ export function flightExtremes(points: readonly AnalysisPoint[]): FlightExtremes
     maxGs: pick((p) => p.gs_kt, (a, b) => a > b),
     maxClimb: pick((p) => (p.on_ground ? null : p.vs_fpm), (a, b) => a > b),
     maxDescent: pick((p) => (p.on_ground ? null : p.vs_fpm), (a, b) => a < b),
+    maxClimbAngle: pick(pathAngleAt, (a, b) => a > b),
+    maxDescentAngle: pick(pathAngleAt, (a, b) => a < b),
   };
+}
+
+// -----------------------------------------------------------------------------
+// Ángulo de trayectoria (ascenso y descenso)
+// -----------------------------------------------------------------------------
+/** Pies por minuto que equivalen a un nudo (6,076.12 ft / 60 min). */
+const FPM_PER_KT = 6076.12 / 60;
+const FT_PER_NM = 6076.12;
+
+/**
+ * Ángulo de trayectoria (°) en un punto: atan(VS / GS). Positivo subiendo,
+ * negativo bajando. Nulo en tierra, sin datos o por debajo de 30 kt.
+ */
+export function pathAngleAt(p: AnalysisPoint): number | null {
+  if (p.on_ground || p.vs_fpm === null || p.gs_kt === null || p.gs_kt < 30) return null;
+  return (Math.atan2(p.vs_fpm, p.gs_kt * FPM_PER_KT) * 180) / Math.PI;
+}
+
+export type AngleLegKind = 'climb' | 'descent' | 'approach';
+
+export interface AngleLeg {
+  kind: AngleLegKind;
+  /** Índices del primer y último punto del tramo. */
+  from: number;
+  to: number;
+  /** Ángulo promedio (°): altitud ganada o perdida entre distancia recorrida. */
+  angleDeg: number;
+  altitudeFt: number;
+  distanceNm: number;
+}
+
+const LEG_OF: Partial<Record<PhaseGroup, AngleLegKind>> = { initial_climb: 'climb', climb: 'climb', descent: 'descent', approach: 'approach' };
+
+/**
+ * Tramos de ascenso (ascenso inicial + ascenso), descenso y aproximación con su
+ * ángulo promedio sobre el terreno. Se omiten tramos de menos de 0.5 NM o 300 ft.
+ */
+export function pathAngleLegs(points: readonly AnalysisPoint[], distances: readonly number[]): AngleLeg[] {
+  const merged: { kind: AngleLegKind; from: number; to: number }[] = [];
+  for (const s of segmentsBy(points, 'phase')) {
+    const kind = LEG_OF[s.key as PhaseGroup];
+    if (!kind) continue;
+    const last = merged[merged.length - 1];
+    if (last && last.kind === kind && last.to === s.from) last.to = s.to;
+    else merged.push({ kind, from: s.from, to: s.to });
+  }
+  const out: AngleLeg[] = [];
+  for (const m of merged) {
+    const altitudeFt = points[m.to]!.altitude_ft - points[m.from]!.altitude_ft;
+    const distanceNm = (distances[m.to] ?? 0) - (distances[m.from] ?? 0);
+    if (distanceNm < 0.5 || Math.abs(altitudeFt) < 300) continue;
+    out.push({ ...m, altitudeFt, distanceNm, angleDeg: (Math.atan2(altitudeFt, distanceNm * FT_PER_NM) * 180) / Math.PI });
+  }
+  return out;
+}
+
+/** "+3.2°" / "−3.0°" con el signo tipográfico. */
+export function formatAngle(deg: number, digits = 1): string {
+  const v = Math.abs(deg).toFixed(digits);
+  if (Number(v) === 0) return `${(0).toFixed(digits)}°`;
+  return `${deg > 0 ? '+' : '−'}${v}°`;
+}
+
+// -----------------------------------------------------------------------------
+// Excursiones de actitud (notas del conector 0.1.18+)
+// -----------------------------------------------------------------------------
+/** Etiqueta y detalle de una nota {kind:'attitude'}; nulo si no es una. */
+export function attitudeNote(data: unknown): { label: string; detail: string } | null {
+  const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  if (d.kind !== 'attitude') return null;
+  const peak = num(d, 'peak_deg');
+  if (peak === null) return null;
+  const label =
+    d.axis === 'bank' ? `Alabeo ${Math.abs(peak).toFixed(0)}°` : `Cabeceo ${formatAngle(peak, 0)}`;
+  const seconds = num(d, 'seconds');
+  const alt = num(d, 'altitude_ft');
+  const ias = num(d, 'ias_kt');
+  const detail = [seconds !== null ? `${seconds} s` : '', alt !== null ? `${Math.round(alt).toLocaleString('en-US')} ft` : '', ias !== null ? `${ias} kt` : '']
+    .filter(Boolean)
+    .join(' · ');
+  return { label, detail };
 }
 
 // -----------------------------------------------------------------------------
@@ -218,7 +304,7 @@ export function flightExtremes(points: readonly AnalysisPoint[]): FlightExtremes
 export interface EventMarker {
   id: string;
   time: number;
-  kind: 'block_off' | 'takeoff' | 'touchdown' | 'block_on' | 'engine' | 'apu' | 'pause' | 'warning' | 'go_around';
+  kind: 'block_off' | 'takeoff' | 'touchdown' | 'block_on' | 'engine' | 'apu' | 'pause' | 'warning' | 'go_around' | 'attitude';
   label: string;
   detail: string | null;
   /** Letra o símbolo corto que se dibuja en el marcador. */
@@ -291,6 +377,10 @@ export function eventMarkers(events: readonly AnalysisEvent[]): EventMarker[] {
         if (d.kind === 'apu') {
           const label = APU_LABELS[String(d.state)] ?? 'APU';
           out.push({ ...base, kind: 'apu', label, detail: num(d, 'fuel_kg') !== null ? `${num(d, 'fuel_kg')} kg a bordo` : null, glyph: 'A', color: '#06b6d4' });
+        }
+        {
+          const att = attitudeNote(d);
+          if (att) out.push({ ...base, kind: 'attitude', label: att.label, detail: att.detail || null, glyph: '∠', color: '#e11d48' });
         }
         break;
       case 'phase_change':

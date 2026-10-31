@@ -12,13 +12,14 @@
 - Análisis del vuelo (2026-10-30): mapa Leaflet con OpenStreetMap, ruta por etapa o por altitud, gráficas de altitud, velocidad y combustible con cursor sincronizado y recuadro de datos.
 - Combustible (2026-10-30): `flight_track_points.fuel_kg`, resumen en `pireps.metrics.fuel` (consumo por etapa, plan de SimBrief), regla opcional de reserva y panel en la web. Conector 0.1.16 (combustible en traza y aterrizaje, rodaje cada 3 s; 78 pruebas). 211 pruebas pgTAP.
 - APU (2026-10-30): conector 0.1.17 registra encendido y apagado de la APU (88 pruebas); el PIREP muestra la franja de APU, minutos en marcha y combustible antes de los motores. 213 pruebas pgTAP.
+- Actitud y ángulo de trayectoria (2026-10-30): conector 0.1.18 registra excursiones de alabeo y cabeceo (2 s o más); cuatro reglas nuevas (alabeo > 35°, cabeceo > +20° o < −7.5°, upset grave). La gráfica de altitud muestra el ángulo promedio de ascenso, descenso y aproximación. 226 pruebas pgTAP.
 - Hora local (2026-10-30): zona horaria en el perfil (`profiles.time_zone`, Settings → Hora; automática = la del navegador) y hora principal UTC o local (clic en el reloj o en Settings). Toda hora Zulu muestra también la local: reloj, salidas programadas, horarios de ruta, PIREP, bitácora, mapa y gráficas; las fechas locales usan la zona elegida.
 - Documento: `docs/architecture/pirep.md`.
 
 ### Para cerrar la Fase 5
 
 - [ ] Revisar en la web el PIREP de MXL106 y aceptarlo (debe sumar 56 min y un ciclo a FVA106, hoy en 0, y a las horas del piloto).
-- [ ] Volar un vuelo completo con el conector 0.1.17 y comprobar el PIREP generado al cerrar (flaps, tren, combustible por etapa, APU y rodaje denso en el mapa).
+- [ ] Volar un vuelo completo con el conector 0.1.18 y comprobar el PIREP generado al cerrar (flaps, tren, combustible por etapa, APU, actitud y rodaje denso en el mapa).
 - [ ] Probar la aprobación automática en una aerolínea con el ajuste activado.
 
 ## Fase 4, LAM ACARS Connector (terminada; PMDG 737 verificado con el SDK en tierra)

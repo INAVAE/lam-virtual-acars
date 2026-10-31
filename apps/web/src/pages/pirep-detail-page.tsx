@@ -23,6 +23,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
+import { attitudeNote } from '@/lib/flight-analysis';
 import { formatLocalDateTime, formatNumber, formatPilotNumber } from '@/lib/format';
 import { useAirlinePermissions } from '@/lib/permissions';
 import { phaseLabel } from '@/lib/phases';
@@ -105,6 +106,10 @@ function eventDetail(e: FlightEvent): string {
         const state = states[String(d.state)] ?? String(d.state);
         return `${state}${typeof d.fuel_kg === 'number' ? ` · ${formatNumber(d.fuel_kg)} kg a bordo` : ''}`;
       }
+      {
+        const att = attitudeNote(d);
+        if (att) return att.detail;
+      }
       return d.kind === 'adapter' ? `Adaptador ${String(d.adapter ?? '')}${d.sdk ? ' con SDK' : ''}` : String(d.kind ?? '');
     case 'aircraft_changed':
       return String(d.title ?? '');
@@ -116,7 +121,8 @@ function eventDetail(e: FlightEvent): string {
 function EventsPanel({ events, loading }: { events: FlightEvent[]; loading: boolean }) {
   const [showAll, setShowAll] = useState(false);
   const isApu = (e: FlightEvent) => e.type === 'note' && (e.data as Record<string, unknown> | null)?.kind === 'apu';
-  const visible = showAll ? events : events.filter((e) => e.type !== 'note' || isApu(e));
+  const attitude = (e: FlightEvent) => (e.type === 'note' ? attitudeNote(e.data) : null);
+  const visible = showAll ? events : events.filter((e) => e.type !== 'note' || isApu(e) || attitude(e) !== null);
   return (
     <Panel
       title="Bitácora del vuelo"
@@ -138,7 +144,9 @@ function EventsPanel({ events, loading }: { events: FlightEvent[]; loading: bool
             <li key={e.id} className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3">
               <DualTimeText value={e.occurred_at} seconds className="text-muted" />
               <span>
-                <span className="font-medium">{isApu(e) ? 'APU' : (eventLabels[e.type] ?? e.type)}</span>
+                <span className={attitude(e) ? 'font-medium text-danger-ink' : 'font-medium'}>
+                  {isApu(e) ? 'APU' : (attitude(e)?.label ?? eventLabels[e.type] ?? e.type)}
+                </span>
                 {eventDetail(e) ? <span className="text-muted"> · {eventDetail(e)}</span> : null}
               </span>
             </li>

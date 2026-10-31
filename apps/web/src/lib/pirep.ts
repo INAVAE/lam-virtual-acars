@@ -53,7 +53,7 @@ export function formatHours(minutes: number | null | undefined): string {
 function formatValue(value: number, unit: string | null): string {
   if (unit === 'fpm') return formatVs(value);
   if (unit === 'G') return `${value.toFixed(2)} G`;
-  if (unit === '°') return `${value.toFixed(1)}°`;
+  if (unit === '°') return `${value < 0 ? '−' : ''}${Math.abs(value).toFixed(1)}°`;
   if (unit === 'kt') return `${Math.round(value)} kt`;
   if (unit === 'kg') return `${formatNumber(Math.round(value))} kg`;
   return formatNumber(value);
@@ -61,9 +61,12 @@ function formatValue(value: number, unit: string | null): string {
 
 /** Texto de una falta: "−700 fpm (umbral 600 fpm)" o "2 veces". */
 export function findingDetail(f: PirepFinding): string | null {
+  if (f.code === 'attitude_upset') return 'Alabeo de más de 45°, cabeceo de más de +25° o de menos de −10°';
   if (f.value === null || f.value === undefined) return null;
   if (f.threshold !== null && f.threshold !== undefined && f.unit) {
-    const threshold = f.unit === 'fpm' ? `${formatNumber(f.threshold)} fpm` : formatValue(f.threshold, f.unit);
+    // El umbral de nariz abajo se guarda positivo; se muestra con su signo.
+    const limit = f.code === 'pitch_down_excess' ? -f.threshold : f.threshold;
+    const threshold = f.unit === 'fpm' ? `${formatNumber(limit)} fpm` : formatValue(limit, f.unit);
     return `${formatValue(f.value, f.unit)} (umbral ${threshold})`;
   }
   if (f.unit) return formatValue(f.value, f.unit);

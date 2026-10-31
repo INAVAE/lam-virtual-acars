@@ -51,6 +51,17 @@ describe('pirep', () => {
     expect(findingDetail(diversion!)).toBeNull();
   });
 
+  it('describe las faltas de actitud', () => {
+    const [bank, down, upset] = parseFindings([
+      { code: 'bank_excess', label: 'Alabeo excesivo', penalty: 5, critical: false, value: 41, threshold: 35, unit: '°' },
+      { code: 'pitch_down_excess', label: 'Cabeceo excesivo (nariz abajo)', penalty: 5, critical: false, value: -8.4, threshold: 7.5, unit: '°' },
+      { code: 'attitude_upset', label: 'Actitud anormal (upset)', penalty: 15, critical: true, value: null, threshold: null, unit: null },
+    ]);
+    expect(findingDetail(bank!)).toBe('41.0° (umbral 35.0°)');
+    expect(findingDetail(down!)).toBe('−8.4° (umbral −7.5°)');
+    expect(findingDetail(upset!)).toMatch(/45°/);
+  });
+
   it('proyecta la traza dentro del lienzo', () => {
     const pts = [
       { latitude: 19.43, longitude: -99.07, altitude_ft: 7316, sampled_at: '2026-10-28T06:00:00Z' },
