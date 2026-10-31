@@ -92,6 +92,8 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
   const hasSecondaryTime = dual(0).secondary !== '';
   const AXIS_Y = bottom + 18;
   const HEIGHT = AXIS_Y + (hasSecondaryTime ? 20 : 8);
+  // Las etiquetas de los extremos se alinean hacia dentro para no cortarse.
+  const tickAnchor = (px: number) => (px > width - RIGHT - 36 ? 'end' : px < LEFT + 36 ? 'start' : 'middle');
   const t0 = times[0] ?? 0;
   const t1 = times[times.length - 1] ?? 1;
   const plotW = width - LEFT - RIGHT;
@@ -225,11 +227,11 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
         {timeTicks.map((t) => (
           <g key={`t${t}`}>
             <line x1={x(t)} x2={x(t)} y1={ALT.top} y2={bottom} stroke="var(--border)" strokeOpacity={0.5} />
-            <text x={x(t)} y={AXIS_Y} textAnchor="middle" className="fill-muted font-mono text-[10px]">
+            <text x={x(t)} y={AXIS_Y} textAnchor={tickAnchor(x(t))} className="fill-muted font-mono text-[10px]">
               {dual(t).primary}
             </text>
             {hasSecondaryTime ? (
-              <text x={x(t)} y={AXIS_Y + 12} textAnchor="middle" className="fill-muted font-mono text-[9px]" opacity={0.7}>
+              <text x={x(t)} y={AXIS_Y + 12} textAnchor={tickAnchor(x(t))} className="fill-muted font-mono text-[9px]" opacity={0.7}>
                 {dual(t).secondary}
               </text>
             ) : null}
