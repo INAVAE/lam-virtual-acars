@@ -10,7 +10,17 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
  * en línea que la política bloquearía). `frame-ancestors` no se incluye: los
  * navegadores lo ignoran cuando llega por <meta> y solo funciona como cabecera.
  */
-function contentSecurityPolicy(supabaseUrl: string): Plugin {
+/** Origen de la plantilla de teselas del mapa ({s} se vuelve comodín de subdominio). */
+function tileOrigin(template: string): string {
+  try {
+    const host = new URL(template.replace(/\{s\}\./, 'sub.').replace(/\{[^}]+\}/g, '0')).origin;
+    return template.includes('{s}.') ? host.replace('://sub.', '://*.') : host;
+  } catch {
+    return '';
+  }
+}
+
+function contentSecurityPolicy(supabaseUrl: string, tileUrl: string): Plugin {
   let supabaseOrigin = '';
   try {
     supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : '';
@@ -23,8 +33,8 @@ function contentSecurityPolicy(supabaseUrl: string): Plugin {
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
-    // Teselas del mapa del PIREP (OpenStreetMap).
-    `img-src 'self' data: blob: ${supabaseOrigin} https://tile.openstreetmap.org`.trim(),
+    // Teselas del mapa del PIREP (OpenStreetMap por omisión).
+    `img-src 'self' data: blob: ${supabaseOrigin} ${tileOrigin(tileUrl)}`.trim(),
     `connect-src 'self' ${supabaseOrigin} ${realtimeOrigin}`.trim(),
     "base-uri 'self'",
     "form-action 'self'",
@@ -64,7 +74,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: base.endsWith('/') ? base : `${base}/`,
-    plugins: [react(), tailwindcss(), contentSecurityPolicy(env.VITE_SUPABASE_URL ?? ''), spaFallback()],
+    plugins: [react(), tailwindcss(), contentSecurityPolicy(env.VITE_SUPABASE_URL ?? '', env.VITE_MAP_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'), spaFallback()],
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),

@@ -96,7 +96,7 @@ Mientras el PIREP está en revisión, el piloto puede comentarlo con `comment_pi
 - **PIREP:** mis reportes con estadísticas, cola "Por revisar" (los más antiguos primero) y todos los de la aerolínea.
 - **Detalle:** resumen, análisis del vuelo, despegue y aterrizaje, puntaje y faltas, revisión y bitácora de eventos.
 - **Análisis del vuelo** (`flight-analysis-panel.tsx`):
-  - **Mapa:** Leaflet con teselas de OpenStreetMap; en modo oscuro se invierten con CSS.
+  - **Mapa:** Leaflet con teselas de OpenStreetMap; en modo oscuro se invierten con CSS. Atribución y política de uso en el ADR 0007.
     - Zoom con la rueda y desplazamiento arrastrando; pantalla completa.
     - La ruta se colorea por etapa o por bandas de altitud.
     - Muestra los aeropuertos (salida, destino y llegada real si hubo desvío) y los eventos (calzos, motores, despegue, contacto con pista, motor y al aire, pausa, avisos).

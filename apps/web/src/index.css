@@ -114,8 +114,16 @@
   color: var(--text);
   border-color: var(--border);
 }
+.lam-map .leaflet-control-attribution {
+  /* Atribución de OpenStreetMap siempre visible y legible (guía de atribución de la OSMF). */
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 1px 6px;
+  opacity: 0.95;
+}
 .lam-map .leaflet-control-attribution a {
-  color: var(--text-muted);
+  color: var(--text);
+  text-decoration: underline;
 }
 .leaflet-tooltip.lam-tip {
   background: var(--surface);

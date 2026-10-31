@@ -8,6 +8,7 @@
 // Uso: SITE_URL=https://inavae.github.io/lam-virtual-acars/ node scripts/visual-check.mjs
 
 import { mkdirSync } from 'node:fs';
+import { deflateSync } from 'node:zlib';
 import { chromium } from 'playwright';
 
 const SITE = (process.env.SITE_URL ?? '').replace(/\/?$/, '/');
@@ -593,6 +594,41 @@ function fakeSession() {
   };
 }
 
+// Las pruebas no piden teselas a OpenStreetMap (su política de uso no permite
+// tráfico automatizado): se responde con una tesela neutra generada aquí.
+function placeholderTile() {
+  const size = 256;
+  const raw = Buffer.alloc((size * 3 + 1) * size);
+  for (let y = 0; y < size; y++) {
+    raw[y * (size * 3 + 1)] = 0;
+    for (let x = 0; x < size; x++) {
+      const edge = x === 0 || y === 0;
+      const v = edge ? 205 : 232;
+      raw.fill(v, y * (size * 3 + 1) + 1 + x * 3, y * (size * 3 + 1) + 4 + x * 3);
+    }
+  }
+  const chunk = (type, data) => {
+    const len = Buffer.alloc(4);
+    len.writeUInt32BE(data.length);
+    const body = Buffer.concat([Buffer.from(type), data]);
+    let c = ~0;
+    for (const b of body) {
+      c ^= b;
+      for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1));
+    }
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(~c >>> 0);
+    return Buffer.concat([len, body, crc]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(size, 0);
+  ihdr.writeUInt32BE(size, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 2;
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
+const TILE_PNG = placeholderTile();
+
 // -----------------------------------------------------------------------------
 // Capturas
 // -----------------------------------------------------------------------------
@@ -617,6 +653,7 @@ async function shoot(name, path, { viewport = { width: 1440, height: 900 }, airl
     if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) problems.push(m.text());
   });
   await page.route(/\.supabase\.co\//, handleSupabase);
+  await page.route(/tile\.openstreetmap\.org\//, (route) => route.fulfill({ status: 200, contentType: 'image/png', body: TILE_PNG }));
   try {
     await page.goto(`${SITE}${path}`, { waitUntil: 'networkidle' });
     if (waitFor) await page.getByText(waitFor, { exact: false }).first().waitFor({ timeout: 15000 });
@@ -714,7 +751,15 @@ await shoot('24-pireps-review', 'pireps', {
     await page.getByText('MXL106').first().waitFor();
   },
 });
-await shoot('25-pirep-detail', `pireps/${PIREP_ID}`, { waitFor: 'Rodaje rápido' });
+await shoot('25-pirep-detail', `pireps/${PIREP_ID}`, {
+  waitFor: 'Rodaje rápido',
+  action: async (page) => {
+    // Atribución de OpenStreetMap visible y enlazada a la licencia (ODbL).
+    const credit = page.locator('.leaflet-control-attribution a[href="https://www.openstreetmap.org/copyright"]');
+    await credit.waitFor({ state: 'visible' });
+    if ((await credit.textContent())?.trim() !== 'OpenStreetMap') throw new Error('Atribución de OpenStreetMap incompleta');
+  },
+});
 await shoot('25b-pirep-analysis-hover', `pireps/${PIREP_ID}`, {
   waitFor: 'Análisis del vuelo',
   action: async (page) => {

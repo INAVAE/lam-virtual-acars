@@ -12,6 +12,7 @@ import {
   type EventMarker,
 } from '@/lib/flight-analysis';
 import { formatNumber } from '@/lib/format';
+import { mapTileConfig } from '@/lib/map-tiles';
 import { phaseLabel } from '@/lib/phases';
 
 export interface MapAirport {
@@ -38,10 +39,9 @@ interface FlightMapProps {
   height: string;
 }
 
-// Teselas de OpenStreetMap (sin clave). En modo oscuro se invierten con CSS
-// para un mapa nocturno; a zoom alto se ven pistas y calles de rodaje.
-const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+// Teselas de OpenStreetMap (ver lib/map-tiles.ts: atribución y política de uso).
+// En modo oscuro se invierten con CSS para un mapa nocturno.
+const TILES = mapTileConfig();
 
 const PLANE_SVG =
   '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M12 2c.8 0 1.4.7 1.4 1.6v5.6l7.6 4.4v2l-7.6-2.3v4.6l2.2 1.7v1.6L12 20.1l-3.6 1.1v-1.6l2.2-1.7v-4.6L3 15.6v-2l7.6-4.4V3.6C10.6 2.7 11.2 2 12 2z" fill="currentColor" stroke="#0b1220" stroke-width="0.8"/></svg>';
@@ -108,7 +108,14 @@ export function FlightMap({ points, times, markers, airports, colorMode, activeI
     const map = mapRef.current;
     if (!map) return;
     tilesRef.current?.remove();
-    tilesRef.current = L.tileLayer(TILES, { attribution: ATTRIBUTION, maxZoom: 19, className: theme === 'dark' ? 'lam-tiles-dark' : 'lam-tiles-light' }).addTo(map);
+    const options: L.TileLayerOptions & { referrerPolicy?: ReferrerPolicy } = {
+      attribution: TILES.attribution,
+      maxZoom: TILES.maxZoom,
+      // La política de OSM exige Referer; se fija aunque el sitio ya use esta política.
+      referrerPolicy: 'strict-origin-when-cross-origin',
+      className: theme === 'dark' ? 'lam-tiles-dark' : 'lam-tiles-light',
+    };
+    tilesRef.current = L.tileLayer(TILES.url, options).addTo(map);
   }, [theme]);
 
   // Traza
