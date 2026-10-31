@@ -117,5 +117,10 @@ jobs:
         run: |
           sha=$(cut -d' ' -f1 out/LamAcars-$VERSION-win-x64.zip.sha256)
           notes=$(printf 'LAM ACARS %s para MSFS 2024 (Windows 10/11, 64 bits).\n\nSHA-256 del zip: `%s`\n\nInstrucciones: descomprime, abre LamAcars.exe y vincula el equipo desde la web (Settings → Dispositivos ACARS).' "$VERSION" "$sha")
-          gh release create "connector-v$VERSION" out/LamAcars-$VERSION-win-x64.zip out/LamAcars-$VERSION-win-x64.zip.sha256 \
-            --title "LAM ACARS $VERSION" --notes "$notes" --prerelease --target "$GITHUB_SHA"
+          # La salida de gh se copia a una anotación: los registros no siempre se pueden leer fuera de GitHub.
+          if ! out=$(gh release create "connector-v$VERSION" out/LamAcars-$VERSION-win-x64.zip out/LamAcars-$VERSION-win-x64.zip.sha256 \
+            --title "LAM ACARS $VERSION" --notes "$notes" --prerelease --target "$GITHUB_SHA" 2>&1); then
+            echo "::error title=Publicar versión::$(echo "$out" | tr '\n' ' ' | cut -c1-900)"
+            exit 1
+          fi
+          echo "$out"
