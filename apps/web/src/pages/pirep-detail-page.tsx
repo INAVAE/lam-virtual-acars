@@ -26,6 +26,7 @@ import { formatZuluDateTime } from '@/lib/booking';
 import { describeError } from '@/lib/errors';
 import { formatLocalDateTime, formatNumber, formatPilotNumber } from '@/lib/format';
 import { useAirlinePermissions } from '@/lib/permissions';
+import { formatZuluTime } from '@/lib/flight-analysis';
 import { phaseLabel } from '@/lib/phases';
 import {
   findingDetail,
@@ -100,6 +101,11 @@ function eventDetail(e: FlightEvent): string {
     case 'engine_shutdown':
       return typeof d.running === 'number' ? `${d.running} de ${String(d.count ?? '?')} encendidos` : '';
     case 'note':
+      if (d.kind === 'apu') {
+        const states: Record<string, string> = { start: 'encendida', stop: 'apagada', running: 'ya en marcha al iniciar ACARS' };
+        const state = states[String(d.state)] ?? String(d.state);
+        return `${state}${typeof d.fuel_kg === 'number' ? ` · ${formatNumber(d.fuel_kg)} kg a bordo` : ''}`;
+      }
       return d.kind === 'adapter' ? `Adaptador ${String(d.adapter ?? '')}${d.sdk ? ' con SDK' : ''}` : String(d.kind ?? '');
     case 'aircraft_changed':
       return String(d.title ?? '');
@@ -110,7 +116,8 @@ function eventDetail(e: FlightEvent): string {
 
 function EventsPanel({ events, loading }: { events: FlightEvent[]; loading: boolean }) {
   const [showAll, setShowAll] = useState(false);
-  const visible = showAll ? events : events.filter((e) => e.type !== 'note');
+  const isApu = (e: FlightEvent) => e.type === 'note' && (e.data as Record<string, unknown> | null)?.kind === 'apu';
+  const visible = showAll ? events : events.filter((e) => e.type !== 'note' || isApu(e));
   return (
     <Panel
       title="Bitácora del vuelo"
@@ -132,7 +139,7 @@ function EventsPanel({ events, loading }: { events: FlightEvent[]; loading: bool
             <li key={e.id} className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3">
               <span className="font-mono text-muted">{new Date(e.occurred_at).toISOString().slice(11, 19)}Z</span>
               <span>
-                <span className="font-medium">{eventLabels[e.type] ?? e.type}</span>
+                <span className="font-medium">{isApu(e) ? 'APU' : (eventLabels[e.type] ?? e.type)}</span>
                 {eventDetail(e) ? <span className="text-muted"> · {eventDetail(e)}</span> : null}
               </span>
             </li>
@@ -360,6 +367,20 @@ function FuelPanel({ fuel }: { fuel: PirepFuel }) {
           <Fact label="Total usado" mono>
             {kg(fuel.used_kg)}
           </Fact>
+          {fuel.before_engines_kg !== undefined ? (
+            <Fact label="Antes de los motores" mono>
+              {kg(fuel.before_engines_kg)}
+            </Fact>
+          ) : null}
+          {fuel.apu ? (
+            <Fact label="APU en marcha" mono>
+              {formatMinutes(Math.round(fuel.apu.minutes))}
+              <span className="block font-sans text-xs text-muted">
+                {fuel.apu.running_at_start ? 'ya encendida al iniciar' : fuel.apu.first_on_at ? `desde ${formatZuluTime(fuel.apu.first_on_at).slice(0, 5)}Z` : ''}
+                {fuel.apu.running_at_end ? ' · encendida al cerrar' : ''}
+              </span>
+            </Fact>
+          ) : null}
         </dl>
 
         {stages.length > 0 ? (

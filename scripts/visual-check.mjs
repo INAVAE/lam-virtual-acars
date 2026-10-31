@@ -324,6 +324,8 @@ const TRACK = Array.from({ length: 80 }, (_, i) => {
 });
 const EVENTS = [
   ['note', 'aircraft_connected', 0, { kind: 'adapter', adapter: 'PMDG 737', sdk: true }],
+  ['note', 'preflight', 1, { kind: 'apu', state: 'start', fuel_kg: 6129 }],
+  ['note', 'taxi_out', 9, { kind: 'apu', state: 'stop', fuel_kg: 6010 }],
   ['phase_change', 'preflight', 0, { from: 'aircraft_connected', to: 'preflight' }],
   ['block_off', 'pushback', 3, { fuel_kg: 6129 }],
   ['engine_start', 'pushback', 5, { running: 1, count: 2 }],
@@ -383,6 +385,8 @@ const pirepRow = (n, callsign, status, score, extra = {}) => ({
       taxi_in_kg: 79,
       used_kg: 2068,
       samples: 80,
+      before_engines_kg: 48,
+      apu: { minutes: 8, starts: 1, first_on_at: at(1), last_off_at: at(9), running_at_start: false, running_at_end: false },
       stages: {
         taxi_out: { kg: 228, minutes: 10.1, kg_per_hour: 1354 },
         climb: { kg: 820, minutes: 14.2, kg_per_hour: 3465 },

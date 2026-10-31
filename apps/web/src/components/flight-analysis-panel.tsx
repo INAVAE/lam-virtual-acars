@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/cn';
 import {
   ALTITUDE_BANDS,
+  apuIntervals,
   cumulativeDistance,
   eventMarkers,
   flightExtremes,
@@ -51,6 +52,7 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
   const spans = useMemo(() => phaseSpans(points), [points]);
   const markers = useMemo(() => eventMarkers(events), [events]);
   const fuel = useMemo(() => fuelSeries(points, times, events), [points, times, events]);
+  const apu = useMemo(() => apuIntervals(events, times[times.length - 1] ?? 0), [events, times]);
   const extremes = useMemo(() => flightExtremes(points), [points]);
   const groupsPresent = useMemo(() => new Set(points.map((p) => phaseGroup(p.phase))), [points]);
 
@@ -233,6 +235,7 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
             markers={markers}
             fuel={fuel}
             reserveKg={reserveKg}
+            apu={apu}
             activeIndex={activeIndex}
             pinned={pinnedIndex !== null}
             onHover={setHoverIndex}
@@ -240,7 +243,7 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
             onPin={setPinnedIndex}
           />
           <p className="text-xs text-muted">
-            Marcadores: B calzos, M motores, ↗ despegue, ↘ contacto con pista, G motor y al aire, P pausa, ! aviso. Teclado: flechas para recorrer la
+            Marcadores: B calzos, A APU, M motores, ↗ despegue, ↘ contacto con pista, G motor y al aire, P pausa, ! aviso. Teclado: flechas para recorrer la
             traza (Mayús para saltar 10 puntos), Esc para soltar.
           </p>
         </div>

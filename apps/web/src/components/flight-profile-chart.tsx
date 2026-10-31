@@ -27,6 +27,8 @@ interface FlightProfileChartProps {
   fuel: FuelSeries;
   /** Reserva final del plan de SimBrief (kg), para la línea de referencia. */
   reserveKg: number | null;
+  /** Intervalos con la APU en marcha (ms). */
+  apu: readonly { start: number; end: number }[];
   activeIndex: number | null;
   pinned: boolean;
   onHover: (index: number | null) => void;
@@ -49,6 +51,7 @@ const IAS_COLOR = '#fbbf24';
 const GS_COLOR = '#94a3b8';
 const FUEL_COLOR = '#a3e635';
 const RESERVE_COLOR = '#ef4444';
+const APU_COLOR = '#06b6d4';
 
 function pathFor(xs: number[], ys: (number | null)[], from = 0, to = xs.length - 1): string {
   let d = '';
@@ -70,7 +73,7 @@ function pathFor(xs: number[], ys: (number | null)[], from = 0, to = xs.length -
  * tiempo, con fondo por etapa, eventos y un cursor que muestra todos los
  * datos del punto. El cursor se sincroniza con el mapa.
  */
-export function FlightProfileChart({ points, times, distances, spans, markers, fuel, reserveKg, activeIndex, pinned, onHover, onSelect, onPin }: FlightProfileChartProps) {
+export function FlightProfileChart({ points, times, distances, spans, markers, fuel, reserveKg, apu, activeIndex, pinned, onHover, onSelect, onPin }: FlightProfileChartProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(800);
   const [hoveredMarker, setHoveredMarker] = useState<EventMarker | null>(null);
@@ -162,6 +165,7 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
   const active = activeIndex !== null ? points[activeIndex] : undefined;
   const ax = activeIndex !== null ? geo.xs[activeIndex] : undefined;
   const flow = activeIndex !== null && hasFuel ? fuelFlowAt(fuel.values, times, activeIndex) : null;
+  const apuOn = activeIndex !== null && apu.some((r) => times[activeIndex]! >= r.start && times[activeIndex]! <= r.end);
   const nearMarkers = active ? markers.filter((m) => Math.abs(m.time - times[activeIndex!]!) <= 30_000) : [];
   const tooltipLeft = ax !== undefined && ax > width - 250 ? ax - 236 : (ax ?? 0) + 14;
 
@@ -253,6 +257,21 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
         {/* Combustible */}
         {hasFuel ? (
           <g>
+            {apu.length > 0 ? (
+              <g>
+                <text x={LEFT - 6} y={FUEL.top - 10} textAnchor="end" className="text-[10px] font-semibold" fill={APU_COLOR}>
+                  APU
+                </text>
+                <line x1={LEFT} x2={width - RIGHT} y1={FUEL.top - 13} y2={FUEL.top - 13} stroke="var(--border)" />
+                {apu.map((r, i) => (
+                  <rect key={`apu${i}`} x={x(r.start)} y={FUEL.top - 16} width={Math.max(2, x(r.end) - x(r.start))} height={6} rx={3} fill={APU_COLOR}>
+                    <title>
+                      APU en marcha {formatZuluTime(r.start).slice(0, 5)}Z–{formatZuluTime(r.end).slice(0, 5)}Z ({Math.round((r.end - r.start) / 60_000)} min)
+                    </title>
+                  </rect>
+                ))}
+              </g>
+            ) : null}
             {spans.map((s, i) => (
               <rect
                 key={`f${i}`}
@@ -412,6 +431,12 @@ export function FlightProfileChart({ points, times, distances, spans, markers, f
               {m.detail ? <span className="text-muted"> · {m.detail}</span> : null}
             </p>
           ))}
+          {apuOn ? (
+            <p className="mt-1 flex items-center gap-1.5 text-[11px]" style={{ color: APU_COLOR }}>
+              <span className="size-2 rounded-full" style={{ background: APU_COLOR }} aria-hidden />
+              APU en marcha
+            </p>
+          ) : null}
           {pinned ? <p className="mt-1 text-[10px] text-muted">Fijado · clic o Esc para soltar</p> : null}
         </div>
       ) : null}

@@ -159,6 +159,9 @@ export interface PirepFuel {
   used_kg?: number;
   samples?: number;
   refueled_kg?: number;
+  /** Combustible gastado antes del primer arranque de motor (APU, normalmente). */
+  before_engines_kg?: number;
+  apu?: { minutes: number; starts: number; first_on_at?: string; last_off_at?: string; running_at_start: boolean; running_at_end: boolean };
   stages?: Partial<Record<'taxi_out' | 'climb' | 'cruise' | 'descent' | 'taxi_in', PirepFuelStage>>;
   plan?: { block_kg?: number; trip_kg?: number; reserve_kg?: number; landing_kg?: number; units?: string };
 }

@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(12);
+select plan(14);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000f1', 'piloto@fuel.test', '{"display_name":"Piloto Fuel"}');
@@ -98,7 +98,10 @@ from t, (values
   (0, 'block_off', 'pushback', interval '105 minutes', '{"fuel_kg":6000}'::jsonb),
   (1, 'takeoff', 'initial_climb', interval '95 minutes', '{"fuel_kg":5850}'::jsonb),
   (2, 'touchdown', 'landing', interval '40 minutes', '{"vs_fpm":-210,"fuel_kg":1000}'::jsonb),
-  (3, 'block_on', 'taxi_in', interval '35 minutes', '{"fuel_kg":950}'::jsonb)
+  (3, 'block_on', 'taxi_in', interval '35 minutes', '{"fuel_kg":950}'::jsonb),
+  (4, 'note', 'preflight', interval '108 minutes', '{"kind":"apu","state":"start","fuel_kg":6000}'::jsonb),
+  (5, 'engine_start', 'pushback', interval '99 minutes', '{"running":1,"count":2}'::jsonb),
+  (6, 'note', 'taxi_out', interval '98 minutes', '{"kind":"apu","state":"stop","fuel_kg":5880}'::jsonb)
 ) as e(seq, type, phase, ago, data);
 
 set local role service_role;
@@ -143,6 +146,12 @@ select results_eq(
   'Aterrizar con 1,000 kg y reserva de 1,100 kg resta 10 puntos'
 );
 select is((select score::int from fuel), 90, 'El puntaje refleja la regla de reserva');
+select results_eq(
+  $$select (f -> 'apu' ->> 'minutes')::numeric, (f -> 'apu' ->> 'starts')::int, (f -> 'apu' ->> 'running_at_start')::boolean, (f -> 'apu' ->> 'running_at_end')::boolean from fuel$$,
+  $$values (10.0::numeric, 1, false, false)$$,
+  'El PIREP registra 10 minutos de APU'
+);
+select is((select (f ->> 'before_engines_kg')::int from fuel), 100, 'Combustible gastado antes del primer arranque de motor');
 
 select * from finish();
 rollback;

@@ -218,7 +218,7 @@ export function flightExtremes(points: readonly AnalysisPoint[]): FlightExtremes
 export interface EventMarker {
   id: string;
   time: number;
-  kind: 'block_off' | 'takeoff' | 'touchdown' | 'block_on' | 'engine' | 'pause' | 'warning' | 'go_around';
+  kind: 'block_off' | 'takeoff' | 'touchdown' | 'block_on' | 'engine' | 'apu' | 'pause' | 'warning' | 'go_around';
   label: string;
   detail: string | null;
   /** Letra o símbolo corto que se dibuja en el marcador. */
@@ -233,6 +233,7 @@ function num(data: Record<string, unknown>, key: string): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
+const APU_LABELS: Record<string, string> = { start: 'APU encendida', stop: 'APU apagada', running: 'APU ya en marcha al iniciar ACARS' };
 const WARNING_LABELS: Record<string, string> = { overspeed: 'Sobrevelocidad', stall: 'Pérdida', slew: 'Slew', crash: 'Choque' };
 const GO_AROUND_LABELS: Record<string, string> = { go_around: 'Motor y al aire', touch_and_go: 'Toque y despegue', rejected_takeoff: 'Despegue abortado' };
 
@@ -285,6 +286,12 @@ export function eventMarkers(events: readonly AnalysisEvent[]): EventMarker[] {
           glyph: '!',
           color: '#dc2626',
         });
+        break;
+      case 'note':
+        if (d.kind === 'apu') {
+          const label = APU_LABELS[String(d.state)] ?? 'APU';
+          out.push({ ...base, kind: 'apu', label, detail: num(d, 'fuel_kg') !== null ? `${num(d, 'fuel_kg')} kg a bordo` : null, glyph: 'A', color: '#06b6d4' });
+        }
         break;
       case 'phase_change':
         if (d.reason === 'go_around' || d.reason === 'touch_and_go' || d.reason === 'rejected_takeoff') {
@@ -359,6 +366,26 @@ export function fuelFlowAt(values: readonly (number | null)[], times: readonly n
   if (hours <= 0) return null;
   const burn = (values[a]! - values[b]!) / hours;
   return burn < 0 ? null : Math.round(burn);
+}
+
+/** Intervalos (ms) con la APU en marcha según las notas del conector. */
+export function apuIntervals(events: readonly AnalysisEvent[], endTime: number): { start: number; end: number }[] {
+  const out: { start: number; end: number }[] = [];
+  let since: number | null = null;
+  const notes = events
+    .filter((e) => e.type === 'note' && (e.data as Record<string, unknown> | null)?.kind === 'apu')
+    .sort((a, b) => Date.parse(a.occurred_at) - Date.parse(b.occurred_at));
+  for (const e of notes) {
+    const state = (e.data as Record<string, unknown>).state;
+    const t = Date.parse(e.occurred_at);
+    if ((state === 'start' || state === 'running') && since === null) since = t;
+    else if (state === 'stop' && since !== null) {
+      out.push({ start: since, end: t });
+      since = null;
+    }
+  }
+  if (since !== null) out.push({ start: since, end: Math.max(since, endTime) });
+  return out;
 }
 
 // -----------------------------------------------------------------------------

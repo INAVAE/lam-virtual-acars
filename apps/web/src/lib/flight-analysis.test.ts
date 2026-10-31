@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   altitudeBand,
+  apuIntervals,
   cumulativeDistance,
   eventMarkers,
   flightExtremes,
@@ -135,5 +136,27 @@ describe('flight-analysis', () => {
     expect(approx.approximate).toBe(true);
     expect(approx.values.slice(0, 6)).toEqual([6000, 5900, 5800, 5700, 5600, null]);
     expect(fuelSeries(TRACK, times, []).values.every((v) => v === null)).toBe(true);
+  });
+
+  it('APU: marcadores e intervalos en marcha', () => {
+    const apu = (id: string, min: number, state: string) => ({
+      id,
+      seq: 0,
+      type: 'note',
+      phase: 'preflight',
+      occurred_at: new Date(t0 + min * 60_000).toISOString(),
+      altitude_ft: null,
+      data: { kind: 'apu', state, fuel_kg: 6000 },
+    });
+    const events = [apu('a', 0, 'start'), apu('b', 12, 'stop'), apu('c', 60, 'start')];
+    expect(apuIntervals(events, t0 + 70 * 60_000)).toEqual([
+      { start: t0, end: t0 + 12 * 60_000 },
+      { start: t0 + 60 * 60_000, end: t0 + 70 * 60_000 },
+    ]);
+    const m = eventMarkers(events);
+    expect(m.map((x) => x.label)).toEqual(['APU encendida', 'APU apagada', 'APU encendida']);
+    expect(m[0]!.detail).toBe('6000 kg a bordo');
+    expect(eventMarkers([{ ...apu('d', 0, 'running') }])[0]!.label).toBe('APU ya en marcha al iniciar ACARS');
+    expect(eventMarkers([{ ...apu('e', 0, 'start'), data: { kind: 'adapter' } }])).toEqual([]);
   });
 });
