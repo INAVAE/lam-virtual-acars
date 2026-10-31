@@ -8,7 +8,7 @@
 - [ ] 7.2 Al elegir un avión: su trayectoria volada con fases y parámetros (como en el PIREP) y la ruta faltante al destino en línea roja punteada, actualizándose hasta la llegada.
 - [ ] 7.3 Selección de varios aviones, con sus rutas visibles a la vez.
 - [ ] 7.4 Eventos con tres escenarios (mismo origen y destino; cualquier origen a un destino; un origen a varios destinos), registro aprobado por el creador, PIREP para la aerolínea de cada piloto y color, nombre, folio y duración del evento en el mapa.
-- [ ] 7.5 Tours por aerolínea con legs y tipos de aeronave permitidos; color propio en el mapa y "Tour · Leg n/N" en el vuelo activo.
+- [ ] 7.5 Tours por aerolínea con legs y tipos de aeronave permitidos, abiertos a pilotos de cualquier aerolínea; color propio en el mapa y "Tour · Leg n/N" en el vuelo activo.
 - [ ] Resolver las preguntas abiertas del documento antes de construir.
 
 ## Fase 5, PIREP automático (construida; falta revisar un PIREP real en la web)

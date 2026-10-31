@@ -100,13 +100,15 @@ Tours y Eventos comparten el color en el mapa y la etiqueta del vuelo activo.
 
 - **Quién los crea:** cada aerolínea crea sus propios tours de rutas a cualquier parte del mundo, con el número de vuelos (legs) que decida.
 - **Aeronaves:** cada tour especifica los tipos de aeronave que pueden participar.
+- **Inscripción:** cualquier piloto de cualquier aerolínea se puede inscribir, no solo los de la aerolínea que creó el tour.
 - **Mapa:** los aviones que vuelan un leg de tour tienen un color diferente. Al elegirlos en el mapa o verlos como vuelo activo, se indica el tour y el número de leg.
 
 **Propuesta de modelo:**
 
 - **`tours`:** aerolínea, código (por ejemplo, TOUR-MXL-01), nombre, descripción, imagen, color, tipos permitidos, fechas de vigencia opcionales y estado.
 - **`tour_legs`:** tour, número de leg, origen, destino, distancia, notas y, opcional, una ruta sugerida.
-- **`tour_progress`:**
+- **`tour_enrollments` / `tour_progress`:**
+  - Inscripción abierta a pilotos de todas las aerolíneas (se registra la aerolínea con la que vuela cada uno).
   - Piloto, tour, leg actual, legs completados (con su PIREP), fecha de inicio y de fin.
   - Un leg cuenta cuando su PIREP se acepta.
 - **Vuelo:**
@@ -129,6 +131,8 @@ Tours y Eventos comparten el color en el mapa y la etiqueta del vuelo activo.
    - ¿Los legs se vuelan en orden obligatorio?
    - ¿Un leg cuenta con el PIREP aceptado, o también en revisión?
    - ¿Hay insignia o reconocimiento al completar el tour?
+   - Un piloto de otra aerolínea inscrito en el tour: ¿vuela con la flota de su propia aerolínea y el PIREP cuenta allí, o con la de la aerolínea dueña del tour?
+   - ¿La inscripción al tour es automática o la aprueba la aerolínea que lo creó?
 3. **Mapa:**
    - ¿Los colores de evento y tour reemplazan el color por fase de la figura, o se agrega un contorno o halo y se conserva la fase?
    - ¿Qué pasa con un vuelo que es de evento y de tour a la vez?
