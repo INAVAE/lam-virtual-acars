@@ -62,6 +62,11 @@ Cada regla cumplida queda en `pireps.findings` con su valor medido y el umbral q
   - consumo, tiempo y flujo (kg/h) por etapa: rodaje de salida, despegue y ascenso, crucero, descenso y aproximación, rodaje de llegada;
   - cargas detectadas (subidas de más de 50 kg);
   - plan de SimBrief en kg (bloque, viaje, reserva final y combustible al aterrizar aproximado).
+- **APU (conector 0.1.17):** notas `{kind: "apu", state: start|stop|running}` cuando la APU queda en marcha o se apaga, con 5 s de estabilidad y la hora del cambio. `running` indica que ya estaba encendida al iniciar ACARS.
+  - Genérico: `APU PCT RPM` ≥ 95 %.
+  - PMDG 737: selector en ON/START y EGT de APU > 300 °C.
+  - PMDG 777: `APURunning` del SDK.
+  - El resumen agrega `apu` (minutos, arranques, primera y última hora) y `before_engines_kg`, el combustible gastado antes del primer arranque de motor.
 - **Vuelos anteriores:** sin combustible en la traza, la gráfica se interpola entre los eventos y se marca como aproximada.
 - **PIREP existentes:** recibieron su resumen al aplicar la migración.
 
@@ -98,7 +103,7 @@ Mientras el PIREP está en revisión, el piloto puede comentarlo con `comment_pi
     - Botones para encuadrar la ruta, la salida y el destino a zoom 14, donde se ven pista y rodaje.
   - **Gráficas:** altitud coloreada por etapa, IAS y GS, y combustible con la línea de la reserva del plan, en el tiempo.
     - Cinta y fondo por fase, con un punto en cada cambio de fase.
-    - Marcadores de eventos con su recuadro.
+    - Marcadores de eventos con su recuadro; franja de APU en marcha sobre la gráfica de combustible.
   - **Cursor compartido:** pasar el puntero por la ruta o por las gráficas mueve un avión en el mapa (orientado por el rumbo) y el cursor en las gráficas.
     - El recuadro muestra hora Z, T+, fase, altitud, VS, IAS, GS, rumbo, distancia recorrida, combustible, flujo (kg/h), posición y el evento cercano.
     - Un clic fija el punto; las flechas recorren la traza.
