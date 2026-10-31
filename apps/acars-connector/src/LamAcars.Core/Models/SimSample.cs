@@ -29,6 +29,8 @@ public sealed record SimSample
     /// <summary>Flaps de borde de salida en grados (posición real, o el retén de la palanca si la aeronave solo da eso).</summary>
     public double? FlapsDeg { get; init; }
     public double? FuelTotalKg { get; init; }
+    /// <summary>APU en marcha (null si la aeronave no lo informa).</summary>
+    public bool? ApuRunning { get; init; }
     public double? GForce { get; init; }
     public double? PitchDeg { get; init; }
     public double? BankDeg { get; init; }

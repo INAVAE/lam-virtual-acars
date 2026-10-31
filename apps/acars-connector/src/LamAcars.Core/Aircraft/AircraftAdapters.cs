@@ -93,6 +93,7 @@ public class GenericAdapter : IAircraftAdapter
         new("IS SLEW ACTIVE", "bool"),
         new("OVERSPEED WARNING", "bool"),
         new("STALL WARNING", "bool"),
+        new("APU PCT RPM", "percent over 100"),
     };
 
     public virtual SimSample Map(IReadOnlyDictionary<string, double> v, DateTimeOffset time, bool paused)
@@ -136,6 +137,8 @@ public class GenericAdapter : IAircraftAdapter
             FlapsRatio = Get("FLAPS HANDLE PERCENT"),
             FlapsDeg = Get("TRAILING EDGE FLAPS LEFT ANGLE") is { } fd ? Math.Round(fd, 1) : null,
             FuelTotalKg = Get("FUEL TOTAL QUANTITY WEIGHT") is { } lb ? lb * LbToKg : null,
+            // APU en marcha a partir del 95 % de RPM (arranque terminado).
+            ApuRunning = Get("APU PCT RPM") is { } apu ? apu >= 0.95 : null,
             GForce = Get("G FORCE"),
             PitchDeg = pitch,
             BankDeg = Get("PLANE BANK DEGREES"),
@@ -175,7 +178,7 @@ public sealed class FenixAdapter : GenericAdapter
 
     public override IReadOnlyList<SimVar> Variables { get; } = new GenericAdapter().Variables.Concat(Extra).ToArray();
 
-    public override IReadOnlyList<string> Diagnostics { get; } = new[] { ParkingBrakeLever, Chocks, "BRAKE PARKING POSITION" };
+    public override IReadOnlyList<string> Diagnostics { get; } = new[] { ParkingBrakeLever, Chocks, "BRAKE PARKING POSITION", "APU PCT RPM" };
 
     public override SimSample Map(IReadOnlyDictionary<string, double> values, DateTimeOffset time, bool paused)
     {

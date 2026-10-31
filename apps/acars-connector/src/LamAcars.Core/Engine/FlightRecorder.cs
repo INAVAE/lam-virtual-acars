@@ -38,6 +38,8 @@ public sealed class FlightRecorder
     private DateTimeOffset? _overspeedSince;
     private DateTimeOffset? _stallSince;
     private SimSample? _liftoff;
+    private bool? _apuState;
+    private (bool State, DateTimeOffset Since)? _apuPending;
 
     public FlightRecorder(IFlightSink sink, FlightRecorderOptions? options = null)
     {
@@ -63,6 +65,7 @@ public sealed class FlightRecorder
     {
         var prev = _previous;
         DetectSimEvents(prev, s);
+        TrackApu(s);
         if (prev is { OnGround: true } && !s.OnGround) _liftoff = s;
 
         foreach (var tr in _machine.Update(s))
@@ -164,6 +167,39 @@ public sealed class FlightRecorder
         if (_stallSince is { } st && (s.Time - st).TotalSeconds >= 2 && (prev.Time - st).TotalSeconds < 2)
             Emit(FlightEventTypes.Stall, _machine.Phase, s, new Dictionary<string, object?> { ["ias_kt"] = Round(s.IasKt) });
     }
+
+    /// <summary>
+    /// APU: nota al encender y al apagar (estado estable 5 s, con la hora del cambio)
+    /// y otra si ya estaba en marcha al iniciar ACARS.
+    /// </summary>
+    private void TrackApu(SimSample s)
+    {
+        if (s.ApuRunning is not { } running) return;
+        if (_apuState is null)
+        {
+            _apuState = running;
+            if (running) EmitApu("running", s, s.Time);
+            return;
+        }
+        if (running == _apuState)
+        {
+            _apuPending = null;
+            return;
+        }
+        if (_apuPending is not { } pending || pending.State != running)
+        {
+            _apuPending = (running, s.Time);
+            return;
+        }
+        if ((s.Time - pending.Since).TotalSeconds < 5) return;
+        _apuState = running;
+        _apuPending = null;
+        EmitApu(running ? "start" : "stop", s, pending.Since);
+    }
+
+    private void EmitApu(string state, SimSample s, DateTimeOffset at) =>
+        Emit(FlightEventTypes.Note, _machine.Phase, s,
+            new Dictionary<string, object?> { ["kind"] = "apu", ["state"] = state, ["fuel_kg"] = Round(s.FuelTotalKg) }, at);
 
     private void EmitBlockOn(SimSample s)
     {

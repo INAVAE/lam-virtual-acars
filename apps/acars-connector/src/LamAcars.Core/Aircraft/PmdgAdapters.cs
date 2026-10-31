@@ -30,11 +30,12 @@ public abstract class PmdgAdapter : GenericAdapter, IClientDataAdapter
     public const string KeyFlapsDeg = "PMDG:FLAPS_DEG";
     public const string KeyModel = "PMDG:MODEL";
     public const string KeyFuelLbs = "PMDG:FUEL_LBS";
+    public const string KeyApuRunning = "PMDG:APU_RUNNING";
 
     public abstract ClientDataArea ClientData { get; }
 
     public override IReadOnlyList<string> Diagnostics { get; } =
-        new[] { KeyModel, KeyParkingBrake, KeyGearDown, KeyFlapsDeg, "BRAKE PARKING POSITION", "GEAR HANDLE POSITION" };
+        new[] { KeyModel, KeyParkingBrake, KeyGearDown, KeyFlapsDeg, KeyApuRunning, "BRAKE PARKING POSITION", "GEAR HANDLE POSITION", "APU PCT RPM" };
 
     public void Read(ReadOnlySpan<byte> data, IDictionary<string, double> values)
     {
@@ -63,6 +64,7 @@ public abstract class PmdgAdapter : GenericAdapter, IClientDataAdapter
             GearDown = values.TryGetValue(KeyGearDown, out var gear) ? gear > 0.5 : sample.GearDown,
             FlapsDeg = values.TryGetValue(KeyFlapsDeg, out var flaps) && (SdkFlapsAreActual || sample.FlapsDeg is null) ? flaps : sample.FlapsDeg,
             FuelTotalKg = sample.FuelTotalKg ?? (values.TryGetValue(KeyFuelLbs, out var lbs) ? lbs * 0.45359237 : (double?)null),
+            ApuRunning = values.TryGetValue(KeyApuRunning, out var apu) ? apu > 0.5 : sample.ApuRunning,
         };
     }
 
@@ -89,6 +91,8 @@ public sealed class Pmdg737Adapter : PmdgAdapter
     public const int GearLever = 506;         // uchar: 0 UP, 1 OFF, 2 DOWN
     public const int ParkingBrakeAnnun = 574; // bool
     public const int AircraftModel = 654;     // ushort
+    public const int ApuEgtNeedle = 200;      // float, °C
+    public const int ApuSelector = 379;       // uchar: 0 OFF, 1 ON, 2 START
 
     private static readonly Regex Title = new(@"\b737-?[6789]00|\bPMDG\b.*\b737\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
@@ -106,6 +110,8 @@ public sealed class Pmdg737Adapter : PmdgAdapter
         v[KeyFlapsDeg] = Math.Round(Float(d, TeFlapsNeedle), 1);
         v[KeyModel] = BinaryPrimitives.ReadUInt16LittleEndian(d[AircraftModel..]);
         v[KeyFuelLbs] = Fuel(Float(d, FuelCenter), Float(d, FuelLeft), Float(d, FuelRight));
+        // El SDK del 737 no publica "APU en marcha": selector en ON/START y EGT de APU encendida.
+        v[KeyApuRunning] = d[ApuSelector] >= 1 && Float(d, ApuEgtNeedle) > 300 ? 1 : 0;
     }
 
     protected override string? IcaoForModel(int model) => model switch
@@ -134,6 +140,7 @@ public sealed class Pmdg777Adapter : PmdgAdapter
     public const int FuelRight = 504;
     public const int FuelAux = 508;
     public const int AircraftModel = 542;      // uchar
+    public const int ApuRunningFlag = 586;     // bool
 
     private static readonly double[] FlapDetents = { 0, 1, 5, 15, 20, 25, 30 };
     private static readonly Regex Title = new(@"\b777-?(200|300|F)|\b777F\b|\bB?77[WL]\b|\bPMDG\b.*\b777\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -153,6 +160,7 @@ public sealed class Pmdg777Adapter : PmdgAdapter
         if (d[FlapsLever] < FlapDetents.Length) v[KeyFlapsDeg] = FlapDetents[d[FlapsLever]];
         v[KeyModel] = d[AircraftModel];
         v[KeyFuelLbs] = Fuel(Float(d, FuelCenter), Float(d, FuelLeft), Float(d, FuelRight), Float(d, FuelAux));
+        v[KeyApuRunning] = Bool(d, ApuRunningFlag) ? 1 : 0;
     }
 
     protected override string? IcaoForModel(int model) => model switch
