@@ -304,37 +304,68 @@ const HISTORY = [
 const PIREP_ID = id(1200);
 const t0 = Date.now() - 3 * 3600_000;
 const at = (min) => new Date(t0 + min * 60_000).toISOString();
-const TRACK = Array.from({ length: 80 }, (_, i) => {
-  const f = i / 79;
-  const alt = f < 0.1 ? 7316 : f < 0.35 ? 7316 + ((f - 0.1) / 0.25) * 17700 : f < 0.6 ? 25000 : f < 0.95 ? 25000 - ((f - 0.6) / 0.35) * 24980 : 16;
+// Vuelo simulado de 56 min con perfil realista: APU, arranque, rodaje, ascenso,
+// crucero, descenso y rodaje de llegada. El combustible se integra por etapa.
+const FUEL_RATE = (m) => (m < 0.5 ? 0 : m < 3 ? 2 : m < 8.6 ? 18 : m < 20 ? 55 : m < 34 ? 40 : m < 52.5 ? 20 : 14); // kg/min
+const fuelAt = (m) => {
+  let kg = 6129;
+  for (let t = 0; t < m; t += 0.05) kg -= FUEL_RATE(t) * 0.05;
+  return Math.round(kg);
+};
+const phaseAt = (m) =>
+  m < 2 ? 'preflight' : m < 3 ? 'pushback' : m < 8.6 ? 'taxi_out' : m < 9.3 ? 'takeoff' : m < 10 ? 'initial_climb' : m < 20 ? 'climb' : m < 34 ? 'cruise' : m < 50 ? 'descent' : m < 52.5 ? 'approach' : m < 53 ? 'landing' : 'taxi_in';
+const altAt = (m) => (m < 9.3 ? 7316 : m < 20 ? 7316 + ((m - 9.3) / 10.7) * 17684 : m < 34 ? 25000 : m < 52.5 ? 25000 - ((m - 34) / 18.5) * 24984 : 16);
+const iasAt = (m) => (m < 2 ? 0 : m < 3 ? 3 : m < 8.6 ? 16 : m < 9.3 ? 140 : m < 12 ? 210 : m < 20 ? 280 : m < 34 ? 270 : m < 48 ? 280 : m < 52.5 ? 150 : m < 53 ? 90 : 14);
+const TRACK = Array.from({ length: 140 }, (_, i) => {
+  const m = (i / 139) * 56;
+  const f = m / 56;
+  const phase = phaseAt(m);
+  const ground = ['preflight', 'pushback', 'taxi_out', 'taxi_in'].includes(phase) || (phase === 'landing' && m > 52.8);
+  const ias = iasAt(m);
   return {
     seq: i,
-    sampled_at: at(f * 56),
+    sampled_at: at(m),
     latitude: 19.436 - f * 2.68 + Math.sin(f * Math.PI) * 0.25,
     longitude: -99.072 - f * 0.68,
-    altitude_ft: Math.round(alt),
-    gs_kt: f < 0.1 || f > 0.95 ? 18 : 420,
-    ias_kt: f < 0.1 || f > 0.95 ? 18 : 280,
-    vs_fpm: f < 0.1 || f > 0.95 ? 0 : f < 0.35 ? 1800 : f < 0.6 ? 0 : -1200,
+    altitude_ft: Math.round(altAt(m)),
+    gs_kt: Math.round(ground ? ias : ias * (1 + altAt(m) / 60000)),
+    ias_kt: ias,
+    vs_fpm: phase === 'climb' || phase === 'initial_climb' ? 1650 : phase === 'descent' || phase === 'approach' ? -1350 : 0,
     heading_deg: 195,
-    fuel_kg: Math.round(6129 - (f < 0.1 ? f * 1000 : 100 + (f - 0.1) * 2080)),
-    on_ground: f < 0.1 || f > 0.95,
-    phase: f < 0.1 ? 'taxi_out' : f < 0.35 ? 'climb' : f < 0.6 ? 'cruise' : f < 0.95 ? 'descent' : 'taxi_in',
+    fuel_kg: fuelAt(m),
+    on_ground: ground,
+    phase,
   };
 });
 const EVENTS = [
   ['note', 'aircraft_connected', 0, { kind: 'adapter', adapter: 'PMDG 737', sdk: true }],
-  ['note', 'preflight', 1, { kind: 'apu', state: 'start', fuel_kg: 6129 }],
-  ['note', 'taxi_out', 9, { kind: 'apu', state: 'stop', fuel_kg: 6010 }],
   ['phase_change', 'preflight', 0, { from: 'aircraft_connected', to: 'preflight' }],
-  ['block_off', 'pushback', 3, { fuel_kg: 6129 }],
-  ['engine_start', 'pushback', 5, { running: 1, count: 2 }],
-  ['engine_start', 'pushback', 6, { running: 2, count: 2 }],
-  ['takeoff', 'initial_climb', 13, { ias_kt: 153, pitch_deg: 8.3, flaps_deg: 5 }],
-  ['phase_change', 'cruise', 23, { from: 'climb', to: 'cruise' }],
-  ['touchdown', 'landing', 52, { vs_fpm: -294, g_force: 1.25, flaps_deg: 30 }],
-  ['block_on', 'taxi_in', 56, { fuel_kg: 4061 }],
+  ['note', 'preflight', 0.5, { kind: 'apu', state: 'start', fuel_kg: fuelAt(0.5) }],
+  ['block_off', 'pushback', 2, { fuel_kg: fuelAt(2) }],
+  ['engine_start', 'pushback', 3, { running: 1, count: 2 }],
+  ['engine_start', 'pushback', 3.6, { running: 2, count: 2 }],
+  ['note', 'taxi_out', 6, { kind: 'apu', state: 'stop', fuel_kg: fuelAt(6) }],
+  ['takeoff', 'initial_climb', 9.3, { ias_kt: 153, pitch_deg: 8.3, flaps_deg: 5, fuel_kg: fuelAt(9.3) }],
+  ['phase_change', 'cruise', 20, { from: 'climb', to: 'cruise' }],
+  ['touchdown', 'landing', 52.8, { vs_fpm: -294, g_force: 1.25, flaps_deg: 30, fuel_kg: fuelAt(52.8) }],
+  ['block_on', 'taxi_in', 55.5, { fuel_kg: fuelAt(55.5) }],
 ].map(([type, phase, min, data], i) => ({ id: id(1300 + i), seq: i, type, phase, occurred_at: at(min), latitude: null, longitude: null, altitude_ft: null, data }));
+const stage = (a, b) => ({ kg: fuelAt(a) - fuelAt(b), minutes: Math.round((b - a) * 10) / 10, kg_per_hour: Math.round(((fuelAt(a) - fuelAt(b)) / (b - a)) * 60) });
+const MOCK_FUEL = {
+  block_off_kg: fuelAt(2),
+  takeoff_kg: fuelAt(9.3),
+  landing_kg: fuelAt(52.8),
+  block_on_kg: fuelAt(55.5),
+  taxi_out_kg: fuelAt(2) - fuelAt(9.3),
+  trip_kg: fuelAt(9.3) - fuelAt(52.8),
+  taxi_in_kg: fuelAt(52.8) - fuelAt(55.5),
+  used_kg: fuelAt(2) - fuelAt(55.5),
+  samples: 140,
+  before_engines_kg: fuelAt(0) - fuelAt(3),
+  apu: { minutes: 5.5, starts: 1, first_on_at: at(0.5), last_off_at: at(6), running_at_start: false, running_at_end: false },
+  stages: { taxi_out: stage(0, 9.3), climb: stage(9.3, 20), cruise: stage(20, 34), descent: stage(34, 53), taxi_in: stage(53, 56) },
+  plan: { block_kg: 6144, trip_kg: 1777, reserve_kg: 1118, landing_kg: 6144 - 1777 - (fuelAt(2) - fuelAt(9.3)), units: 'kg' },
+};
 const pirepRow = (n, callsign, status, score, extra = {}) => ({
   id: n === 0 ? PIREP_ID : id(1200 + n),
   airline_id: MXL.id,
@@ -350,15 +381,15 @@ const pirepRow = (n, callsign, status, score, extra = {}) => ({
   destination_airport_id: 2,
   arrival_airport_id: 2,
   diverted: false,
-  block_off_at: at(3),
-  takeoff_at: at(13),
-  landing_at: at(52),
-  block_on_at: at(56),
-  block_minutes: 53,
-  flight_minutes: 39,
+  block_off_at: at(2),
+  takeoff_at: at(9.3),
+  landing_at: at(52.8),
+  block_on_at: at(55.5),
+  block_minutes: 54,
+  flight_minutes: 44,
   distance_nm: 207,
   planned_distance_nm: 165,
-  fuel_used_kg: 2068,
+  fuel_used_kg: MOCK_FUEL.used_kg,
   max_altitude_ft: 25024,
   landing_vs_fpm: -294,
   landing_g: 1.25,
@@ -367,35 +398,15 @@ const pirepRow = (n, callsign, status, score, extra = {}) => ({
   findings: [{ code: 'taxi_speed', label: 'Rodaje rápido', penalty: 5, critical: false, value: 32, threshold: 30, unit: 'kt' }],
   metrics: {
     block_estimated: false,
-    fuel_block_off_kg: 6129,
-    fuel_block_on_kg: 4061,
+    fuel_block_off_kg: MOCK_FUEL.block_off_kg,
+    fuel_block_on_kg: MOCK_FUEL.block_on_kg,
     takeoff: { ias_kt: 153, pitch_deg: 8.3, flaps_deg: 5 },
     touchdown: { vs_fpm: -294, g_force: 1.25, pitch_deg: 3.1, bank_deg: 1.6, ias_kt: 141, bounces: 0, flaps_deg: 30, gear_down: true, vs_source: 'touchdown_normal_velocity' },
     max_taxi_gs_kt: 32,
     sim_aircraft_title: '737-800BCF BW',
     sim_aircraft_icao: 'B738',
-    client_version: '0.1.16',
-    fuel: {
-      block_off_kg: 6129,
-      takeoff_kg: 5901,
-      landing_kg: 4140,
-      block_on_kg: 4061,
-      taxi_out_kg: 228,
-      trip_kg: 1761,
-      taxi_in_kg: 79,
-      used_kg: 2068,
-      samples: 80,
-      before_engines_kg: 48,
-      apu: { minutes: 8, starts: 1, first_on_at: at(1), last_off_at: at(9), running_at_start: false, running_at_end: false },
-      stages: {
-        taxi_out: { kg: 228, minutes: 10.1, kg_per_hour: 1354 },
-        climb: { kg: 820, minutes: 14.2, kg_per_hour: 3465 },
-        cruise: { kg: 420, minutes: 14, kg_per_hour: 1800 },
-        descent: { kg: 521, minutes: 19.6, kg_per_hour: 1595 },
-        taxi_in: { kg: 79, minutes: 4, kg_per_hour: 1185 },
-      },
-      plan: { block_kg: 6144, trip_kg: 1777, reserve_kg: 1118, landing_kg: 4139, units: 'kg' },
-    },
+    client_version: '0.1.17',
+    fuel: MOCK_FUEL,
   },
   has_critical: false,
   status,
@@ -715,6 +726,19 @@ await shoot('25b-pirep-analysis-hover', `pireps/${PIREP_ID}`, {
     await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.4);
     await page.getByText('En el aire').first().waitFor();
     await page.waitForTimeout(1500);
+  },
+});
+await shoot('25c-pirep-apu-hover', `pireps/${PIREP_ID}`, {
+  waitFor: 'Análisis del vuelo',
+  action: async (page) => {
+    const chart = page.locator('svg[aria-label^="Perfil de altitud"]');
+    await chart.scrollIntoViewIfNeeded();
+    const box = await chart.boundingBox();
+    if (!box) throw new Error('No se encontró la gráfica');
+    // Minuto 1.5: APU en marcha, motores apagados.
+    await page.mouse.move(box.x + 56 + ((box.width - 72) * 1.5) / 56, box.y + box.height * 0.5);
+    await page.getByText('APU en marcha').first().waitFor();
+    await page.waitForTimeout(800);
   },
 });
 await shoot('26-pirep-detail-mobile', `pireps/${PIREP_ID}`, { viewport: { width: 390, height: 844 }, waitFor: 'Rodaje rápido' });
