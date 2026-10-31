@@ -76,6 +76,19 @@ Mientras el PIREP está en revisión, el piloto puede comentarlo con `comment_pi
 ## Web
 
 - **PIREP:** mis reportes con estadísticas, cola "Por revisar" (los más antiguos primero) y todos los de la aerolínea.
-- **Detalle:** resumen, trayectoria y perfil de altitud (SVG propio), despegue y aterrizaje, puntaje y faltas, revisión y bitácora de eventos.
+- **Detalle:** resumen, análisis del vuelo, despegue y aterrizaje, puntaje y faltas, revisión y bitácora de eventos.
+- **Análisis del vuelo** (`flight-analysis-panel.tsx`):
+  - **Mapa:** Leaflet con teselas de OpenStreetMap; en modo oscuro se invierten con CSS.
+    - Zoom con la rueda y desplazamiento arrastrando; pantalla completa.
+    - La ruta se colorea por etapa o por bandas de altitud.
+    - Muestra los aeropuertos (salida, destino y llegada real si hubo desvío) y los eventos (calzos, motores, despegue, contacto con pista, motor y al aire, pausa, avisos).
+    - Botones para encuadrar la ruta, la salida y el destino a zoom 14, donde se ven pista y rodaje.
+  - **Gráficas:** altitud coloreada por etapa, e IAS y GS, en el tiempo.
+    - Cinta y fondo por fase, con un punto en cada cambio de fase.
+    - Marcadores de eventos con su recuadro.
+  - **Cursor compartido:** pasar el puntero por la ruta o por las gráficas mueve un avión en el mapa (orientado por el rumbo) y el cursor en las gráficas.
+    - El recuadro muestra hora Z, T+, fase, altitud, VS, IAS, GS, rumbo, distancia recorrida, posición y el evento cercano.
+    - Un clic fija el punto; las flechas recorren la traza.
+  - **Extremos:** altitud, IAS, GS, ascenso y descenso máximos; un clic lleva al punto.
 - **Airlines → aerolínea:** puntaje mínimo y reglas de puntuación (solo el administrador las cambia).
 - **Dashboard y My Flights:** el dashboard muestra tus horas y los PIREP por revisar; el historial de My Flights enlaza a cada PIREP.

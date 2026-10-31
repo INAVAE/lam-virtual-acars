@@ -77,7 +77,16 @@ export function FlightMap({ points, times, markers, airports, colorMode, activeI
   // Mapa (una sola vez)
   useEffect(() => {
     if (!containerRef.current) return;
-    const map = L.map(containerRef.current, { zoomControl: true, worldCopyJump: true, minZoom: 2, maxZoom: 18 });
+    const map = L.map(containerRef.current, {
+      zoomControl: true,
+      worldCopyJump: true,
+      minZoom: 2,
+      maxZoom: 18,
+      // Zoom fraccionario: el encuadre aprovecha todo el mapa y la rueda es más suave.
+      zoomSnap: 0.25,
+      zoomDelta: 0.5,
+      wheelPxPerZoomLevel: 90,
+    });
     map.setView([19.43, -99.07], 6);
     mapRef.current = map;
     trackRef.current = L.layerGroup().addTo(map);
