@@ -40,6 +40,17 @@ public sealed class FlightRecorder
     private SimSample? _liftoff;
     private bool? _apuState;
     private (bool State, DateTimeOffset Since)? _apuPending;
+    private readonly Dictionary<string, AttitudeExcursion> _attitude = new();
+
+    /// <summary>
+    /// Umbrales de detección de actitud (los mínimos que una aerolínea puede usar
+    /// en sus reglas): alabeo de 30° (máximo de la operación normal), cabeceo de
+    /// +18° (por encima de un despegue normal) y −6° (por debajo de un descenso normal).
+    /// </summary>
+    public const double BankDetectDeg = 30, PitchUpDetectDeg = 18, PitchDownDetectDeg = -6;
+
+    /// <summary>Segundos que debe durar una excursión para registrarse (filtra la turbulencia).</summary>
+    public const double AttitudeMinSeconds = 2;
 
     public FlightRecorder(IFlightSink sink, FlightRecorderOptions? options = null)
     {
@@ -66,6 +77,7 @@ public sealed class FlightRecorder
         var prev = _previous;
         DetectSimEvents(prev, s);
         TrackApu(s);
+        TrackAttitude(s);
         if (prev is { OnGround: true } && !s.OnGround) _liftoff = s;
 
         foreach (var tr in _machine.Update(s))
@@ -200,6 +212,58 @@ public sealed class FlightRecorder
     private void EmitApu(string state, SimSample s, DateTimeOffset at) =>
         Emit(FlightEventTypes.Note, _machine.Phase, s,
             new Dictionary<string, object?> { ["kind"] = "apu", ["state"] = state, ["fuel_kg"] = Round(s.FuelTotalKg) }, at);
+
+    /// <summary>
+    /// Excursiones de actitud en vuelo: alabeo o cabeceo más allá de los umbrales de
+    /// detección durante 2 s o más. Se registra una nota por excursión, con la hora
+    /// de inicio, el valor máximo y la duración, cuando la actitud vuelve a lo normal
+    /// (1 s por debajo del umbral).
+    /// </summary>
+    private void TrackAttitude(SimSample s)
+    {
+        var airborne = !s.OnGround && !s.Paused && !s.Slew;
+        CheckAttitude("bank", airborne && s.BankDeg is { } b && Math.Abs(b) >= BankDetectDeg, s.BankDeg is { } bv ? Math.Abs(bv) : null, s);
+        CheckAttitude("pitch_up", airborne && s.PitchDeg is >= PitchUpDetectDeg, s.PitchDeg, s);
+        CheckAttitude("pitch_down", airborne && s.PitchDeg is <= PitchDownDetectDeg, s.PitchDeg, s);
+    }
+
+    private void CheckAttitude(string axis, bool beyond, double? value, SimSample s)
+    {
+        _attitude.TryGetValue(axis, out var x);
+        if (beyond && value is { } v)
+        {
+            if (x is null) _attitude[axis] = x = new AttitudeExcursion(s, v);
+            x.ClearSince = null;
+            x.LastBeyond = s.Time;
+            if (Math.Abs(v) > Math.Abs(x.Peak)) { x.Peak = v; x.PeakSample = s; }
+            return;
+        }
+        if (x is null) return;
+        x.ClearSince ??= s.Time;
+        if (!s.OnGround && (s.Time - x.ClearSince.Value).TotalSeconds < 1) return;
+        _attitude.Remove(axis);
+        var seconds = (x.LastBeyond - x.Start.Time).TotalSeconds;
+        if (seconds < AttitudeMinSeconds) return;
+        Emit(FlightEventTypes.Note, _machine.Phase, x.Start, new Dictionary<string, object?>
+        {
+            ["kind"] = "attitude",
+            ["axis"] = axis,
+            ["peak_deg"] = Math.Round(x.Peak, 1),
+            ["seconds"] = Math.Round(seconds),
+            ["altitude_ft"] = Math.Round(x.PeakSample.AltitudeFt),
+            ["agl_ft"] = Round(x.PeakSample.AglFt),
+            ["ias_kt"] = Round(x.PeakSample.IasKt),
+        }, x.Start.Time);
+    }
+
+    private sealed class AttitudeExcursion(SimSample start, double peak)
+    {
+        public SimSample Start { get; } = start;
+        public double Peak { get; set; } = peak;
+        public SimSample PeakSample { get; set; } = start;
+        public DateTimeOffset LastBeyond { get; set; } = start.Time;
+        public DateTimeOffset? ClearSince { get; set; }
+    }
 
     private void EmitBlockOn(SimSample s)
     {
