@@ -1,6 +1,7 @@
-import type { LiveFlight, LiveTrackPoint } from '@lam/shared-types';
-import { useQuery } from '@tanstack/react-query';
+import type { LiveFlight } from '@lam/shared-types';
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
+import { mergeTrace, type LiveTrace, type TraceResponse } from '@/lib/live';
 import { getSupabase } from '@/lib/supabase';
 
 /** El conector manda la posición cada 10 s: la web consulta con la misma frecuencia (ADR 0008). */
@@ -25,17 +26,28 @@ export function useLiveFlights(airlineId: string | null, refreshMs = LIVE_REFRES
   });
 }
 
-/** Traza del vuelo seleccionado; llega por lotes del conector, así que basta cada 30 s. */
-export function useLiveTrack(flightId: string | null) {
-  return useQuery({
-    queryKey: ['live-track', flightId],
-    enabled: Boolean(flightId),
-    refetchInterval: 30_000,
-    refetchIntervalInBackground: false,
-    queryFn: async (): Promise<LiveTrackPoint[]> => {
-      const { data, error } = await getSupabase().rpc('get_live_flight_track', { p_flight_id: flightId! });
-      if (error) throw error;
-      return Array.isArray(data) ? (data as unknown as LiveTrackPoint[]) : [];
-    },
+/**
+ * Trazas de los vuelos elegidos en el mapa. Cada consulta pide solo los puntos y
+ * eventos nuevos desde la anterior y los agrega a lo que ya se tiene.
+ */
+export function useLiveTraces(flightIds: readonly string[]) {
+  const queryClient = useQueryClient();
+  return useQueries({
+    queries: flightIds.map((id) => ({
+      queryKey: ['live-trace', id],
+      refetchInterval: 15_000,
+      refetchIntervalInBackground: false,
+      staleTime: 10_000,
+      queryFn: async (): Promise<LiveTrace> => {
+        const prev = queryClient.getQueryData<LiveTrace>(['live-trace', id]);
+        const { data, error } = await getSupabase().rpc('get_live_flight_trace', {
+          p_flight_id: id,
+          p_after_seq: prev?.lastSeq ?? -1,
+          p_after_event_seq: prev?.lastEventSeq ?? -1,
+        });
+        if (error) throw error;
+        return mergeTrace(prev, data as unknown as TraceResponse);
+      },
+    })),
   });
 }

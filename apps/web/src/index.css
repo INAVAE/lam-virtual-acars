@@ -231,6 +231,21 @@
 .lam-live.is-stale {
   opacity: 0.45;
 }
+/* Avión en evento o tour: la figura lleva el color del evento o tour con un halo claro. */
+.lam-live.is-special svg {
+  filter: drop-shadow(0 0 2px rgb(255 255 255 / 0.9));
+}
+.lam-live .lam-plane {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+.lam-ev.lam-ev-sm {
+  width: 16px;
+  height: 16px;
+  font-size: 9px;
+}
 /* Teselas: nocturnas en modo oscuro, apagadas en claro para que resalte la ruta. */
 .lam-tiles-dark {
   filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(85%) saturate(55%);

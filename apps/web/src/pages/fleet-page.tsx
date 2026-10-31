@@ -29,6 +29,7 @@ import {
   type FleetAircraft,
 } from '@/hooks/use-fleet';
 import type { Airline } from '@/hooks/use-lam-data';
+import { aircraftSvg, defaultMapCategory, MAP_CATEGORIES, MAP_CATEGORY_LABELS, mapCategory, type MapCategory } from '@/lib/aircraft-icons';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
 import {
@@ -415,6 +416,7 @@ const typeSchema = z.object({
     (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
     z.number().int().min(60, 'Mínimo 60 kt').max(700, 'Máximo 700 kt').nullable(),
   ),
+  map_category: z.enum(['auto', ...MAP_CATEGORIES] as [string, ...string[]]),
 });
 type TypeForm = z.infer<typeof typeSchema>;
 
@@ -423,6 +425,7 @@ function AircraftTypeDialog({ type, onClose }: { type: AircraftType | null; onCl
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<TypeForm>({
     resolver: zodResolver(typeSchema),
@@ -435,10 +438,18 @@ function AircraftTypeDialog({ type, onClose }: { type: AircraftType | null; onCl
       max_passengers: type?.max_passengers ?? null,
       max_cargo_kg: type?.max_cargo_kg ?? null,
       cruise_speed_kts: type?.cruise_speed_kts ?? null,
+      map_category: type?.map_category ?? 'auto',
     },
   });
+  const [wIcao, wWake, wEngine, wPax, wCategory] = watch(['icao_code', 'wake_category', 'engine_type', 'max_passengers', 'map_category']);
+  const autoCategory = defaultMapCategory((wIcao ?? '').toUpperCase(), wWake, wEngine, typeof wPax === 'number' ? wPax : wPax ? Number(wPax) : null);
+  const shownCategory: MapCategory = wCategory === 'auto' ? autoCategory : mapCategory(wCategory);
 
-  async function onSubmit(values: TypeForm) {
+  async function onSubmit({ map_category, ...rest }: TypeForm) {
+    const values = {
+      ...rest,
+      map_category: map_category === 'auto' ? defaultMapCategory(rest.icao_code, rest.wake_category, rest.engine_type, rest.max_passengers) : map_category,
+    };
     try {
       await save.mutateAsync({ id: type?.id, values });
       toast.success(type ? 'Tipo actualizado' : 'Tipo agregado');
@@ -501,6 +512,23 @@ function AircraftTypeDialog({ type, onClose }: { type: AircraftType | null; onCl
         <Field id="t-cargo" label="Carga máxima (kg)" error={errors.max_cargo_kg?.message}>
           <Input type="number" inputMode="numeric" {...fieldAria('t-cargo', errors.max_cargo_kg?.message)} {...register('max_cargo_kg')} />
         </Field>
+        <Field id="t-map" label="Figura en el mapa en vivo" hint="Distingue en el mapa un avión ligero de un 737 o de un A380.">
+          <div className="flex items-center gap-3">
+            <Select id="t-map" className="flex-1" {...register('map_category')}>
+              <option value="auto">Automática · {MAP_CATEGORY_LABELS[autoCategory]}</option>
+              {MAP_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {MAP_CATEGORY_LABELS[c]}
+                </option>
+              ))}
+            </Select>
+            <span
+              className="inline-grid size-10 shrink-0 place-items-center rounded-md border border-line bg-bg"
+              aria-hidden
+              dangerouslySetInnerHTML={{ __html: aircraftSvg(shownCategory, '#38bdf8') }}
+            />
+          </div>
+        </Field>
       </form>
     </Dialog>
   );
@@ -529,7 +557,7 @@ function AircraftTypesTable() {
       ) : types.isError ? (
         <Alert tone="danger">{describeError(types.error)}</Alert>
       ) : (
-        <Table minWidth="48rem">
+        <Table minWidth="56rem">
           <thead>
             <tr>
               <Th>ICAO</Th>
@@ -539,6 +567,7 @@ function AircraftTypesTable() {
               <Th className="text-right">Pasajeros</Th>
               <Th className="text-right">Carga (kg)</Th>
               <Th className="text-right">Crucero (kt)</Th>
+              <Th>Mapa</Th>
               {isOrgAdmin ? <Th className="text-right">Acciones</Th> : null}
             </tr>
           </thead>
@@ -554,6 +583,12 @@ function AircraftTypesTable() {
                 <Td className="text-right tabular-nums">{t.max_passengers ?? '—'}</Td>
                 <Td className="text-right tabular-nums">{t.max_cargo_kg ? formatNumber(t.max_cargo_kg) : '—'}</Td>
                 <Td className="text-right tabular-nums">{t.cruise_speed_kts ?? '—'}</Td>
+                <Td>
+                  <span className="inline-flex items-center gap-1.5 text-sm">
+                    <span className="inline-grid size-7 place-items-center" aria-hidden dangerouslySetInnerHTML={{ __html: aircraftSvg(t.map_category, '#38bdf8') }} />
+                    {MAP_CATEGORY_LABELS[mapCategory(t.map_category)]}
+                  </span>
+                </Td>
                 {isOrgAdmin ? (
                   <Td className="text-right">
                     <Button size="sm" variant="secondary" onClick={() => setEditing(t)}>

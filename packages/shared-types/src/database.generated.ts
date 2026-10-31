@@ -234,6 +234,7 @@ export type Database = {
           icao_code: string
           id: number
           manufacturer: string
+          map_category: string
           max_cargo_kg: number | null
           max_passengers: number | null
           model: string
@@ -247,6 +248,7 @@ export type Database = {
           icao_code: string
           id?: never
           manufacturer: string
+          map_category?: string
           max_cargo_kg?: number | null
           max_passengers?: number | null
           model: string
@@ -260,6 +262,7 @@ export type Database = {
           icao_code?: string
           id?: never
           manufacturer?: string
+          map_category?: string
           max_cargo_kg?: number | null
           max_passengers?: number | null
           model?: string
@@ -1851,6 +1854,10 @@ export type Database = {
         Returns: Json
       }
       get_live_flight_track: { Args: { p_flight_id: string }; Returns: Json }
+      get_live_flight_trace: {
+        Args: { p_after_event_seq?: number; p_after_seq?: number; p_flight_id: string }
+        Returns: Json
+      }
       get_live_flights: { Args: { p_airline_id?: string }; Returns: Json }
       get_operations_overview: { Args: { p_airline_id?: string }; Returns: Json }
       get_pilot_performance: {

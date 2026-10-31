@@ -113,6 +113,7 @@ const TYPES = [
   max_passengers: pax,
   max_cargo_kg: cargo,
   cruise_speed_kts: speed,
+  map_category: { A20N: 'narrowbody', B738: 'narrowbody', B77W: 'widebody', MD11: 'widebody', AT76: 'turboprop' }[icao],
   created_at: now,
   updated_at: now,
 }));
@@ -508,16 +509,44 @@ const liveFlight = (n, callsign, from, to, pos, phase, extra = {}) => ({
   ...extra,
 });
 const LIVE = [
-  liveFlight(0, 'MXL106', 'MMMX', 'MMGL', { lat: 20.05, lon: -101.6, alt: 34000, ias: 270, gs: 455, hdg: 288, vs: 0, remaining: 98, started: 52 }, 'cruise'),
-  liveFlight(1, 'MXL221', 'MMGL', 'MMMX', { lat: 19.9, lon: -100.1, alt: 14500, ias: 280, gs: 320, hdg: 112, vs: -1800, remaining: 58, started: 61 }, 'descent', {
-    alerts: [{ code: 'attitude', level: 'warn', at: minsAgo(12), value: 37, axis: 'bank' }],
+  liveFlight(0, 'MXL106', 'MMMX', 'MMGL', { lat: 20.05, lon: -101.6, alt: 34000, ias: 270, gs: 455, hdg: 288, vs: 0, remaining: 98, started: 52 }, 'cruise', {
+    map_category: 'narrowbody',
   }),
-  liveFlight(2, 'MXL310', 'MMMX', 'MMMY', { lat: 19.43, lon: -99.07, alt: 7316, ias: 12, gs: 14, hdg: 50, vs: 0, remaining: 380, started: 9 }, 'taxi_out'),
+  liveFlight(1, 'MXL221', 'MMGL', 'MMMX', { lat: 19.9, lon: -100.1, alt: 14500, ias: 280, gs: 320, hdg: 112, vs: -1800, remaining: 58, started: 61 }, 'descent', {
+    aircraft_type: 'B77W',
+    aircraft_model: 'Boeing 777-300ER',
+    map_category: 'widebody',
+    alerts: [{ code: 'attitude', level: 'warn', at: minsAgo(12), value: 37, axis: 'bank' }],
+    tour: { id: id(1600), code: 'TMX01', name: 'Joyas de México', color: '#a855f7', leg: 3, legs: 8 },
+  }),
+  liveFlight(2, 'MXL310', 'MMMX', 'MMMY', { lat: 19.43, lon: -99.07, alt: 7316, ias: 12, gs: 14, hdg: 50, vs: 0, remaining: 380, started: 9 }, 'taxi_out', {
+    aircraft_type: 'AT76',
+    aircraft_model: 'ATR 72-600',
+    map_category: 'turboprop',
+  }),
   liveFlight(3, 'MXL455', 'MMMY', 'MMMX', { lat: 23.6, lon: -100.2, alt: 31000, ias: 265, gs: 410, hdg: 180, vs: 0, remaining: 230, started: 40, contact: 6 }, 'cruise', {
+    map_category: 'narrowbody',
     alerts: [{ code: 'no_signal', level: 'warn', at: minsAgo(6), value: 6 }],
+    event: { id: id(1650), folio: 'EV-0007', name: 'Fly-in Ciudad de México', color: '#f59e0b', starts_at: minsAgo(90), ends_at: minsAgo(-150) },
   }),
 ];
-const LIVE_TRACK = TRACK.filter((p) => !p.on_ground).slice(0, 60).map((p, i) => [19.44 + i * 0.011, -99.1 - i * 0.042, p.altitude_ft, p.phase]);
+// Traza en formato compacto de get_live_flight_trace: del origen a la posición actual.
+const liveTrace = (f) => {
+  const last = TRACK.reduce((acc, p, i) => (p.phase === f.phase ? i : acc), 0);
+  const pts = TRACK.slice(0, last + 1);
+  const start = Date.parse(f.started_at);
+  const end = Date.parse(f.position.sampled_at);
+  return pts.map((p, i) => {
+    const k = pts.length > 1 ? i / (pts.length - 1) : 1;
+    return [
+      i, Math.round(start + (end - start) * k),
+      +(f.origin.latitude + (f.position.latitude - f.origin.latitude) * k).toFixed(5),
+      +(f.origin.longitude + (f.position.longitude - f.origin.longitude) * k).toFixed(5),
+      p.altitude_ft, p.gs_kt, p.ias_kt, p.vs_fpm, f.position.heading_deg, p.on_ground ? 1 : 0, p.phase, p.wind_dir_deg, p.wind_kt, p.fuel_kg,
+    ];
+  });
+};
+const LIVE_TRACES = Object.fromEntries(LIVE.map((f) => [f.flight_id, liveTrace(f)]));
 const MONTHS = Array.from({ length: 12 }, (_, i) => {
   const d = new Date();
   d.setUTCDate(1);
@@ -728,13 +757,26 @@ async function handleSupabase(route) {
   }
   const RPC = {
     get_live_flights: LIVE,
-    get_live_flight_track: LIVE_TRACK,
     get_airline_statistics: STATS,
     get_operations_overview: OPS,
     get_pilot_performance: PERFORMANCE,
     get_pilot_landing_stats: LANDING_STATS,
   };
   const rpcName = url.pathname.startsWith('/rest/v1/rpc/') ? url.pathname.slice('/rest/v1/rpc/'.length) : null;
+  if (rpcName === 'get_live_flight_trace') {
+    const body = request.postDataJSON() ?? {};
+    const points = (LIVE_TRACES[body.p_flight_id] ?? []).filter((p) => p[0] > (body.p_after_seq ?? -1));
+    const all = LIVE_TRACES[body.p_flight_id] ?? [];
+    const last = all.length - 1;
+    // Los eventos del PIREP de ejemplo, recolocados en el tiempo de este vuelo.
+    const events = (body.p_after_event_seq ?? -1) >= 0 || last < 1 ? [] : EVENTS.flatMap((e) => {
+      const idx = Math.round(((Date.parse(e.occurred_at) - Date.parse(TRACK[0].sampled_at)) / 60_000 / 56) * 139);
+      if (idx > last) return [];
+      const t = all[0][1] + ((all[last][1] - all[0][1]) * idx) / last;
+      return [{ ...e, occurred_at: new Date(t).toISOString() }];
+    });
+    return route.fulfill({ status: 200, headers: CORS, json: { active: true, session_id: id(1550), points, events } });
+  }
   if (rpcName && rpcName in RPC) return route.fulfill({ status: 200, headers: CORS, json: RPC[rpcName] });
   if (url.pathname === '/rest/v1/rpc/route_aircraft_options') {
     return route.fulfill({ status: 200, headers: CORS, json: AIRCRAFT_OPTIONS });
@@ -1012,10 +1054,18 @@ await shoot('25f-pirep-waived-finding', `pireps/${PIREP_ID}`, {
     await page.waitForTimeout(400);
   },
 });
-await shoot('31-live-flights', `live?flight=${id(1500)}`, {
+await shoot('31-live-flights', `live?flights=${id(1501)},${id(1500)}`, {
   waitFor: 'Vuelos en vivo',
   action: async (page) => {
     await page.getByRole('region', { name: /Detalle del vuelo MXL106/ }).waitFor();
+    await page.waitForTimeout(2500);
+  },
+});
+await shoot('31b-live-flight-profile', `live?flights=${id(1500)}`, {
+  waitFor: 'Vuelos en vivo',
+  action: async (page) => {
+    await page.getByRole('heading', { name: 'Perfil de MXL106' }).waitFor();
+    await page.getByRole('heading', { name: 'Perfil de MXL106' }).scrollIntoViewIfNeeded();
     await page.waitForTimeout(1500);
   },
 });

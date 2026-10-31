@@ -1,6 +1,6 @@
 import type { LivePosition } from '@lam/shared-types';
 import { describe, expect, it } from 'vitest';
-import { ageSeconds, alertText, eteMinutes, extrapolate, flightProgress, formatAge, greatCirclePoints, worstAlert } from './live';
+import { ageSeconds, alertText, eteMinutes, extrapolate, flightProgress, formatAge, greatCirclePoints, mergeTrace, parseSelection, toggleSelection, worstAlert, type CompactTracePoint } from './live';
 
 const T = Date.parse('2026-11-01T12:00:00Z');
 const pos = (extra: Partial<LivePosition> = {}): LivePosition => ({
@@ -63,5 +63,35 @@ describe('mapa en vivo', () => {
     expect(alertText({ code: 'diversion_risk', level: 'warn', value: 42 })).toBe('Aproximación a 42 NM del destino');
     expect(worstAlert([{ code: 'paused', level: 'info' }, { code: 'crash', level: 'danger' }, { code: 'no_signal', level: 'warn' }])?.code).toBe('crash');
     expect(worstAlert([])).toBeNull();
+  });
+});
+
+describe('traza y selección en el mapa en vivo', () => {
+  const cp = (seq: number, phase = 'cruise'): CompactTracePoint => [seq, Date.parse('2026-11-01T12:00:00Z') + seq * 1000, 19 + seq / 100, -99, 30000, 450, 280, 0, 90, 0, phase, 270, 40, 5000 - seq];
+  const ev = (seq: number) => ({ id: `e${seq}`, seq, type: 'takeoff', phase: 'initial_climb', occurred_at: '2026-11-01T12:00:00Z', altitude_ft: 0, data: {} });
+
+  it('agrega los puntos nuevos sin duplicar', () => {
+    const a = mergeTrace(undefined, { active: true, points: [cp(0), cp(1, 'climb')], events: [ev(0)] });
+    expect(a.points).toHaveLength(2);
+    expect(a.points[1]).toMatchObject({ seq: 1, phase: 'climb', wind_kt: 40, on_ground: false });
+    expect(a.lastSeq).toBe(1);
+    const b = mergeTrace(a, { active: true, points: [cp(1), cp(2)], events: [ev(0), ev(3)] });
+    expect(b.points.map((p) => p.seq)).toEqual([0, 1, 2]);
+    expect(b.events.map((e) => e.seq)).toEqual([0, 3]);
+    expect(mergeTrace(b, { active: true, points: [], events: [] })).toBe(b);
+    expect(mergeTrace(b, { active: false, points: [], events: [] }).active).toBe(false);
+  });
+
+  it('agrega y quita vuelos de la selección', () => {
+    expect(toggleSelection(['a'], 'b')).toEqual(['a', 'b']);
+    expect(toggleSelection(['a', 'b'], 'a')).toEqual(['b']);
+    expect(toggleSelection(['a', 'b', 'c'], 'd', 3)).toEqual(['b', 'c', 'd']);
+  });
+
+  it('lee la selección de la URL', () => {
+    const id1 = '00000000-0000-4000-8000-000000001500';
+    const id2 = '00000000-0000-4000-8000-000000001501';
+    expect(parseSelection(`${id1},${id2},${id1},basura`)).toEqual([id1, id2]);
+    expect(parseSelection(null)).toEqual([]);
   });
 });

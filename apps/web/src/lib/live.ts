@@ -3,6 +3,7 @@
  * tiempo estimado, posición estimada entre lecturas y textos de las alertas.
  */
 import type { LiveAlert, LiveFlight, LivePosition } from '@lam/shared-types';
+import type { AnalysisEvent, AnalysisPoint } from './flight-analysis';
 
 /** Segundos desde una fecha ISO hasta `now` (ms). */
 export function ageSeconds(iso: string, now: number): number {
@@ -106,4 +107,87 @@ export function worstAlert(alerts: readonly LiveAlert[] | null | undefined): Liv
   if (!alerts || alerts.length === 0) return null;
   const rank = { danger: 3, warn: 2, info: 1 } as const;
   return [...alerts].sort((a, b) => rank[b.level] - rank[a.level])[0] ?? null;
+}
+
+// -----------------------------------------------------------------------------
+// Traza de los vuelos elegidos (get_live_flight_trace, por partes)
+// -----------------------------------------------------------------------------
+export interface LiveTrace {
+  points: AnalysisPoint[];
+  events: AnalysisEvent[];
+  lastSeq: number;
+  lastEventSeq: number;
+  /** false cuando el vuelo ya no está en curso. */
+  active: boolean;
+}
+
+/** Punto compacto: [seq, ms, lat, lon, alt, gs, ias, vs, rumbo, en tierra, fase, viento dir, viento kt, combustible]. */
+export type CompactTracePoint = [number, number, number, number, number, number | null, number | null, number | null, number | null, number, string, number | null, number | null, number | null];
+
+export interface TraceResponse {
+  active: boolean;
+  points: CompactTracePoint[];
+  events: AnalysisEvent[];
+}
+
+export function tracePoint(p: CompactTracePoint): AnalysisPoint {
+  return {
+    seq: p[0],
+    sampled_at: new Date(p[1]).toISOString(),
+    latitude: p[2],
+    longitude: p[3],
+    altitude_ft: p[4],
+    gs_kt: p[5],
+    ias_kt: p[6],
+    vs_fpm: p[7],
+    heading_deg: p[8],
+    on_ground: p[9] === 1,
+    phase: p[10],
+    wind_dir_deg: p[11],
+    wind_kt: p[12],
+    fuel_kg: p[13],
+  };
+}
+
+/** Agrega a la traza guardada los puntos y eventos nuevos (sin duplicados, en orden). */
+export function mergeTrace(prev: LiveTrace | undefined, res: TraceResponse | null | undefined): LiveTrace {
+  const base: LiveTrace = prev ?? { points: [], events: [], lastSeq: -1, lastEventSeq: -1, active: true };
+  if (!res) return base;
+  if (!res.active) return { ...base, active: false };
+  const fresh = (res.points ?? []).map(tracePoint).filter((p) => p.seq > base.lastSeq);
+  const events = (res.events ?? []).filter((e) => e.seq > base.lastEventSeq);
+  if (fresh.length === 0 && events.length === 0) return base.active ? base : { ...base, active: true };
+  const points = [...base.points, ...fresh].sort((a, b) => a.seq - b.seq);
+  const allEvents = [...base.events, ...events].sort((a, b) => a.seq - b.seq);
+  return {
+    points,
+    events: allEvents,
+    lastSeq: points.length ? points[points.length - 1]!.seq : base.lastSeq,
+    lastEventSeq: allEvents.length ? allEvents[allEvents.length - 1]!.seq : base.lastEventSeq,
+    active: true,
+  };
+}
+
+/** Fases en las que el vuelo ya llegó: no se dibuja la ruta faltante. */
+export const ARRIVED_PHASES = new Set(['landing', 'taxi_in', 'engines_shutdown', 'flight_completed']);
+
+/** Máximo de vuelos elegidos a la vez en el mapa. */
+export const MAX_SELECTED = 10;
+
+/** Agrega o quita un vuelo de la selección (el más reciente al final; respeta el máximo). */
+export function toggleSelection(ids: readonly string[], id: string, max = MAX_SELECTED): string[] {
+  if (ids.includes(id)) return ids.filter((x) => x !== id);
+  const next = [...ids, id];
+  return next.length > max ? next.slice(next.length - max) : next;
+}
+
+/** "a,b,c" → ids válidos y sin repetir. */
+export function parseSelection(value: string | null | undefined, max = MAX_SELECTED): string[] {
+  if (!value) return [];
+  const out: string[] = [];
+  for (const raw of value.split(',')) {
+    const id = raw.trim();
+    if (/^[0-9a-f-]{36}$/i.test(id) && !out.includes(id)) out.push(id);
+  }
+  return out.slice(-max);
 }

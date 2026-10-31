@@ -116,6 +116,8 @@ export interface LiveFlight {
   aircraft_registration: string;
   aircraft_type: string;
   aircraft_model: string;
+  /** Figura en el mapa: light, business_jet, turboprop, regional_jet, narrowbody, widebody o jumbo. */
+  map_category?: string;
   sim_aircraft_title: string | null;
   origin: LiveAirport;
   destination: LiveAirport;
@@ -129,10 +131,31 @@ export interface LiveFlight {
   position: LivePosition | null;
   /** Solo para el staff de la aerolínea; null para los pilotos. */
   alerts: LiveAlert[] | null;
+  /** Evento en el que participa el vuelo (Fase 7). */
+  event?: LiveFlightEvent | null;
+  /** Leg de tour que vuela (Fase 7). */
+  tour?: LiveFlightTour | null;
 }
 
-/** Punto de la traza en vivo: [lat, lon, altitud ft, fase]. */
-export type LiveTrackPoint = [number, number, number, string];
+export interface LiveFlightEvent {
+  id: string;
+  folio: string;
+  name: string;
+  color: string;
+  starts_at: string;
+  ends_at: string;
+}
+
+export interface LiveFlightTour {
+  id: string;
+  code: string;
+  name: string;
+  color: string;
+  /** Número del leg que vuela y total de legs del tour. */
+  leg: number;
+  legs: number;
+}
+
 
 export interface StatsTotals {
   flights: number;
