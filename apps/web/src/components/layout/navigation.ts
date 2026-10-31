@@ -23,6 +23,8 @@ export interface NavItem {
   to?: string;
   phase?: number;
   adminOnly?: boolean;
+  /** Solo para administradores y jefes de operaciones de alguna aerolínea. */
+  staffOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -35,7 +37,7 @@ export const navigation: NavGroup[] = [
     label: 'Operación',
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
-      { label: 'Live Flights', icon: Radar, phase: 6 },
+      { label: 'Live Flights', icon: Radar, to: '/live' },
       { label: 'Flight Booking', icon: CalendarPlus, to: '/booking' },
       { label: 'My Flights', icon: PlaneTakeoff, to: '/my-flights' },
       { label: 'PIREP', icon: FileText, to: '/pireps' },
@@ -54,8 +56,8 @@ export const navigation: NavGroup[] = [
   {
     label: 'Control',
     items: [
-      { label: 'Statistics', icon: Activity, phase: 6 },
-      { label: 'Operations Center', icon: Monitor, phase: 6 },
+      { label: 'Statistics', icon: Activity, to: '/statistics' },
+      { label: 'Operations Center', icon: Monitor, to: '/operations', staffOnly: true },
       { label: 'Administration', icon: ShieldCheck, to: '/administration', adminOnly: true },
       { label: 'Settings', icon: Settings, to: '/settings' },
     ],

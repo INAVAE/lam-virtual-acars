@@ -2,9 +2,12 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useCallback, useEffect, useRef } from 'react';
 import {
+  formatWind,
+  formatWindComponents,
   nearestIndexByPosition,
   nearestIndexByTime,
   pointColor,
+  pointWind,
   segmentsBy,
   type AnalysisPoint,
   type ColorMode,
@@ -30,6 +33,8 @@ interface FlightMapProps {
   times: readonly number[];
   markers: readonly EventMarker[];
   airports: readonly MapAirport[];
+  /** Puntos donde se dibuja una flecha de viento (vacío: sin flechas). */
+  windIndices?: readonly number[];
   colorMode: ColorMode;
   activeIndex: number | null;
   onHover: (index: number | null) => void;
@@ -43,7 +48,7 @@ interface FlightMapProps {
 // En modo oscuro se invierten con CSS para un mapa nocturno.
 const TILES = mapTileConfig();
 
-const PLANE_SVG =
+export const PLANE_SVG =
   '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M12 2c.8 0 1.4.7 1.4 1.6v5.6l7.6 4.4v2l-7.6-2.3v4.6l2.2 1.7v1.6L12 20.1l-3.6 1.1v-1.6l2.2-1.7v-4.6L3 15.6v-2l7.6-4.4V3.6C10.6 2.7 11.2 2 12 2z" fill="currentColor" stroke="#0b1220" stroke-width="0.8"/></svg>';
 
 function escapeHtml(s: string): string {
@@ -58,6 +63,7 @@ function pointSummary(p: AnalysisPoint, time: TimeFormat): string {
     `${formatNumber(p.altitude_ft)} ft · VS ${p.vs_fpm === null ? '—' : formatNumber(p.vs_fpm)} fpm`,
     `IAS ${p.ias_kt ?? '—'} kt · GS ${p.gs_kt ?? '—'} kt${p.heading_deg === null ? '' : ` · ${String(Math.round(p.heading_deg)).padStart(3, '0')}°`}`,
   ];
+  if (p.wind_kt != null) rows.push(`Viento ${escapeHtml(formatWind(p.wind_dir_deg, p.wind_kt))}${pointWind(p) ? ` · ${escapeHtml(formatWindComponents(pointWind(p)))}` : ''}`);
   return rows.join('<br>');
 }
 
@@ -65,7 +71,7 @@ function pointSummary(p: AnalysisPoint, time: TimeFormat): string {
  * Mapa interactivo de la traza (Leaflet): tramos coloreados por fase o por
  * altitud, aeropuertos, eventos y el punto activo sincronizado con las gráficas.
  */
-export function FlightMap({ points, times, markers, airports, colorMode, activeIndex, onHover, onSelect, theme, focus, height }: FlightMapProps) {
+export function FlightMap({ points, times, markers, airports, windIndices = [], colorMode, activeIndex, onHover, onSelect, theme, focus, height }: FlightMapProps) {
   const { dual } = useTimePrefs();
   const timeText = useCallback<TimeFormat>(
     (value) => {
@@ -79,6 +85,7 @@ export function FlightMap({ points, times, markers, airports, colorMode, activeI
   const tilesRef = useRef<L.TileLayer | null>(null);
   const trackRef = useRef<L.LayerGroup | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+  const windRef = useRef<L.LayerGroup | null>(null);
   const activeRef = useRef<L.Marker | null>(null);
   const fittedRef = useRef(false);
   const handlers = useRef({ onHover, onSelect });
@@ -100,6 +107,7 @@ export function FlightMap({ points, times, markers, airports, colorMode, activeI
     map.setView([19.43, -99.07], 6);
     mapRef.current = map;
     trackRef.current = L.layerGroup().addTo(map);
+    windRef.current = L.layerGroup().addTo(map);
     markersRef.current = L.layerGroup().addTo(map);
     const observer = new ResizeObserver(() => map.invalidateSize());
     observer.observe(containerRef.current);
@@ -205,6 +213,36 @@ export function FlightMap({ points, times, markers, airports, colorMode, activeI
         .addTo(group);
     }
   }, [airports, markers, points, times, timeText]);
+
+  // Flechas de viento a lo largo de la ruta (hacia donde sopla, con su velocidad)
+  useEffect(() => {
+    const group = windRef.current;
+    if (!group) return;
+    group.clearLayers();
+    for (const i of windIndices) {
+      const p = points[i];
+      if (!p || p.wind_kt == null || p.wind_dir_deg == null) continue;
+      const c = pointWind(p);
+      const color = c && c.head < 0 ? '#f97316' : '#22c55e';
+      L.marker([p.latitude, p.longitude], {
+        icon: L.divIcon({
+          className: '',
+          html: `<div class="lam-wind" style="--w:${color}"><svg viewBox="-8 -8 16 16" width="18" height="18" style="transform:rotate(${Math.round((p.wind_dir_deg + 180) % 360)}deg)" aria-hidden="true"><path d="M0 7 L0 -6 M-3.5 -2 L0 -7 L3.5 -2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${Math.round(p.wind_kt)}</span></div>`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        }),
+        keyboard: false,
+        interactive: true,
+        zIndexOffset: -100,
+      })
+        .bindTooltip(`<strong>Viento ${escapeHtml(formatWind(p.wind_dir_deg, p.wind_kt))}</strong><br>${formatNumber(p.altitude_ft)} ft${c ? ` · ${escapeHtml(formatWindComponents(c))}` : ''}`, {
+          className: 'lam-tip',
+          direction: 'top',
+          offset: [0, -8],
+        })
+        .addTo(group);
+    }
+  }, [windIndices, points]);
 
   // Punto activo (sincronizado con las gráficas)
   useEffect(() => {

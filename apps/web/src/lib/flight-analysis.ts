@@ -18,6 +18,9 @@ export interface AnalysisPoint {
   phase: string;
   /** Combustible a bordo (kg); nulo en vuelos registrados antes del conector 0.1.16. */
   fuel_kg?: number | null;
+  /** Viento: dirección verdadera de donde sopla (°) y velocidad (kt). Conector 0.1.21+. */
+  wind_dir_deg?: number | null;
+  wind_kt?: number | null;
 }
 
 export interface AnalysisEvent {
@@ -195,6 +198,8 @@ export interface FlightExtremes {
   /** Ángulo de trayectoria (°) máximo subiendo y bajando. */
   maxClimbAngle: { value: number; index: number } | null;
   maxDescentAngle: { value: number; index: number } | null;
+  /** Viento más fuerte en el aire (kt). */
+  maxWind: { value: number; index: number } | null;
 }
 
 export function flightExtremes(points: readonly AnalysisPoint[]): FlightExtremes {
@@ -214,6 +219,7 @@ export function flightExtremes(points: readonly AnalysisPoint[]): FlightExtremes
     maxDescent: pick((p) => (p.on_ground ? null : p.vs_fpm), (a, b) => a < b),
     maxClimbAngle: pick(pathAngleAt, (a, b) => a > b),
     maxDescentAngle: pick(pathAngleAt, (a, b) => a < b),
+    maxWind: pick((p) => (p.on_ground ? null : (p.wind_kt ?? null)), (a, b) => a > b),
   };
 }
 
@@ -304,7 +310,7 @@ export function attitudeNote(data: unknown): { label: string; detail: string } |
 export interface EventMarker {
   id: string;
   time: number;
-  kind: 'block_off' | 'takeoff' | 'touchdown' | 'block_on' | 'engine' | 'apu' | 'pause' | 'warning' | 'go_around' | 'attitude';
+  kind: 'block_off' | 'takeoff' | 'touchdown' | 'block_on' | 'engine' | 'apu' | 'pause' | 'warning' | 'go_around' | 'attitude' | 'shear';
   label: string;
   detail: string | null;
   /** Letra o símbolo corto que se dibuja en el marcador. */
@@ -506,4 +512,130 @@ export function formatZuluTime(time: number | string): string {
 export function formatLatLon(lat: number, lon: number): string {
   const f = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed(4)}°${v >= 0 ? pos : neg}`;
   return `${f(lat, 'N', 'S')} ${f(lon, 'E', 'W')}`;
+}
+
+// -----------------------------------------------------------------------------
+// Viento
+// -----------------------------------------------------------------------------
+/**
+ * Componentes del viento respecto al rumbo verdadero: cabeza (+) / cola (−) y
+ * cruzado desde la derecha (+) / izquierda (−), en nudos.
+ */
+export function windComponents(windDirDeg: number | null | undefined, windKt: number | null | undefined, headingDeg: number | null | undefined): { head: number; cross: number } | null {
+  if (windDirDeg == null || windKt == null || headingDeg == null) return null;
+  const a = ((windDirDeg - headingDeg) * Math.PI) / 180;
+  return { head: windKt * Math.cos(a), cross: windKt * Math.sin(a) };
+}
+
+export function pointWind(p: AnalysisPoint): { head: number; cross: number } | null {
+  return windComponents(p.wind_dir_deg, p.wind_kt, p.heading_deg);
+}
+
+/** "270°/18 kt" (dirección de donde sopla). */
+export function formatWind(dirDeg: number | null | undefined, kt: number | null | undefined): string {
+  if (dirDeg == null || kt == null) return '—';
+  if (Math.round(kt) === 0) return 'Calma';
+  return `${String(Math.round(dirDeg) % 360).padStart(3, '0')}°/${Math.round(kt)} kt`;
+}
+
+/** "12 kt de cabeza · 8 kt cruzado izq." */
+export function formatWindComponents(c: { head: number; cross: number } | null): string {
+  if (!c) return '';
+  const head = Math.round(c.head);
+  const cross = Math.round(c.cross);
+  const parts = [head === 0 ? '' : `${Math.abs(head)} kt de ${head > 0 ? 'cabeza' : 'cola'}`, cross === 0 ? '' : `${Math.abs(cross)} kt cruzado ${cross > 0 ? 'der.' : 'izq.'}`];
+  return parts.filter(Boolean).join(' · ') || 'sin componente';
+}
+
+/** Fases a baja altura donde se vigila la cizalladura. */
+export const SHEAR_PHASES = new Set(['takeoff', 'initial_climb', 'approach', 'landing']);
+/** Cambio del viento de cabeza (kt) en 30 s que se marca como cizalladura. */
+export const SHEAR_THRESHOLD_KT = 15;
+const SHEAR_WINDOW_MS = 30_000;
+
+export interface ShearEvent {
+  /** Punto con el cambio más fuerte del episodio. */
+  index: number;
+  time: number;
+  /** Cambio del viento de cabeza en la ventana: + gana sustentación, − la pierde. */
+  changeKt: number;
+  phase: string;
+  /** Inicio y fin del episodio (ms). */
+  start: number;
+  end: number;
+}
+
+/**
+ * Cizalladura a baja altura: en despegue, ascenso inicial, aproximación y
+ * aterrizaje, el viento de cabeza cambia 15 kt o más en 30 s. Los puntos
+ * seguidos que cumplen forman un episodio (mismo criterio que el PIREP).
+ */
+export function windShearEvents(points: readonly AnalysisPoint[], times: readonly number[]): ShearEvent[] {
+  const low: { i: number; t: number; head: number }[] = [];
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i]!;
+    if (!SHEAR_PHASES.has(p.phase)) continue;
+    const c = pointWind(p);
+    if (c) low.push({ i, t: times[i]!, head: c.head });
+  }
+  const out: ShearEvent[] = [];
+  let current: ShearEvent | null = null;
+  let first = 0;
+  for (let k = 0; k < low.length; k++) {
+    const cur = low[k]!;
+    while (low[first]!.t < cur.t - SHEAR_WINDOW_MS) first++;
+    const change = cur.head - low[first]!.head;
+    if (Math.abs(change) >= SHEAR_THRESHOLD_KT) {
+      const startT = low[first]!.t;
+      if (!current) {
+        current = { index: cur.i, time: cur.t, changeKt: change, phase: points[cur.i]!.phase, start: startT, end: cur.t };
+        out.push(current);
+      } else {
+        current.end = cur.t;
+        if (Math.abs(change) > Math.abs(current.changeKt)) {
+          current.index = cur.i;
+          current.time = cur.t;
+          current.changeKt = change;
+          current.phase = points[cur.i]!.phase;
+        }
+      }
+    } else {
+      current = null;
+    }
+  }
+  return out;
+}
+
+/** Marcadores de cizalladura para el mapa y las gráficas. */
+export function shearMarkers(points: readonly AnalysisPoint[], events: readonly ShearEvent[]): EventMarker[] {
+  return events.map((e, n) => ({
+    id: `shear-${n}`,
+    time: e.time,
+    kind: 'shear' as const,
+    label: `Cizalladura ${e.changeKt > 0 ? '+' : '−'}${Math.abs(Math.round(e.changeKt))} kt`,
+    detail: `${e.changeKt > 0 ? 'aumenta' : 'disminuye'} el viento de cabeza en 30 s · ${Math.round(points[e.index]!.altitude_ft).toLocaleString('en-US')} ft`,
+    glyph: '≋',
+    color: '#a855f7',
+    latitude: points[e.index]!.latitude,
+    longitude: points[e.index]!.longitude,
+  }));
+}
+
+/**
+ * Índices de puntos repartidos a lo largo de la ruta (por distancia) para
+ * dibujar flechas de viento sin saturar: uno cada `stepNm`.
+ */
+export function windSampleIndices(points: readonly AnalysisPoint[], distances: readonly number[], count = 24): number[] {
+  const total = distances[distances.length - 1] ?? 0;
+  if (total <= 0) return [];
+  const step = total / count;
+  const out: number[] = [];
+  let next = step / 2;
+  for (let i = 0; i < points.length; i++) {
+    if (distances[i]! >= next && points[i]!.wind_kt != null && points[i]!.wind_dir_deg != null && !points[i]!.on_ground) {
+      out.push(i);
+      next = distances[i]! + step;
+    }
+  }
+  return out;
 }

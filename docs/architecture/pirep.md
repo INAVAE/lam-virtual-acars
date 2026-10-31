@@ -17,7 +17,8 @@ PIREP que falten.
 | Tiempo en vuelo | Primer `takeoff` → último `touchdown`. |
 | Combustible | `fuel_kg` de `block_off` menos el de `block_on`. |
 | Distancia | Suma ortodrómica entre los puntos de la traza. |
-| Altitud máxima, rodaje máximo, IAS máxima bajo 10,000 ft | Traza (`flight_track_points`). |
+| Altitud máxima, rodaje máximo, IAS máxima bajo 10,000 ft | Traza (`flight_track_points`). En una salida directa (sin detenerse en la pista), la aceleración para el despegue no cuenta como rodaje: se ignoran los puntos de rodaje posteriores al último punto a 20 kt o menos, o a la última desaceleración, antes del despegue. |
+| Viento | Traza (conector 0.1.21): viento al despegar y en la toma con sus componentes, viento máximo y cizalladura a baja altura. |
 | Aterrizaje | Último `touchdown`: VS, G, cabeceo, alabeo, rebotes, IAS, flaps y tren. |
 | Desvío | El aeropuerto más cercano al cierre (10 NM) es distinto del destino, o no hay ninguno. |
 
@@ -93,6 +94,15 @@ Cada regla cumplida queda en `pireps.findings` con su valor medido y el umbral q
 
 La gráfica de altitud muestra el ángulo promedio de cada tramo de ascenso (ascenso inicial y ascenso juntos), descenso y aproximación. Se calcula como la altitud ganada o perdida entre la distancia recorrida. La aproximación se marca en verde si queda a 3° ± 0.5°. El recuadro de cada punto da el ángulo instantáneo, atan(VS / GS), y los extremos del vuelo incluyen los ángulos máximos de ascenso y descenso. No se puntúa.
 
+## Viento y cizalladura
+
+- `private.pirep_wind_metrics` guarda `metrics.wind`:
+  - viento en el punto de traza más cercano al despegue y al contacto, con componentes de cabeza (+) / cola (−) y cruzado derecha (+) / izquierda (−);
+  - viento máximo en el aire;
+  - cizalladura.
+- **Cizalladura:** en despegue, ascenso inicial, aproximación y aterrizaje, el viento de cabeza cambia 15 kt o más en 30 s. Los puntos seguidos forman un episodio.
+- Es informativa: no resta puntos. La web usa el mismo criterio para marcar ≋ en las gráficas y el mapa.
+
 ## Revisión
 
 El PIREP se acepta solo si la aerolínea tiene activada la aprobación automática, el
@@ -107,6 +117,24 @@ Revisa el jefe de operaciones o el administrador de la aerolínea con
 - Nadie revisa su propio PIREP, salvo el superadministrador.
 
 Mientras el PIREP está en revisión, el piloto puede comentarlo con `comment_pirep`.
+
+### Anular una falta
+
+Si el comentario del piloto justifica una falta (por ejemplo, una salida directa sin posición y mantener), el revisor la anula con `waive_pirep_finding(id, código, motivo)` antes de decidir:
+
+- Solo mientras el PIREP está en revisión. El motivo es obligatorio.
+- La falta queda en `findings` con `waived`, el motivo, quién la anuló y cuándo.
+- El puntaje y `has_critical` se recalculan sin las faltas anuladas.
+- `waive_pirep_finding(id, código, null, false)` la restaura.
+- Las estadísticas de faltas frecuentes y de aterrizaje no cuentan las anuladas.
+
+### Archivar
+
+- **Quién archiva:** el jefe de operaciones o el administrador de la aerolínea archiva un PIREP de sus pilotos con motivo (`archive_pirep`). El superadministrador puede archivar los de cualquier aerolínea.
+- **Efectos:** el PIREP pasa al estado `archived` y guarda el estado anterior (`archived_from`). Si estaba aceptado, se restan sus horas y su ciclo.
+- **Visibilidad:** solo lo ve el superadministrador. Desaparece para el piloto, las listas y las estadísticas, y queda en la auditoría.
+- **Restaurar:** `restore_pirep` lo devuelve a su estado anterior y, si estaba aceptado, vuelve a sumar horas y ciclo. Solo lo hace el superadministrador.
+- **Por qué no se borra:** archivar es reversible y conserva la auditoría (decisión del usuario, 2026-10-31).
 
 ## Efectos al aceptar
 

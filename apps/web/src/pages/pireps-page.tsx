@@ -182,6 +182,7 @@ export function PirepsPage() {
               <option value="pending">{pirepStatusLabels.pending}</option>
               <option value="accepted">{pirepStatusLabels.accepted}</option>
               <option value="rejected">{pirepStatusLabels.rejected}</option>
+              {isOrgAdmin ? <option value="archived">{pirepStatusLabels.archived}</option> : null}
             </Select>
           </label>
         ) : null}

@@ -717,6 +717,8 @@ export type Database = {
           updated_at: string
           user_id: string
           vs_fpm: number | null
+          wind_dir_deg: number | null
+          wind_kt: number | null
         }
         Insert: {
           agl_ft?: number | null
@@ -735,6 +737,8 @@ export type Database = {
           updated_at?: string
           user_id: string
           vs_fpm?: number | null
+          wind_dir_deg?: number | null
+          wind_kt?: number | null
         }
         Update: {
           agl_ft?: number | null
@@ -753,6 +757,8 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vs_fpm?: number | null
+          wind_dir_deg?: number | null
+          wind_kt?: number | null
         }
         Relationships: [
           {
@@ -896,6 +902,8 @@ export type Database = {
           session_id: string
           user_id: string
           vs_fpm: number | null
+          wind_dir_deg: number | null
+          wind_kt: number | null
         }
         Insert: {
           airline_id: string
@@ -914,6 +922,8 @@ export type Database = {
           session_id: string
           user_id: string
           vs_fpm?: number | null
+          wind_dir_deg?: number | null
+          wind_kt?: number | null
         }
         Update: {
           airline_id?: string
@@ -932,6 +942,8 @@ export type Database = {
           session_id?: string
           user_id?: string
           vs_fpm?: number | null
+          wind_dir_deg?: number | null
+          wind_kt?: number | null
         }
         Relationships: []
       }
@@ -1302,6 +1314,10 @@ export type Database = {
           aircraft_type_id: number
           airline_id: string
           arrival_airport_id: number | null
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
+          archived_from: Database["public"]["Enums"]["pirep_status"] | null
           auto_approved: boolean
           block_minutes: number
           block_off_at: string | null
@@ -1343,6 +1359,10 @@ export type Database = {
           aircraft_type_id: number
           airline_id: string
           arrival_airport_id?: number | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
+          archived_from?: Database["public"]["Enums"]["pirep_status"] | null
           auto_approved?: boolean
           block_minutes: number
           block_off_at?: string | null
@@ -1384,6 +1404,10 @@ export type Database = {
           aircraft_type_id?: number
           airline_id?: string
           arrival_airport_id?: number | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
+          archived_from?: Database["public"]["Enums"]["pirep_status"] | null
           auto_approved?: boolean
           block_minutes?: number
           block_off_at?: string | null
@@ -1805,7 +1829,34 @@ export type Database = {
         Args: { p_comment: string; p_pirep_id: string }
         Returns: Database["public"]["Tables"]["pireps"]["Row"]
       }
+      archive_pirep: {
+        Args: { p_pirep_id: string; p_reason: string }
+        Returns: Database["public"]["Tables"]["pireps"]["Row"]
+      }
+      get_pilot_landing_stats: {
+        Args: { p_airline_id?: string; p_limit?: number; p_user_id?: string }
+        Returns: Json
+      }
+      restore_pirep: {
+        Args: { p_pirep_id: string }
+        Returns: Database["public"]["Tables"]["pireps"]["Row"]
+      }
+      waive_pirep_finding: {
+        Args: { p_code: string; p_pirep_id: string; p_reason?: string; p_waive?: boolean }
+        Returns: Database["public"]["Tables"]["pireps"]["Row"]
+      }
       get_dashboard_summary: { Args: { p_airline_id?: string }; Returns: Json }
+      get_airline_statistics: {
+        Args: { p_airline_id?: string; p_months?: number }
+        Returns: Json
+      }
+      get_live_flight_track: { Args: { p_flight_id: string }; Returns: Json }
+      get_live_flights: { Args: { p_airline_id?: string }; Returns: Json }
+      get_operations_overview: { Args: { p_airline_id?: string }; Returns: Json }
+      get_pilot_performance: {
+        Args: { p_airline_id?: string; p_days?: number }
+        Returns: Json
+      }
       import_routes: {
         Args: { p_airline_id: string; p_dry_run?: boolean; p_rows: Json }
         Returns: Json
@@ -1847,7 +1898,7 @@ export type Database = {
       flight_status: "scheduled" | "in_progress" | "completed" | "cancelled"
       membership_status: "pending" | "active" | "suspended" | "rejected"
       org_role: "superadmin"
-      pirep_status: "pending" | "accepted" | "rejected"
+      pirep_status: "pending" | "accepted" | "rejected" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never

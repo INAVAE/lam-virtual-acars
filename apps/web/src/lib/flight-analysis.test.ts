@@ -9,6 +9,8 @@ import {
   formatAngle,
   formatElapsed,
   formatLatLon,
+  formatWind,
+  formatWindComponents,
   fuelFlowAt,
   fuelSeries,
   nearestIndexByPosition,
@@ -19,6 +21,10 @@ import {
   phaseGroup,
   phaseSpans,
   segmentsBy,
+  shearMarkers,
+  windComponents,
+  windSampleIndices,
+  windShearEvents,
   type AnalysisPoint,
 } from './flight-analysis';
 
@@ -233,5 +239,61 @@ describe('ángulo de trayectoria y actitud', () => {
       { id: 'x', seq: 1, type: 'note', phase: 'climb', occurred_at: '2026-10-28T06:10:00Z', altitude_ft: 9000, data: { kind: 'attitude', axis: 'bank', peak_deg: 38 } },
     ]);
     expect(m[0]).toMatchObject({ kind: 'attitude', label: 'Alabeo 38°', glyph: '∠' });
+  });
+});
+
+describe('viento', () => {
+  it('descompone el viento respecto al rumbo', () => {
+    expect(windComponents(270, 20, 270)).toEqual({ head: 20, cross: expect.closeTo(0, 6) });
+    const left = windComponents(270, 20, 0)!;
+    expect(left.head).toBeCloseTo(0, 6);
+    expect(left.cross).toBeCloseTo(-20, 6);
+    expect(windComponents(null, 20, 0)).toBeNull();
+  });
+
+  it('da formato al viento', () => {
+    expect(formatWind(90.4, 7.6)).toBe('090°/8 kt');
+    expect(formatWind(360, 12)).toBe('000°/12 kt');
+    expect(formatWind(200, 0.3)).toBe('Calma');
+    expect(formatWind(null, 5)).toBe('—');
+    expect(formatWindComponents({ head: -12.4, cross: 8.2 })).toBe('12 kt de cola · 8 kt cruzado der.');
+    expect(formatWindComponents({ head: 0.2, cross: 0.1 })).toBe('sin componente');
+  });
+
+  const w = (i: number, sec: number, phase: string, dir: number, kt: number): AnalysisPoint => ({
+    ...pt(i, phase, 3000, 19 + i * 0.01, -99, { on_ground: false, heading_deg: 100, wind_dir_deg: dir, wind_kt: kt }),
+    sampled_at: new Date(t0 + sec * 1000).toISOString(),
+  });
+
+  it('detecta cizalladura a baja altura (15 kt en 30 s)', () => {
+    const track = [
+      w(0, 0, 'cruise', 100, 60),
+      w(1, 2, 'cruise', 280, 60),
+      w(2, 100, 'approach', 100, 20),
+      w(3, 102, 'approach', 100, 18),
+      w(4, 104, 'approach', 100, 2),
+      w(5, 106, 'approach', 190, 5),
+      w(6, 160, 'approach', 100, 5),
+    ];
+    const times = track.map((p) => Date.parse(p.sampled_at));
+    const events = windShearEvents(track, times);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ index: 5, phase: 'approach' });
+    expect(events[0]!.changeKt).toBeCloseTo(-20, 0);
+    const m = shearMarkers(track, events);
+    expect(m[0]).toMatchObject({ kind: 'shear', glyph: '≋', label: 'Cizalladura −20 kt' });
+  });
+
+  it('el crucero no cuenta como cizalladura', () => {
+    const track = [w(0, 0, 'cruise', 100, 60), w(1, 2, 'cruise', 280, 60)];
+    expect(windShearEvents(track, track.map((p) => Date.parse(p.sampled_at)))).toEqual([]);
+  });
+
+  it('reparte las flechas de viento por distancia', () => {
+    const track = Array.from({ length: 100 }, (_, i) => w(i, i * 10, 'cruise', 270, 30));
+    const idx = windSampleIndices(track, cumulativeDistance(track), 10);
+    expect(idx.length).toBeGreaterThanOrEqual(9);
+    expect(idx.length).toBeLessThanOrEqual(10);
+    expect(windSampleIndices(track.map((p) => ({ ...p, wind_kt: null })), cumulativeDistance(track), 10)).toEqual([]);
   });
 });

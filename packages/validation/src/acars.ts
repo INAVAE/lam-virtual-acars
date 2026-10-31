@@ -102,6 +102,9 @@ export const positionSample = z.object({
   vs_fpm: z.number().min(-20000).max(20000).nullish(),
   on_ground: z.boolean(),
   phase,
+  /** Viento: dirección verdadera de donde sopla (°) y velocidad (kt). Conector 0.1.21+. */
+  wind_dir_deg: z.number().min(0).max(360).nullish(),
+  wind_kt: z.number().min(0).max(400).nullish(),
 });
 export type PositionSample = z.infer<typeof positionSample>;
 

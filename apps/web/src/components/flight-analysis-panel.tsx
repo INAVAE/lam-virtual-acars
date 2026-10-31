@@ -1,4 +1,4 @@
-import { Crosshair, Maximize2, Minimize2, PlaneLanding, PlaneTakeoff, Route } from 'lucide-react';
+import { Crosshair, Maximize2, Minimize2, PlaneLanding, PlaneTakeoff, Route, Wind } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlightMap, type MapAirport, type MapFocus } from '@/components/flight-map';
 import { FlightProfileChart } from '@/components/flight-profile-chart';
@@ -13,10 +13,14 @@ import {
   eventMarkers,
   flightExtremes,
   formatAngle,
+  formatWind,
   fuelSeries,
   PHASE_GROUPS,
   phaseGroup,
   phaseSpans,
+  shearMarkers,
+  windSampleIndices,
+  windShearEvents,
   type AnalysisEvent,
   type AnalysisPoint,
   type ColorMode,
@@ -52,7 +56,11 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
   const times = useMemo(() => points.map((p) => Date.parse(p.sampled_at)), [points]);
   const distances = useMemo(() => cumulativeDistance(points), [points]);
   const spans = useMemo(() => phaseSpans(points), [points]);
-  const markers = useMemo(() => eventMarkers(events), [events]);
+  const shear = useMemo(() => windShearEvents(points, times), [points, times]);
+  const markers = useMemo(() => [...eventMarkers(events), ...shearMarkers(points, shear)].sort((a, b) => a.time - b.time), [events, points, shear]);
+  const hasWind = useMemo(() => points.some((p) => p.wind_kt != null), [points]);
+  const windIndices = useMemo(() => windSampleIndices(points, distances), [points, distances]);
+  const [showWind, setShowWind] = useState(true);
   const fuel = useMemo(() => fuelSeries(points, times, events), [points, times, events]);
   const apu = useMemo(() => apuIntervals(events, times[times.length - 1] ?? 0), [events, times]);
   const extremes = useMemo(() => flightExtremes(points), [points]);
@@ -94,6 +102,15 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
     { label: 'Ángulo descenso máx.', value: extremes.maxDescentAngle ? formatAngle(extremes.maxDescentAngle.value) : '—', index: extremes.maxDescentAngle?.index },
     { label: 'Recorrido', value: `${formatNumber(Math.round(distances[distances.length - 1] ?? 0))} NM`, index: undefined },
   ];
+  if (hasWind) {
+    const w = extremes.maxWind ? points[extremes.maxWind.index] : undefined;
+    stats.push({ label: 'Viento máx.', value: w ? formatWind(w.wind_dir_deg, w.wind_kt) : '—', index: extremes.maxWind?.index });
+    stats.push({
+      label: 'Cizalladura',
+      value: shear.length === 0 ? 'No' : `${shear.length} · ${shear[0]!.changeKt > 0 ? '+' : '−'}${Math.abs(Math.round(shear[0]!.changeKt))} kt`,
+      index: shear[0]?.index,
+    });
+  }
   const knownFuel = fuel.values.filter((v): v is number => v !== null);
   if (knownFuel.length > 1) {
     stats.push({
@@ -138,6 +155,12 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
                 </button>
               ))}
             </div>
+            {hasWind ? (
+              <Button size="sm" variant={showWind ? 'secondary' : 'ghost'} onClick={() => setShowWind((v) => !v)} aria-pressed={showWind}>
+                <Wind className="size-4" aria-hidden />
+                Viento
+              </Button>
+            ) : null}
             <span className="mx-1 h-5 w-px bg-line" aria-hidden />
             <Button size="sm" variant="ghost" onClick={() => setFocus((f) => ({ target: 'route', nonce: f.nonce + 1 }))}>
               <Route className="size-4" aria-hidden />
@@ -178,6 +201,7 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
             times={times}
             markers={markers}
             airports={airports}
+            windIndices={hasWind && showWind ? windIndices : []}
             colorMode={colorMode}
             activeIndex={activeIndex}
             onHover={setHoverIndex}
@@ -240,6 +264,7 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
             fuel={fuel}
             reserveKg={reserveKg}
             apu={apu}
+            shear={shear}
             activeIndex={activeIndex}
             pinned={pinnedIndex !== null}
             onHover={setHoverIndex}
@@ -248,7 +273,8 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
           />
           <p className="text-xs text-muted">
             Marcadores: B calzos, A APU, M motores, ↗ despegue, ↘ contacto con pista, G motor y al aire, P pausa, ! aviso, ∠ alabeo o cabeceo
-            excesivo. En la altitud, la línea punteada y su etiqueta dan el ángulo promedio de cada ascenso, descenso y aproximación (en verde si la
+            excesivo, ≋ cizalladura (el viento de cabeza cambia 15 kt o más en 30 s a baja altura). Las flechas de viento apuntan hacia donde sopla:
+            verdes de cabeza, naranjas de cola. En la altitud, la línea punteada y su etiqueta dan el ángulo promedio de cada ascenso, descenso y aproximación (en verde si la
             aproximación queda a 3° ± 0.5°). Teclado: flechas para recorrer la traza (Mayús para saltar 10 puntos), Esc para soltar.
           </p>
         </div>

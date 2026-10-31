@@ -126,6 +126,9 @@ function toSummary(value: unknown): DashboardSummary {
     my_pireps_pending: num(v.my_pireps_pending),
     my_block_minutes: num(v.my_block_minutes),
     my_flights_accepted: num(v.my_flights_accepted),
+    live_flights: num(v.live_flights),
+    airline_block_minutes_30d: num(v.airline_block_minutes_30d),
+    airline_flights_30d: num(v.airline_flights_30d),
   };
 }
 

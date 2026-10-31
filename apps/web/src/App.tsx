@@ -15,14 +15,17 @@ import { AirportsPage } from '@/pages/airports-page';
 import { BookingPage } from '@/pages/booking-page';
 import { DashboardPage } from '@/pages/dashboard-page';
 import { FleetPage } from '@/pages/fleet-page';
+import { LiveFlightsPage } from '@/pages/live-flights-page';
 import { MyFlightsPage } from '@/pages/my-flights-page';
 import { PirepDetailPage } from '@/pages/pirep-detail-page';
 import { PirepsPage } from '@/pages/pireps-page';
 import { NotFoundPage } from '@/pages/not-found-page';
+import { OperationsPage } from '@/pages/operations-page';
 import { PilotsPage } from '@/pages/pilots-page';
 import { PublicHomePage } from '@/pages/public-home-page';
 import { RoutesPage } from '@/pages/routes-page';
 import { SettingsPage } from '@/pages/settings-page';
+import { StatisticsPage } from '@/pages/statistics-page';
 
 export function App() {
   return (
@@ -48,6 +51,7 @@ export function App() {
           }
         >
           <Route index element={<DashboardPage />} />
+          <Route path="live" element={<LiveFlightsPage />} />
           <Route path="booking" element={<BookingPage />} />
           <Route path="my-flights" element={<MyFlightsPage />} />
           <Route path="pireps" element={<PirepsPage />} />
@@ -58,6 +62,8 @@ export function App() {
           <Route path="fleet" element={<FleetPage />} />
           <Route path="airports" element={<AirportsPage />} />
           <Route path="routes" element={<RoutesPage />} />
+          <Route path="statistics" element={<StatisticsPage />} />
+          <Route path="operations" element={<OperationsPage />} />
           <Route path="administration" element={<AdministrationPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>

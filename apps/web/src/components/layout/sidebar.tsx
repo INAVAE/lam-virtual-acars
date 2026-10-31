@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router';
+import { useMyMemberships } from '@/hooks/use-lam-data';
 import { cn } from '@/lib/cn';
 import { navigation, type NavItem } from './navigation';
 
@@ -58,6 +59,11 @@ function Item({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) 
 }
 
 export function Sidebar({ isOrgAdmin, onNavigate }: { isOrgAdmin: boolean; onNavigate?: () => void }) {
+  const memberships = useMyMemberships();
+  // El Operations Center se muestra a quien supervisa alguna aerolínea; la base de datos aplica el permiso real.
+  const isStaff =
+    isOrgAdmin ||
+    (memberships.data ?? []).some((m) => m.status === 'active' && m.roles.some((r) => r === 'airline_admin' || r === 'ops_chief'));
   return (
     <nav aria-label="Navegación principal" className="flex h-full flex-col">
       <div className="flex items-center gap-2.5 px-4 pb-4 pt-5">
@@ -70,7 +76,7 @@ export function Sidebar({ isOrgAdmin, onNavigate }: { isOrgAdmin: boolean; onNav
 
       <div className="flex-1 space-y-5 overflow-y-auto px-2 pb-4">
         {navigation.map((group) => {
-          const items = group.items.filter((item) => !item.adminOnly || isOrgAdmin);
+          const items = group.items.filter((item) => (!item.adminOnly || isOrgAdmin) && (!item.staffOnly || isStaff));
           return (
             <div key={group.label}>
               <p className="px-2.5 pb-1 text-sm text-muted">{group.label}</p>

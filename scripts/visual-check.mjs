@@ -299,7 +299,7 @@ const FLIGHTS = [
 ];
 const HISTORY = [
   flight(3, 'MXL801', '801', 'MMTJ', 'MMMX', 3, 'XA-MXD', 'cancelled', { cancelled_at: now, booking: { id: id(803), status: 'expired', expires_at: now, closed_at: now } }),
-  flight(5, 'MXL106', '106', 'MMMX', 'MMGL', 2, 'XA-MXB', 'completed', { completed_at: now, pirep: { id: id(1200), status: 'pending', score: 85 } }),
+  flight(5, 'MXL106', '106', 'MMMX', 'MMGL', 2, 'XA-MXB', 'completed', { completed_at: now, pirep: { id: id(1200), status: 'pending', score: 90 } }),
 ];
 
 // PIREP de ejemplo: MMMX → MMAA con traza sintética.
@@ -318,6 +318,13 @@ const phaseAt = (m) =>
   m < 2 ? 'preflight' : m < 3 ? 'pushback' : m < 8.6 ? 'taxi_out' : m < 9.3 ? 'takeoff' : m < 10 ? 'initial_climb' : m < 20 ? 'climb' : m < 34 ? 'cruise' : m < 50 ? 'descent' : m < 52.5 ? 'approach' : m < 53 ? 'landing' : 'taxi_in';
 const altAt = (m) => (m < 9.3 ? 7316 : m < 20 ? 7316 + ((m - 9.3) / 10.7) * 17684 : m < 34 ? 25000 : m < 52.5 ? 25000 - ((m - 34) / 18.5) * 24984 : 16);
 const iasAt = (m) => (m < 2 ? 0 : m < 3 ? 3 : m < 8.6 ? 16 : m < 9.3 ? 140 : m < 12 ? 210 : m < 20 ? 280 : m < 34 ? 270 : m < 48 ? 280 : m < 52.5 ? 150 : m < 53 ? 90 : 14);
+// Viento: del sur cerca del suelo, rolando al oeste y arreciando con la altura.
+// En la aproximación (minuto 51) cae de 20 a 2 kt: una cizalladura de −18 kt.
+const windAt = (m, alt) => {
+  if (m >= 50.9 && m < 51.4) return { dir: 180, kt: 2 };
+  if (alt < 3000) return { dir: 180, kt: 20 };
+  return { dir: Math.round(180 + Math.min(1, alt / 25000) * 90), kt: Math.round(20 + Math.min(1, (alt - 3000) / 22000) * 45) };
+};
 const TRACK = Array.from({ length: 140 }, (_, i) => {
   const m = (i / 139) * 56;
   const f = m / 56;
@@ -335,6 +342,8 @@ const TRACK = Array.from({ length: 140 }, (_, i) => {
     vs_fpm: phase === 'climb' || phase === 'initial_climb' ? 1650 : phase === 'descent' || phase === 'approach' ? -1350 : 0,
     heading_deg: 195,
     fuel_kg: fuelAt(m),
+    wind_dir_deg: windAt(m, Math.max(0, altAt(m) - (m < 34 ? 7316 : 16))).dir,
+    wind_kt: windAt(m, Math.max(0, altAt(m) - (m < 34 ? 7316 : 16))).kt,
     on_ground: ground,
     phase,
   };
@@ -347,11 +356,11 @@ const EVENTS = [
   ['engine_start', 'pushback', 3, { running: 1, count: 2 }],
   ['engine_start', 'pushback', 3.6, { running: 2, count: 2 }],
   ['note', 'taxi_out', 6, { kind: 'apu', state: 'stop', fuel_kg: fuelAt(6) }],
-  ['takeoff', 'initial_climb', 9.3, { ias_kt: 153, pitch_deg: 8.3, flaps_deg: 5, fuel_kg: fuelAt(9.3) }],
+  ['takeoff', 'initial_climb', 9.3, { ias_kt: 153, pitch_deg: 8.3, flaps_deg: 5, fuel_kg: fuelAt(9.3), wind_dir_deg: 180, wind_kt: 20, headwind_kt: 19.3, crosswind_kt: -5.2 }],
   ['note', 'climb', 14, { kind: 'attitude', axis: 'bank', peak_deg: -38.4, seconds: 6, altitude_ft: Math.round(altAt(14)), ias_kt: 280 }],
   ['phase_change', 'cruise', 20, { from: 'climb', to: 'cruise' }],
   ['note', 'descent', 42, { kind: 'attitude', axis: 'pitch_down', peak_deg: -8.1, seconds: 4, altitude_ft: Math.round(altAt(42)), ias_kt: 280 }],
-  ['touchdown', 'landing', 52.8, { vs_fpm: -294, g_force: 1.25, flaps_deg: 30, fuel_kg: fuelAt(52.8) }],
+  ['touchdown', 'landing', 52.8, { vs_fpm: -294, g_force: 1.25, flaps_deg: 30, fuel_kg: fuelAt(52.8), wind_dir_deg: 180, wind_kt: 20, headwind_kt: 19.3, crosswind_kt: -5.2 }],
   ['block_on', 'taxi_in', 55.5, { fuel_kg: fuelAt(55.5) }],
 ].map(([type, phase, min, data], i) => ({ id: id(1300 + i), seq: i, type, phase, occurred_at: at(min), latitude: null, longitude: null, altitude_ft: null, data }));
 const stage = (a, b) => ({ kg: fuelAt(a) - fuelAt(b), minutes: Math.round((b - a) * 10) / 10, kg_per_hour: Math.round(((fuelAt(a) - fuelAt(b)) / (b - a)) * 60) });
@@ -402,7 +411,11 @@ const pirepRow = (n, callsign, status, score, extra = {}) => ({
   findings: [
     { code: 'bank_excess', label: 'Alabeo excesivo', penalty: 5, critical: false, value: 38.4, threshold: 35, unit: '°' },
     { code: 'pitch_down_excess', label: 'Cabeceo excesivo (nariz abajo)', penalty: 5, critical: false, value: -8.1, threshold: 7.5, unit: '°' },
-    { code: 'taxi_speed', label: 'Rodaje rápido', penalty: 5, critical: false, value: 32, threshold: 30, unit: 'kt' },
+    {
+      code: 'taxi_speed', label: 'Rodaje rápido', penalty: 5, critical: false, value: 32, threshold: 30, unit: 'kt',
+      waived: true, waived_by_name: PROFILE.display_name, waived_at: now,
+      waived_reason: 'Salida directa: despegue autorizado sin posición y mantener; los 32 kt fueron la carrera de despegue.',
+    },
   ],
   metrics: {
     block_estimated: false,
@@ -416,6 +429,13 @@ const pirepRow = (n, callsign, status, score, extra = {}) => ({
     client_version: '0.1.19',
     fuel: MOCK_FUEL,
     attitude: { excursions: 2, max_bank_deg: 38.4, min_pitch_down_deg: -8.1 },
+    wind: {
+      samples: 140,
+      takeoff: { at: at(9.3), dir_deg: 180, kt: 20, heading_deg: 195, headwind_kt: 19.3, crosswind_kt: -5.2 },
+      touchdown: { at: at(52.8), dir_deg: 180, kt: 20, heading_deg: 195, headwind_kt: 19.3, crosswind_kt: -5.2 },
+      max: { at: at(30), dir_deg: 270, kt: 65, altitude_ft: 25000, phase: 'cruise' },
+      shear: { events: 1, max_change_kt: -18.3, at: at(51.2), phase: 'approach', altitude_ft: 6850 },
+    },
   },
   has_critical: false,
   status,
@@ -436,7 +456,7 @@ const pirepRow = (n, callsign, status, score, extra = {}) => ({
   ...extra,
 });
 const PIREPS = [
-  pirepRow(0, 'MXL106', 'pending', 85),
+  pirepRow(0, 'MXL106', 'pending', 90),
   pirepRow(1, 'MXL350', 'accepted', 100, { findings: [], landing_vs_fpm: -162, block_minutes: 128 }),
   pirepRow(2, 'MXL801', 'rejected', 55, {
     diverted: true,
@@ -449,6 +469,140 @@ const PIREPS = [
     ],
   }),
 ];
+// -----------------------------------------------------------------------------
+// Fase 6: vuelos en vivo, estadísticas, Operations Center y aterrizajes
+// -----------------------------------------------------------------------------
+const apt = (icao) => {
+  const a = AIRPORTS.find((x) => x.icao_code === icao) ?? AIRPORTS[0];
+  return { icao: a.icao_code, name: a.name, city: a.city, latitude: a.latitude, longitude: a.longitude };
+};
+const minsAgo = (m) => new Date(Date.now() - m * 60_000).toISOString();
+const liveFlight = (n, callsign, from, to, pos, phase, extra = {}) => ({
+  flight_id: id(1500 + n),
+  session_id: id(1550 + n),
+  airline: { id: MXL.id, icao: MXL.icao_code, name: MXL.name, slug: MXL.slug, color: MXL.brand_primary_color, logo_path: MXL.logo_path },
+  callsign,
+  flight_number: callsign.slice(3),
+  network: 'IVAO',
+  pilot: { id: n === 0 ? USER_ID : id(700 + n), name: n === 0 ? PROFILE.display_name : ['Ana Torres', 'Luis Ramírez', 'Sofía Méndez'][n - 1], number: 1001 + n },
+  is_mine: n === 0,
+  aircraft_registration: ['XA-MXB', 'XA-MXC', 'XA-MXD', 'XA-MXE'][n],
+  aircraft_type: 'B738',
+  aircraft_model: 'Boeing 737-800',
+  sim_aircraft_title: 'PMDG 737-800',
+  origin: apt(from),
+  destination: apt(to),
+  planned_distance_nm: 300,
+  planned_minutes: 70,
+  route_nm: 270,
+  remaining_nm: pos.remaining,
+  started_at: minsAgo(pos.started),
+  last_contact_at: minsAgo(pos.contact ?? 0.05),
+  phase,
+  position: {
+    sampled_at: minsAgo(pos.contact ?? 0.05), latitude: pos.lat, longitude: pos.lon, altitude_ft: pos.alt, agl_ft: pos.alt - 1000,
+    ias_kt: pos.ias, gs_kt: pos.gs, heading_deg: pos.hdg, vs_fpm: pos.vs, on_ground: pos.alt < 8000 && pos.gs < 40,
+    wind_dir_deg: 260, wind_kt: 42,
+  },
+  alerts: [],
+  ...extra,
+});
+const LIVE = [
+  liveFlight(0, 'MXL106', 'MMMX', 'MMGL', { lat: 20.05, lon: -101.6, alt: 34000, ias: 270, gs: 455, hdg: 288, vs: 0, remaining: 98, started: 52 }, 'cruise'),
+  liveFlight(1, 'MXL221', 'MMGL', 'MMMX', { lat: 19.9, lon: -100.1, alt: 14500, ias: 280, gs: 320, hdg: 112, vs: -1800, remaining: 58, started: 61 }, 'descent', {
+    alerts: [{ code: 'attitude', level: 'warn', at: minsAgo(12), value: 37, axis: 'bank' }],
+  }),
+  liveFlight(2, 'MXL310', 'MMMX', 'MMMY', { lat: 19.43, lon: -99.07, alt: 7316, ias: 12, gs: 14, hdg: 50, vs: 0, remaining: 380, started: 9 }, 'taxi_out'),
+  liveFlight(3, 'MXL455', 'MMMY', 'MMMX', { lat: 23.6, lon: -100.2, alt: 31000, ias: 265, gs: 410, hdg: 180, vs: 0, remaining: 230, started: 40, contact: 6 }, 'cruise', {
+    alerts: [{ code: 'no_signal', level: 'warn', at: minsAgo(6), value: 6 }],
+  }),
+];
+const LIVE_TRACK = TRACK.filter((p) => !p.on_ground).slice(0, 60).map((p, i) => [19.44 + i * 0.011, -99.1 - i * 0.042, p.altitude_ft, p.phase]);
+const MONTHS = Array.from({ length: 12 }, (_, i) => {
+  const d = new Date();
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() - 11 + i);
+  const flights = [0, 0, 2, 5, 9, 7, 12, 15, 11, 18, 22, 14][i];
+  return { month: d.toISOString().slice(0, 7), flights, block_minutes: flights * 74, distance_nm: flights * 290, average_score: flights ? 88 + (i % 5) : null, pilots: Math.min(6, flights) };
+});
+const RANKING = [
+  ['Ana Torres', 1002, 1820, 24, 7100, 94.2, -142, -61],
+  [PROFILE.display_name, 1001, 1510, 19, 5600, 91.8, -188, -95],
+  ['Luis Ramírez', 1003, 1230, 15, 4400, 86.5, -236, -120],
+  ['Sofía Méndez', 1004, 640, 8, 2300, 89.0, -205, -88],
+].map(([name, number, block, flights, dist, score, vs, best], i) => ({
+  user_id: i === 1 ? USER_ID : id(700 + i), name, number, country_code: 'MX', flights, block_minutes: block, distance_nm: dist,
+  average_score: score, average_landing_vs_fpm: vs, best_landing_vs_fpm: best, last_30_days_minutes: Math.round(block / 4), last_flight_at: minsAgo(60 * (i + 1) * 9),
+}));
+const STATS = {
+  airlines: [MXL.id],
+  months: 12,
+  totals: { flights: 66, block_minutes: 5200, flight_minutes: 4300, distance_nm: 19400, fuel_used_kg: 310000, average_score: 90.6, average_landing_vs_fpm: -191, pilots: 4, airports: 7 },
+  last_30_days: { flights: 14, block_minutes: 1040, distance_nm: 4100, average_score: 91.2, pilots: 4 },
+  monthly: MONTHS,
+  top_routes: [
+    { origin: 'MMMX', destination: 'MMGL', origin_city: 'Ciudad de México', destination_city: 'Guadalajara', flights: 21, block_minutes: 1470, average_score: 92.1 },
+    { origin: 'MMGL', destination: 'MMMX', origin_city: 'Guadalajara', destination_city: 'Ciudad de México', flights: 17, block_minutes: 1190, average_score: 90.4 },
+    { origin: 'MMMX', destination: 'MMMY', origin_city: 'Ciudad de México', destination_city: 'Monterrey', flights: 12, block_minutes: 1080, average_score: 88.7 },
+    { origin: 'MMMX', destination: 'MMUN', origin_city: 'Ciudad de México', destination_city: 'Cancún', flights: 9, block_minutes: 1170, average_score: 91.0 },
+  ],
+  aircraft_types: [
+    { icao: 'B738', model: 'Boeing 737-800', flights: 41, block_minutes: 3300, average_landing_vs_fpm: -183 },
+    { icao: 'A20N', model: 'Airbus A320neo', flights: 25, block_minutes: 1900, average_landing_vs_fpm: -204 },
+  ],
+  landings: [
+    { bucket: 'butter', label: '0 a −100', flights: 9 }, { bucket: 'soft', label: '−100 a −200', flights: 27 }, { bucket: 'normal', label: '−200 a −300', flights: 19 },
+    { bucket: 'firm', label: '−300 a −400', flights: 7 }, { bucket: 'hard', label: '−400 a −600', flights: 3 }, { bucket: 'very_hard', label: 'más de −600', flights: 1 },
+  ],
+  ranking: RANKING,
+  common_findings: [
+    { code: 'taxi_speed', label: 'Rodaje rápido', count: 11 },
+    { code: 'landing_firm', label: 'Aterrizaje firme', count: 7 },
+    { code: 'speed_below_fl100', label: '250 nudos bajo 10,000 ft', count: 5 },
+    { code: 'bank_excess', label: 'Alabeo excesivo', count: 2 },
+  ],
+};
+const OPS = {
+  airlines: [MXL.id],
+  departures: [
+    { flight_id: id(1600), airline_icao: 'MXL', callsign: 'MXL500', flight_number: '500', pilot: { id: id(701), name: 'Ana Torres', number: 1002 }, origin: 'MMMX', destination: 'MMGL', aircraft_type: 'B738', aircraft_registration: 'XA-MXA', network: 'IVAO', scheduled_departure_at: minsAgo(45), booked_at: minsAgo(300), booking_expires_at: minsAgo(-600), has_ofp: true, state: 'late' },
+    { flight_id: id(1601), airline_icao: 'MXL', callsign: 'MXL612', flight_number: '612', pilot: { id: id(702), name: 'Luis Ramírez', number: 1003 }, origin: 'MMGL', destination: 'MMMX', aircraft_type: 'A20N', aircraft_registration: 'XA-MXF', network: 'OFFLINE', scheduled_departure_at: null, booked_at: minsAgo(1300), booking_expires_at: minsAgo(-100), has_ofp: false, state: 'expiring' },
+  ],
+  pirep_queue: [
+    { id: PIREP_ID, callsign: 'MXL106', flight_number: '106', pilot: { id: USER_ID, name: PROFILE.display_name, number: 1001 }, origin: 'MMMX', destination: 'MMAA', arrival: 'MMAA', diverted: false, score: 90, has_critical: false, critical_labels: [], block_minutes: 54, landing_vs_fpm: -294, pilot_comment: true, created_at: minsAgo(26 * 60) },
+  ],
+  fleet: AIRCRAFT.map((a, i) => ({ id: a.id, airline_icao: 'MXL', registration: a.registration, fleet_number: null, aircraft_type: 'B738', status: a.status ?? 'available', current_airport: ['MMMX', 'MMGL', 'MMMY', 'MMMX'][i % 4], base_airport: 'MMMX', away_from_base: i % 4 === 1 || i % 4 === 2, total_minutes: 3000 + i * 410, cycles: 40 + i * 6, last_flight_at: minsAgo(i * 300 + 60), usage: i === 1 ? 'flying' : i === 2 ? 'booked' : null, usage_callsign: i === 1 ? 'MXL106' : i === 2 ? 'MXL500' : null, usage_pilot: i === 1 ? PROFILE.display_name : i === 2 ? 'Ana Torres' : null })),
+  counts: { flights_completed_24h: 5, bookings_expired_24h: 1, pireps_reviewed_7d: 12 },
+};
+const PERFORMANCE = {
+  days: 90,
+  pilots: RANKING.map((r, i) => ({
+    user_id: r.user_id, name: r.name, number: r.number, airlines: ['MXL'], member_since: minsAgo(60 * 24 * 200), flights: 6 + i, accepted: 5 + i, rejected: i === 2 ? 1 : 0, pending: 1,
+    block_minutes: r.block_minutes / 3, average_score: r.average_score, previous_average_score: r.average_score - 3 + i * 2, average_landing_vs_fpm: r.average_landing_vs_fpm,
+    critical_findings: i === 2 ? 1 : 0, top_findings: i === 0 ? [] : ['Rodaje rápido', 'Aterrizaje firme'].slice(0, i), total_block_minutes: r.block_minutes, last_flight_at: r.last_flight_at,
+  })),
+};
+const LANDING_VS = [-142, -188, -96, -251, -173, -305, -120, -212, -164, -431, -199, -145, -87, -233, -176, -158, -268, -131, -190, -214];
+const LANDING_STATS = {
+  user_id: USER_ID,
+  pilot: { id: USER_ID, name: PROFILE.display_name, number: 1001 },
+  summary: {
+    landings: 20, average_vs_fpm: -194, median_vs_fpm: -181, best_vs_fpm: -87, worst_vs_fpm: -431, stddev_vs_fpm: 76, average_g: 1.21, max_g: 1.58,
+    average_pitch_deg: 4.3, average_bank_deg: 1.4, max_bank_deg: 4.2, average_ias_kt: 141, average_crosswind_kt: 6.8, max_crosswind_kt: 17,
+    bounce_rate: 0.05, firm_rate: 0.1, hard_rate: 0.05, within_limits_rate: 0.85, average_score: 91.8, last_10_average_vs_fpm: -173, previous_10_average_vs_fpm: -215,
+  },
+  buckets: [
+    { bucket: 'butter', label: '0 a −100', flights: 2 }, { bucket: 'soft', label: '−100 a −200', flights: 11 }, { bucket: 'normal', label: '−200 a −300', flights: 5 },
+    { bucket: 'firm', label: '−300 a −400', flights: 1 }, { bucket: 'hard', label: '−400 a −600', flights: 1 }, { bucket: 'very_hard', label: 'más de −600', flights: 0 },
+  ],
+  recent: LANDING_VS.map((vs, i) => ({
+    id: i === 0 ? PIREP_ID : id(1700 + i), at: minsAgo(60 * 24 * i + 90), callsign: `MXL${100 + i * 7}`, origin: i % 2 ? 'MMGL' : 'MMMX', arrival: i % 2 ? 'MMMX' : 'MMGL',
+    aircraft_type: i % 3 ? 'B738' : 'A20N', status: i < 2 ? 'pending' : 'accepted', vs_fpm: vs, g_force: Math.round((1.1 + Math.abs(vs) / 1200) * 100) / 100,
+    pitch_deg: 3.5 + (i % 4) * 0.4, bank_deg: ((i % 5) - 2) * 0.9, bounces: vs < -400 ? 1 : 0, ias_kt: 136 + (i % 6), flaps_deg: 30, headwind_kt: 8 + (i % 7), crosswind_kt: ((i % 9) - 4) * 2,
+    score: vs < -400 ? 70 : vs < -300 ? 90 : 100, within_limits: vs > -300, findings: vs < -400 ? ['landing_firm', 'landing_bounce'] : vs < -300 ? ['landing_firm'] : [],
+  })),
+};
+
 const RULE_DEFS = [
   ['landing_hard', 'Aterrizaje duro', 'Velocidad vertical al tocar pista más fuerte que el umbral.', 'fpm', 20, 600, false],
   ['landing_firm', 'Aterrizaje firme', 'Velocidad vertical al tocar pista más fuerte que el umbral (sin llegar a duro).', 'fpm', 5, 400, false],
@@ -572,6 +726,16 @@ async function handleSupabase(route) {
       json: { scope: 'organization', airlines_total: 5, airlines_active: 5, pilots_active_members: 3, pending_requests: 2, profiles_total: 6, bookings_active: 4, my_bookings_active: 2, pireps_pending_review: 1, my_pireps_pending: 1, my_block_minutes: 128, my_flights_accepted: 1 },
     });
   }
+  const RPC = {
+    get_live_flights: LIVE,
+    get_live_flight_track: LIVE_TRACK,
+    get_airline_statistics: STATS,
+    get_operations_overview: OPS,
+    get_pilot_performance: PERFORMANCE,
+    get_pilot_landing_stats: LANDING_STATS,
+  };
+  const rpcName = url.pathname.startsWith('/rest/v1/rpc/') ? url.pathname.slice('/rest/v1/rpc/'.length) : null;
+  if (rpcName && rpcName in RPC) return route.fulfill({ status: 200, headers: CORS, json: RPC[rpcName] });
   if (url.pathname === '/rest/v1/rpc/route_aircraft_options') {
     return route.fulfill({ status: 200, headers: CORS, json: AIRCRAFT_OPTIONS });
   }
@@ -827,6 +991,51 @@ await shoot('29-pirep-local-first', `pireps/${PIREP_ID}`, {
   },
 });
 await shoot('30-settings-time', 'settings', { waitFor: 'Zona horaria' });
+await shoot('25e-pirep-wind-shear', `pireps/${PIREP_ID}`, {
+  waitFor: 'Análisis del vuelo',
+  action: async (page) => {
+    const chart = page.locator('svg[aria-label^="Perfil de altitud"]');
+    await chart.scrollIntoViewIfNeeded();
+    const box = await chart.boundingBox();
+    if (!box) throw new Error('No se encontró la gráfica');
+    // Minuto 51.2: cizalladura en la aproximación.
+    await page.mouse.move(box.x + 56 + ((box.width - 72) * 51.2) / 56, box.y + box.height * 0.45);
+    await page.getByRole('status').filter({ hasText: 'Cizalladura' }).first().waitFor();
+    await page.getByRole('status').filter({ hasText: 'Viento' }).first().waitFor();
+    await page.waitForTimeout(800);
+  },
+});
+await shoot('25f-pirep-waived-finding', `pireps/${PIREP_ID}`, {
+  waitFor: 'Anulada por',
+  action: async (page) => {
+    await page.getByText('Anulada por').first().scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+  },
+});
+await shoot('31-live-flights', `live?flight=${id(1500)}`, {
+  waitFor: 'Vuelos en vivo',
+  action: async (page) => {
+    await page.getByRole('region', { name: /Detalle del vuelo MXL106/ }).waitFor();
+    await page.waitForTimeout(1500);
+  },
+});
+await shoot('32-statistics', 'statistics', { waitFor: 'Ranking de pilotos' });
+await shoot('33-statistics-landings', 'statistics', {
+  waitFor: 'Ranking de pilotos',
+  action: async (page) => {
+    await page.getByRole('tab', { name: 'Aterrizajes' }).click();
+    await page.getByText('Dentro de parámetros').first().waitFor();
+    await page.waitForTimeout(500);
+  },
+});
+await shoot('34-operations', 'operations', { waitFor: 'Operations Center', action: async (page) => page.getByText('MXL221').first().waitFor() });
+await shoot('35-operations-pireps', 'operations', {
+  waitFor: 'Operations Center',
+  action: async (page) => {
+    await page.getByRole('tab', { name: /PIREP por revisar/ }).click();
+    await page.getByText('Con comentario').first().waitFor();
+  },
+});
 await shoot('28-airline-scoring', `airlines/${MXL.slug}`, { airlineId: MXL.id, waitFor: 'Puntuación de PIREP' });
 
 await browser.close();

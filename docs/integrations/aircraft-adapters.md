@@ -65,3 +65,16 @@ iniciar la sesión y en el aviso de tipo distinto al reservado.
 
 - Fenix: los valores de las L: del freno y los calzos (la bitácora registra cada cambio).
 - PMDG: que el bloque llegue con `ON_SET` y que los campos coincidan. La bitácora registra modelo, freno, tren y flaps del SDK junto a las variables estándar.
+
+## Viento (conector 0.1.21)
+
+Todos los adaptadores leen `AMBIENT WIND DIRECTION` (grados verdaderos, de donde sopla) y
+`AMBIENT WIND VELOCITY` (nudos), que el simulador da para cualquier aeronave. Las componentes
+de cabeza y cruzada se calculan con `PLANE HEADING DEGREES TRUE`.
+
+## Cierre del vuelo y APU (conector 0.1.21)
+
+El vuelo se completa solo con motores apagados, avión detenido, freno de estacionamiento (5 s)
+y la APU apagada. Si el avión no informa APU (`ApuRunning` nulo), no se exige. Sin freno, basta
+con 60 s detenido, también con la APU apagada. Mientras la APU siga encendida, el conector muestra
+"Apaga la APU para cerrar el vuelo".

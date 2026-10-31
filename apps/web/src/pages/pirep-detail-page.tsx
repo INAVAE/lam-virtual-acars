@@ -1,5 +1,5 @@
-import type { PirepFuel, PirepMetrics } from '@lam/shared-types';
-import { ArrowLeft, Check, Plane, TriangleAlert, X } from 'lucide-react';
+import type { PirepFinding, PirepFuel, PirepMetrics, PirepWindAt } from '@lam/shared-types';
+import { Archive, ArchiveRestore, ArrowLeft, Ban, Check, Plane, RotateCcw, TriangleAlert, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -9,21 +9,25 @@ import type { MapAirport } from '@/components/flight-map';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog } from '@/components/ui/dialog';
 import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  useArchivePirep,
   useCommentPirep,
   usePirep,
   usePirepTrack,
+  useRestorePirep,
   useReviewPirep,
+  useWaiveFinding,
   type FlightEvent,
   type PirepDetail,
 } from '@/hooks/use-pireps';
 import { useAuth } from '@/lib/auth';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
-import { attitudeNote } from '@/lib/flight-analysis';
+import { attitudeNote, formatWind, formatWindComponents, windComponents } from '@/lib/flight-analysis';
 import { formatLocalDateTime, formatNumber, formatPilotNumber } from '@/lib/format';
 import { useAirlinePermissions } from '@/lib/permissions';
 import { phaseLabel } from '@/lib/phases';
@@ -259,9 +263,33 @@ function CommentsPanel({ pirep, isOwner, canReview }: { pirep: PirepDetail; isOw
 }
 
 // -----------------------------------------------------------------------------
+/** Viento de un evento (datos del conector) o, si no los trae, del resumen del PIREP. */
+function windAt(data: Record<string, unknown> | undefined, fallback: PirepWindAt | undefined): { text: string; detail: string } | null {
+  const n = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+  const dir = n(data?.wind_dir_deg) ?? fallback?.dir_deg;
+  const kt = n(data?.wind_kt) ?? fallback?.kt;
+  if (dir == null || kt == null) return null;
+  const head = n(data?.headwind_kt) ?? fallback?.headwind_kt;
+  const cross = n(data?.crosswind_kt) ?? fallback?.crosswind_kt;
+  const heading = n(data?.heading_deg) ?? fallback?.heading_deg;
+  const c = head != null && cross != null ? { head, cross } : windComponents(dir, kt, heading);
+  return { text: formatWind(dir, kt), detail: formatWindComponents(c) };
+}
+
+function WindFact({ label, wind }: { label: string; wind: { text: string; detail: string } | null }) {
+  return (
+    <Fact label={label} mono>
+      {wind ? wind.text : '—'}
+      {wind?.detail ? <span className="block font-sans text-xs text-muted">{wind.detail}</span> : null}
+    </Fact>
+  );
+}
+
 function LandingFacts({ pirep, metrics }: { pirep: PirepDetail; metrics: PirepMetrics }) {
   const td = metrics.touchdown;
   const to = metrics.takeoff;
+  const wind = metrics.wind;
+  const shear = wind?.shear;
   const rating = landingRating(pirep.landing_vs_fpm);
   const gear = td?.gear_down;
   return (
@@ -306,8 +334,36 @@ function LandingFacts({ pirep, metrics }: { pirep: PirepDetail; metrics: PirepMe
           </Fact>
           <Fact label="Rodaje máx." mono>
             {metrics.max_taxi_gs_kt !== undefined ? `${metrics.max_taxi_gs_kt} kt` : '—'}
+            {metrics.takeoff_roll_from_seq !== undefined ? (
+              <span className="block font-sans text-xs text-muted">sin contar la aceleración de la salida directa</span>
+            ) : null}
           </Fact>
         </dl>
+        {wind || td?.wind_kt !== undefined || to?.wind_kt !== undefined ? (
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-line pt-3 sm:grid-cols-4">
+            <WindFact label="Viento al despegar" wind={windAt(to, wind?.takeoff)} />
+            <WindFact label="Viento en la toma" wind={windAt(td, wind?.touchdown)} />
+            <Fact label="Viento máximo" mono>
+              {wind?.max ? formatWind(wind.max.dir_deg, wind.max.kt) : '—'}
+              {wind?.max?.altitude_ft != null ? <span className="block font-sans text-xs text-muted">a {formatNumber(wind.max.altitude_ft)} ft</span> : null}
+            </Fact>
+            <Fact label="Cizalladura">
+              {shear ? (
+                <span className="text-warn-ink">
+                  {shear.max_change_kt > 0 ? '+' : '−'}
+                  {Math.abs(Math.round(shear.max_change_kt))} kt en 30 s
+                  <span className="block text-xs text-muted">
+                    {phaseLabel(shear.phase)} · {formatNumber(shear.altitude_ft)} ft{shear.events > 1 ? ` · ${shear.events} episodios` : ''}
+                  </span>
+                </span>
+              ) : wind ? (
+                'No detectada'
+              ) : (
+                '—'
+              )}
+            </Fact>
+          </dl>
+        ) : null}
       </div>
     </Panel>
   );
@@ -485,29 +541,109 @@ function FuelPanel({ fuel }: { fuel: PirepFuel }) {
   );
 }
 
-function FindingsPanel({ pirep }: { pirep: PirepDetail }) {
-  const findings = parseFindings(pirep.findings);
+function FindingRow({ pirep, finding, canWaive }: { pirep: PirepDetail; finding: PirepFinding; canWaive: boolean }) {
+  const waive = useWaiveFinding();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const waived = finding.waived === true;
+
+  async function submit(on: boolean) {
+    try {
+      await waive.mutateAsync({ id: pirep.id, code: finding.code, reason, waive: on });
+      toast.success(on ? `Falta anulada: ${finding.label}` : `Falta restaurada: ${finding.label}`);
+      setOpen(false);
+      setReason('');
+    } catch (error) {
+      toast.error(describeError(error));
+    }
+  }
+
   return (
-    <Panel title="Puntaje" description="100 puntos menos la penalización de cada regla de la aerolínea que se cumplió.">
+    <li className="px-3 py-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className={waived ? 'flex items-center gap-1.5 font-medium text-muted line-through' : 'flex items-center gap-1.5 font-medium'}>
+            {finding.critical && !waived ? <TriangleAlert className="size-4 text-warn-ink" aria-label="Falta grave" /> : null}
+            {finding.label}
+          </p>
+          {findingDetail(finding) ? <p className="text-sm text-muted">{findingDetail(finding)}</p> : null}
+          {waived ? (
+            <p className="mt-0.5 text-sm text-ok-ink">
+              Anulada{finding.waived_by_name ? ` por ${finding.waived_by_name}` : ''}
+              {finding.waived_at ? ` · ${formatLocalDateTime(finding.waived_at)}` : ''}: <span className="text-ink">{finding.waived_reason}</span>
+            </p>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span className={waived ? 'whitespace-nowrap font-mono text-sm tabular-nums text-muted line-through' : 'whitespace-nowrap font-mono text-sm tabular-nums'}>
+            {finding.penalty > 0 ? `−${finding.penalty}` : 'info'}
+          </span>
+          {canWaive && (finding.penalty > 0 || finding.critical) ? (
+            waived ? (
+              <Button size="sm" variant="ghost" onClick={() => submit(false)} loading={waive.isPending}>
+                <RotateCcw className="size-3.5" aria-hidden />
+                Restaurar
+              </Button>
+            ) : !open ? (
+              <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+                <Ban className="size-3.5" aria-hidden />
+                Anular
+              </Button>
+            ) : null
+          ) : null}
+        </div>
+      </div>
+      {open && !waived ? (
+        <div className="mt-2 space-y-2 rounded-md border border-line bg-bg p-2.5">
+          <label className="block text-xs uppercase tracking-wide text-muted" htmlFor={`waive-${finding.code}`}>
+            Motivo de la anulación
+          </label>
+          <Textarea
+            id={`waive-${finding.code}`}
+            rows={2}
+            maxLength={500}
+            placeholder="Por ejemplo: salida directa autorizada sin posición y mantener; la velocidad fue la carrera de despegue."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => submit(true)} loading={waive.isPending} disabled={reason.trim() === ''}>
+              Anular falta
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+function FindingsPanel({ pirep, canReview }: { pirep: PirepDetail; canReview: boolean }) {
+  const findings = parseFindings(pirep.findings);
+  const canWaive = canReview && pirep.status === 'pending';
+  const waivedPoints = findings.filter((f) => f.waived).reduce((sum, f) => sum + f.penalty, 0);
+  return (
+    <Panel
+      title="Puntaje"
+      description={
+        canWaive
+          ? 'Si el comentario del piloto justifica una falta, anúlala con un motivo: el puntaje se recalcula antes de tu decisión.'
+          : '100 puntos menos la penalización de cada regla de la aerolínea que se cumplió.'
+      }
+    >
       <div className="flex items-center gap-4">
         <p className="font-display text-5xl font-semibold tabular-nums">{pirep.score}</p>
         <Badge tone={scoreTone(pirep.score)}>{pirep.score >= 90 ? 'Excelente' : pirep.score >= 75 ? 'Bueno' : pirep.score >= 50 ? 'Regular' : 'Deficiente'}</Badge>
+        {waivedPoints > 0 ? <span className="text-sm text-muted">+{waivedPoints} por faltas anuladas</span> : null}
       </div>
       {findings.length === 0 ? (
         <p className="mt-3 text-sm text-muted">Sin faltas: el vuelo cumplió todas las reglas.</p>
       ) : (
         <ul className="mt-3 divide-y divide-line rounded-md border border-line">
           {findings.map((f) => (
-            <li key={f.code} className="flex items-start justify-between gap-3 px-3 py-2">
-              <div>
-                <p className="flex items-center gap-1.5 font-medium">
-                  {f.critical ? <TriangleAlert className="size-4 text-warn-ink" aria-label="Falta grave" /> : null}
-                  {f.label}
-                </p>
-                {findingDetail(f) ? <p className="text-sm text-muted">{findingDetail(f)}</p> : null}
-              </div>
-              <span className="whitespace-nowrap font-mono text-sm tabular-nums">{f.penalty > 0 ? `−${f.penalty}` : 'info'}</span>
-            </li>
+            <FindingRow key={f.code} pirep={pirep} finding={f} canWaive={canWaive} />
           ))}
         </ul>
       )}
@@ -518,6 +654,56 @@ function FindingsPanel({ pirep }: { pirep: PirepDetail }) {
   );
 }
 
+function ArchiveDialog({ pirep, open, onClose }: { pirep: PirepDetail; open: boolean; onClose: () => void }) {
+  const archive = useArchivePirep();
+  const [reason, setReason] = useState('');
+  async function submit() {
+    try {
+      await archive.mutateAsync({ id: pirep.id, reason });
+      toast.success(pirep.status === 'accepted' ? 'PIREP archivado: se restaron sus horas y su ciclo' : 'PIREP archivado');
+      setReason('');
+      onClose();
+    } catch (error) {
+      toast.error(describeError(error));
+    }
+  }
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title={`Archivar ${pirep.callsign}`}
+      description="El PIREP deja de verse para el piloto y en las listas y estadísticas. Queda en la auditoría y el superadministrador puede restaurarlo."
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={submit} loading={archive.isPending} disabled={reason.trim() === ''}>
+            <Archive className="size-4" aria-hidden />
+            Archivar
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        {pirep.status === 'accepted' ? (
+          <Alert tone="info">Está aceptado: al archivarlo se restan {formatMinutes(pirep.block_minutes)} de block y un ciclo a la aeronave y al piloto.</Alert>
+        ) : null}
+        <label className="block text-sm font-medium" htmlFor="archive-reason">
+          Motivo
+        </label>
+        <Textarea
+          id="archive-reason"
+          maxLength={2000}
+          placeholder="Por ejemplo: vuelo duplicado, prueba del conector, vuelo hecho fuera de las reglas de la aerolínea…"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
+      </div>
+    </Dialog>
+  );
+}
+
 export function PirepDetailPage() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -525,6 +711,8 @@ export function PirepDetailPage() {
   const pirep = usePirep(id);
   const track = usePirepTrack(pirep.data?.flight_id, pirep.data?.session_id);
   const permissions = useAirlinePermissions(pirep.data?.airline_id);
+  const restore = useRestorePirep();
+  const [archiveOpen, setArchiveOpen] = useState(false);
 
   if (pirep.isPending) return <Skeleton className="h-96" />;
   if (pirep.isError) return <Alert tone="danger">{describeError(pirep.error)}</Alert>;
@@ -534,6 +722,7 @@ export function PirepDetailPage() {
   const metrics = parseMetrics(p.metrics);
   const isOwner = p.user_id === user?.id;
   const canReview = permissions.canStaff && (!isOwner || isOrgAdmin);
+  const canArchive = canReview && p.status !== 'archived';
   const airports: MapAirport[] = [];
   if (p.origin) airports.push({ icao: p.origin.icao_code, name: p.origin.name, latitude: p.origin.latitude, longitude: p.origin.longitude, role: 'origin' });
   if (p.destination)
@@ -564,6 +753,12 @@ export function PirepDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {canArchive ? (
+            <Button size="sm" variant="danger" onClick={() => setArchiveOpen(true)}>
+              <Archive className="size-4" aria-hidden />
+              Archivar
+            </Button>
+          ) : null}
           <Badge tone={pirepStatusTone[p.status]} className="px-2 py-1 text-sm">
             {pirepStatusLabels[p.status]}
           </Badge>
@@ -573,6 +768,37 @@ export function PirepDetailPage() {
           </div>
         </div>
       </header>
+
+      {canArchive ? <ArchiveDialog pirep={p} open={archiveOpen} onClose={() => setArchiveOpen(false)} /> : null}
+
+      {p.status === 'archived' ? (
+        <Alert tone="info">
+          <span className="flex flex-wrap items-center justify-between gap-3">
+            <span>
+              Archivado{p.archived_at ? ` el ${formatLocalDateTime(p.archived_at)}` : ''}. Motivo: {p.archive_reason ?? '—'}. Estado anterior:{' '}
+              {p.archived_from ? pirepStatusLabels[p.archived_from] : '—'}.
+            </span>
+            {isOrgAdmin ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                loading={restore.isPending}
+                onClick={async () => {
+                  try {
+                    await restore.mutateAsync({ id: p.id });
+                    toast.success('PIREP restaurado');
+                  } catch (error) {
+                    toast.error(describeError(error));
+                  }
+                }}
+              >
+                <ArchiveRestore className="size-4" aria-hidden />
+                Restaurar
+              </Button>
+            ) : null}
+          </span>
+        </Alert>
+      ) : null}
 
       {p.diverted ? (
         <Alert tone="danger">
@@ -659,7 +885,7 @@ export function PirepDetailPage() {
           {metrics.fuel ? <FuelPanel fuel={metrics.fuel} /> : null}
         </div>
         <div className="space-y-6">
-          <FindingsPanel pirep={p} />
+          <FindingsPanel pirep={p} canReview={canReview} />
           <CommentsPanel pirep={p} isOwner={isOwner} canReview={canReview} />
           <EventsPanel events={track.data?.events ?? []} loading={track.isPending} />
         </div>

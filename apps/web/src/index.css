@@ -186,6 +186,51 @@
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
   transition: transform 80ms linear;
 }
+/* Flechas de viento sobre la ruta: hacia donde sopla, con la velocidad en kt. */
+.lam-wind {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  color: var(--w);
+  filter: drop-shadow(0 0 1.5px rgb(0 0 0 / 0.85));
+}
+.lam-wind span {
+  position: absolute;
+  left: 15px;
+  top: 2px;
+  font: 600 10px/1 ui-monospace, monospace;
+  color: var(--w);
+  text-shadow: 0 0 2px #000, 0 0 2px #000;
+  white-space: nowrap;
+}
+/* Aviones del mapa en vivo: anillo en el elegido, atenuados sin señal. */
+.lam-live {
+  position: relative;
+  width: 28px;
+  height: 28px;
+}
+.lam-live.is-selected::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  border: 2px solid var(--c);
+  background: color-mix(in srgb, var(--c) 18%, transparent);
+}
+.lam-live.is-mine::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+}
+.lam-live.is-stale {
+  opacity: 0.45;
+}
 /* Teselas: nocturnas en modo oscuro, apagadas en claro para que resalte la ruta. */
 .lam-tiles-dark {
   filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(85%) saturate(55%);

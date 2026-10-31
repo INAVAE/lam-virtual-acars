@@ -32,6 +32,8 @@ El token es opaco (`lamd_` + 43 caracteres base64url, 256 bits). El servidor gua
 | `POST /track-batch` | `{ session_id, points[≤600] }` | `{ received, inserted, duplicates }` |
 
 Cada punto de la traza puede llevar `fuel_kg` (combustible total a bordo, opcional; desde el conector 0.1.16). El evento `touchdown` lleva también `fuel_kg`.
+
+La posición y cada punto de la traza pueden llevar `wind_dir_deg` (dirección verdadera de donde sopla el viento, 0–360) y `wind_kt` (velocidad, 0–400), ambos opcionales, desde el conector 0.1.21. Los eventos `takeoff` y `touchdown` agregan `wind_dir_deg`, `wind_kt`, `headwind_kt` (cabeza +, cola −) y `crosswind_kt` (desde la derecha +, desde la izquierda −).
 | `POST /events` (también `/event`) | `{ session_id, events[≤50] }` | `{ received, inserted, duplicates }` |
 | `POST /session/end` | `{ session_id, reason: completed\|aborted, latitude, longitude }` | `{ status, flight_id, final_airport }` (repetir el cierre devuelve `already_closed`) |
 

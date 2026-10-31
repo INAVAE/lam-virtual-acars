@@ -5,12 +5,14 @@ export const pirepStatusLabels: Record<PirepStatus, string> = {
   pending: 'En revisión',
   accepted: 'Aceptado',
   rejected: 'Rechazado',
+  archived: 'Archivado',
 };
 
-export const pirepStatusTone: Record<PirepStatus, 'ok' | 'warn' | 'danger'> = {
+export const pirepStatusTone: Record<PirepStatus, 'ok' | 'warn' | 'danger' | 'neutral'> = {
   pending: 'warn',
   accepted: 'ok',
   rejected: 'danger',
+  archived: 'neutral',
 };
 
 /** Tono del puntaje: 90+ verde, 75+ normal, menos de 75 aviso, menos de 50 peligro. */

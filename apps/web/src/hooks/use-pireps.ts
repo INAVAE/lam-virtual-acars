@@ -27,6 +27,8 @@ export function usePireps(view: PirepListView, airlineId: string | null, status:
       }
       if (airlineId) query = query.eq('airline_id', airlineId);
       if (status !== 'all' && view !== 'review') query = query.eq('status', status);
+      // Los archivados solo aparecen si se piden (y solo los ve el superadministrador).
+      if (status === 'all') query = query.neq('status', 'archived');
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -55,7 +57,20 @@ export type PirepDetail = NonNullable<NonNullable<ReturnType<typeof usePirep>['d
 
 export type TrackPoint = Pick<
   Tables<'flight_track_points'>,
-  'seq' | 'sampled_at' | 'latitude' | 'longitude' | 'altitude_ft' | 'gs_kt' | 'ias_kt' | 'vs_fpm' | 'heading_deg' | 'on_ground' | 'phase' | 'fuel_kg'
+  | 'seq'
+  | 'sampled_at'
+  | 'latitude'
+  | 'longitude'
+  | 'altitude_ft'
+  | 'gs_kt'
+  | 'ias_kt'
+  | 'vs_fpm'
+  | 'heading_deg'
+  | 'on_ground'
+  | 'phase'
+  | 'fuel_kg'
+  | 'wind_dir_deg'
+  | 'wind_kt'
 >;
 export type FlightEvent = Pick<
   Tables<'flight_events'>,
@@ -74,7 +89,7 @@ export function usePirepTrack(flightId: string | undefined, sessionId: string | 
       for (let from = 0; from < 20_000; from += 1000) {
         const { data, error } = await supabase
           .from('flight_track_points')
-          .select('seq, sampled_at, latitude, longitude, altitude_ft, gs_kt, ias_kt, vs_fpm, heading_deg, on_ground, phase, fuel_kg')
+          .select('seq, sampled_at, latitude, longitude, altitude_ft, gs_kt, ias_kt, vs_fpm, heading_deg, on_ground, phase, fuel_kg, wind_dir_deg, wind_kt')
           .eq('flight_id', flightId!)
           .eq('session_id', sessionId!)
           .order('seq')
@@ -110,6 +125,50 @@ export function useReviewPirep() {
         p_decision: decision,
         p_comment: comment.trim() || undefined,
       });
+      if (error) throw error;
+      return data;
+    },
+    onSettled: () => refreshPireps(queryClient),
+  });
+}
+
+/** Anula (o restaura, con waive=false) una falta del PIREP en revisión. */
+export function useWaiveFinding() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, code, reason, waive }: { id: string; code: string; reason?: string; waive: boolean }) => {
+      const { data, error } = await getSupabase().rpc('waive_pirep_finding', {
+        p_pirep_id: id,
+        p_code: code,
+        p_reason: reason?.trim() || undefined,
+        p_waive: waive,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSettled: () => refreshPireps(queryClient),
+  });
+}
+
+/** Archiva un PIREP (staff de la aerolínea o superadministrador). */
+export function useArchivePirep() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const { data, error } = await getSupabase().rpc('archive_pirep', { p_pirep_id: id, p_reason: reason.trim() });
+      if (error) throw error;
+      return data;
+    },
+    onSettled: () => refreshPireps(queryClient),
+  });
+}
+
+/** Restaura un PIREP archivado (superadministrador). */
+export function useRestorePirep() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const { data, error } = await getSupabase().rpc('restore_pirep', { p_pirep_id: id });
       if (error) throw error;
       return data;
     },
