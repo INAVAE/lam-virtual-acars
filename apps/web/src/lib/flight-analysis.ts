@@ -279,7 +279,7 @@ export function formatAngle(deg: number, digits = 1): string {
 }
 
 // -----------------------------------------------------------------------------
-// Excursiones de actitud (notas del conector 0.1.18+)
+// Excursiones de actitud (notas del conector 0.1.19+)
 // -----------------------------------------------------------------------------
 /** Etiqueta y detalle de una nota {kind:'attitude'}; nulo si no es una. */
 export function attitudeNote(data: unknown): { label: string; detail: string } | null {

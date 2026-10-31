@@ -1,6 +1,6 @@
 -- =============================================================================
 -- LAM Virtual ACARS — Alabeo y cabeceo excesivos en el PIREP
--- El conector (0.1.18) registra notas {kind: "attitude", axis: bank|pitch_up|
+-- El conector (0.1.19) registra notas {kind: "attitude", axis: bank|pitch_up|
 -- pitch_down, peak_deg, seconds, altitude_ft, agl_ft, ias_kt} cuando la actitud
 -- pasa sus umbrales de detección (alabeo 30°, cabeceo +18° / −6°) durante 2 s o
 -- más. Cuatro reglas nuevas las evalúan; el umbral de cada aerolínea no debe ser
@@ -168,7 +168,7 @@ begin
   -- Combustible: niveles, consumo por etapa y plan de SimBrief
   v_fuel := private.pirep_fuel_metrics(p_session_id);
 
-  -- Actitud: excursiones de alabeo y cabeceo que registra el conector (0.1.18+).
+  -- Actitud: excursiones de alabeo y cabeceo que registra el conector (0.1.19+).
   select
     count(*) as excursions,
     max(abs((e.data ->> 'peak_deg')::numeric)) filter (where e.data ->> 'axis' = 'bank') as max_bank,

@@ -139,7 +139,7 @@ export interface PirepMetrics {
   sim_aircraft_icao?: string;
   client_version?: string;
   fuel?: PirepFuel;
-  /** Excursiones de alabeo y cabeceo (conector 0.1.18+). */
+  /** Excursiones de alabeo y cabeceo (conector 0.1.19+). */
   attitude?: PirepAttitude;
 }
 

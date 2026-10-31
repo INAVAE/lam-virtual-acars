@@ -76,7 +76,7 @@ Cada regla cumplida queda en `pireps.findings` con su valor medido y el umbral q
 
 ## Actitud (alabeo y cabeceo)
 
-- **Medición (conector 0.1.18):** en el aire, sin pausa ni slew, el conector registra una nota por excursión:
+- **Medición (conector 0.1.19):** en el aire, sin pausa ni slew, el conector registra una nota por excursión:
   `{kind: "attitude", axis: bank|pitch_up|pitch_down, peak_deg, seconds, altitude_ft, agl_ft, ias_kt}`.
   - Umbrales de detección: alabeo ≥ 30°, cabeceo ≥ +18° o ≤ −6°.
   - La excursión debe durar 2 s o más (filtra la turbulencia). Termina cuando la actitud pasa 1 s dentro de lo normal, o al tocar tierra.
@@ -87,7 +87,7 @@ Cada regla cumplida queda en `pireps.findings` con su valor medido y el umbral q
   - Cabeceo: un despegue normal queda entre +12° y +18°, y un descenso entre 0° y −5°.
   - Actitud anormal: definición de upset del *Airplane Upset Recovery Training Aid* (alabeo > 45°, cabeceo > +25° o < −10°). Es grave para que el vuelo pase por revisión.
 - **Resumen:** `pireps.metrics.attitude` guarda las excursiones, el alabeo máximo y los cabeceos máximo y mínimo.
-- **Vuelos anteriores al conector 0.1.18:** no tienen notas de actitud; estas reglas no se cumplen.
+- **Vuelos anteriores al conector 0.1.19:** no tienen notas de actitud; estas reglas no se cumplen.
 
 ## Ángulo de trayectoria (web)
 

@@ -413,7 +413,7 @@ const pirepRow = (n, callsign, status, score, extra = {}) => ({
     max_taxi_gs_kt: 32,
     sim_aircraft_title: '737-800BCF BW',
     sim_aircraft_icao: 'B738',
-    client_version: '0.1.18',
+    client_version: '0.1.19',
     fuel: MOCK_FUEL,
     attitude: { excursions: 2, max_bank_deg: 38.4, min_pitch_down_deg: -8.1 },
   },
