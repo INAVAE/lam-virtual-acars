@@ -70,6 +70,7 @@ Tours y Eventos comparten el color en el mapa y la etiqueta del vuelo activo.
   1. Todos salen del mismo aeropuerto y llegan al mismo destino.
   2. Salen de cualquier aeropuerto hacia un mismo destino.
   3. Salen de un mismo aeropuerto hacia destinos diferentes.
+- **Quién crea:** cualquier piloto de una aerolínea puede crear un evento; el administrador de su aerolínea lo aprueba antes de publicarse.
 - **Registro:** los pilotos se inscriben, y el administrador del evento (quien lo creó) aprueba cada registro.
 - **PIREP:** cuentan para el piloto en su aerolínea, como cualquier vuelo.
 - **Mapa:** los aviones del evento tienen un color diferente y muestran el nombre, el folio y la duración del evento.
@@ -82,7 +83,9 @@ Tours y Eventos comparten el color en el mapa y la etiqueta del vuelo activo.
   - Aeropuertos de salida y de destino según el escenario, y lista opcional de aeropuertos permitidos.
   - `starts_at` y `ends_at`.
   - Tipos de aeronave permitidos (opcional) y aerolíneas participantes (todas o una lista).
-  - Banner, color, `created_by` y estado: borrador, publicado, en curso, terminado, cancelado.
+  - Banner, color, `created_by` y la aerolínea del creador.
+  - Estado: borrador, enviado (espera la aprobación del administrador de la aerolínea del creador), publicado, en curso, terminado, cancelado o rechazado.
+  - Quién aprobó la publicación y cuándo.
 - **`event_registrations`:**
   - Evento, piloto, aerolínea con la que vuela, tipo de aeronave y, opcional, ruta o aeropuerto propuesto.
   - Estado: pendiente, aprobado, rechazado o retirado, con revisor y fecha.
@@ -91,48 +94,67 @@ Tours y Eventos comparten el color en el mapa y la etiqueta del vuelo activo.
   - La reserva puede elegir el evento si el piloto tiene un registro aprobado.
   - El origen y el destino se validan contra el escenario.
   - La ventana de tiempo se valida contra `starts_at` y `ends_at`.
-- **Mapa:** `get_live_flights` devuelve `event` (folio, nombre, color, inicio y fin). El avión se dibuja con el color del evento; el recuadro muestra el nombre, el folio y la duración.
+- **Mapa:** `get_live_flights` devuelve `event` (folio, nombre, color, inicio y fin). Solo la figura del avión toma el color del evento; la trayectoria conserva los colores por fase. El recuadro muestra el nombre, el folio y la duración.
 - **Página Eventos:** lista (próximos, en curso, pasados), detalle con participantes, inscripción y panel del creador para aprobar o rechazar. Al terminar, la tabla de resultados.
 
 ## 7.5 Tours
 
 **Pedido:**
 
-- **Quién los crea:** cada aerolínea crea sus propios tours de rutas a cualquier parte del mundo, con el número de vuelos (legs) que decida.
+- **Quién los crea:** un piloto o un administrador de la aerolínea, con tours de rutas a cualquier parte del mundo y el número de legs que decida.
 - **Aeronaves:** cada tour especifica los tipos de aeronave que pueden participar.
-- **Inscripción:** cualquier piloto de cualquier aerolínea se puede inscribir, no solo los de la aerolínea que creó el tour.
+- **Inscripción:**
+  - Cualquier piloto de cualquier aerolínea se puede inscribir al tour que desee.
+  - Vuela con la flota de su propia aerolínea; el PIREP le cuenta como un vuelo normal de su aerolínea.
+  - El creador del tour aprueba cada inscripción. El tour puede configurarse para aprobar solo las de pilotos de la misma aerolínea del tour.
+- **Legs:**
+  - Se configuran al crear el tour, que define si deben volarse en orden o en cualquier orden.
+  - Un leg cuenta con su PIREP aceptado o en revisión.
+  - El tour configura si se pueden volar legs siguientes sin que el anterior esté revisado, y cuántos como máximo pueden quedar sin revisión, para no acumular vuelos.
 - **Mapa:** los aviones que vuelan un leg de tour tienen un color diferente. Al elegirlos en el mapa o verlos como vuelo activo, se indica el tour y el número de leg.
 
 **Propuesta de modelo:**
 
-- **`tours`:** aerolínea, código (por ejemplo, TOUR-MXL-01), nombre, descripción, imagen, color, tipos permitidos, fechas de vigencia opcionales y estado.
+- **`tours`:**
+  - Aerolínea, `created_by` (piloto o administrador), código (por ejemplo, TOUR-MXL-01), nombre, descripción, imagen, color, tipos permitidos, fechas de vigencia opcionales y estado.
+  - `ordered_legs` (bool): en orden o en cualquier orden.
+  - `allow_unreviewed_progress` (bool) y `max_unreviewed_legs` (entero): cuántos legs puede volar el piloto con PIREP aún en revisión.
+  - `auto_approve_same_airline` (bool): aprobar sin revisión las inscripciones de pilotos de la misma aerolínea.
 - **`tour_legs`:** tour, número de leg, origen, destino, distancia, notas y, opcional, una ruta sugerida.
-- **`tour_enrollments` / `tour_progress`:**
-  - Inscripción abierta a pilotos de todas las aerolíneas (se registra la aerolínea con la que vuela cada uno).
-  - Piloto, tour, leg actual, legs completados (con su PIREP), fecha de inicio y de fin.
-  - Un leg cuenta cuando su PIREP se acepta.
+- **`tour_enrollments`:** tour, piloto, aerolínea con la que vuela; estado pendiente, aprobada, rechazada o retirada; quién la aprobó (el creador, o automática si es de la misma aerolínea y el tour lo permite).
+- **`tour_progress`:**
+  - Inscripción, leg y PIREP con que se voló.
+  - Un leg cuenta con el PIREP aceptado o en revisión. Si el PIREP se rechaza o se archiva, el leg vuelve a estar pendiente.
+  - Antes de reservar un leg se valida: el orden (si el tour lo exige) y el máximo de legs sin revisión (si el tour permite avanzar sin revisión; si no, el leg anterior debe estar aceptado).
 - **Vuelo:**
   - `flights.tour_leg_id` y `pireps.tour_leg_id`.
-  - La reserva ofrece el siguiente leg del piloto con los tipos permitidos.
+  - La reserva ofrece los legs disponibles del piloto (el siguiente si el tour va en orden), con la aeronave de su aerolínea y los tipos permitidos.
   - Las rutas de un leg no tienen que existir en `routes`: son rutas propias del tour.
-- **Mapa:** `get_live_flights` devuelve `tour` (código, nombre, color, leg actual y total). El recuadro muestra "Tour X · Leg 3/12".
+- **Mapa:** `get_live_flights` devuelve `tour` (código, nombre, color, leg actual y total). Solo la figura del avión toma el color del tour; la trayectoria conserva los colores por fase. El recuadro muestra "Tour X · Leg 3/12".
 - **Página Tours:** lista por aerolínea, detalle con mapa de los legs, avance del piloto y ranking de quién lo completó.
 
 ---
 
-## Preguntas abiertas para la siguiente sesión
+## Decisiones del usuario (2026-10-31)
+
+- **Eventos:**
+  - Son 3 escenarios (el "2" del pedido fue un error de redacción).
+  - Cualquier piloto de una aerolínea puede crear un evento, y el administrador de su aerolínea lo aprueba.
+  - El creador del evento aprueba los registros.
+- **Tours:**
+  - Cualquier piloto de cualquier aerolínea se inscribe al tour que desee, vuela con su propia flota y el PIREP le cuenta como un vuelo normal de su aerolínea.
+  - Los legs se configuran al crear el tour, que define si van en orden o en cualquier orden.
+  - Un PIREP de tour cuenta aunque esté en revisión.
+  - El tour configura si se puede avanzar sin la revisión del leg anterior y el máximo de legs sin revisión.
+  - El creador del tour (piloto o administrador) aprueba las inscripciones; el tour puede aprobar solas las de pilotos de su misma aerolínea.
+- **Mapa:** el color de evento o tour no reemplaza al de la fase; solo se colorea la figura del avión, no la ruta ni la trayectoria.
+
+## Preguntas que quedan
 
 1. **Eventos:**
-   - **Escenarios:** el pedido dice "2 escenarios" pero describe 3. ¿Son los tres? ¿Hace falta un cuarto, cualquier origen hacia cualquier destino?
-   - **Creadores:** ¿quién puede crear eventos? ¿Solo el superadministrador, o también el administrador o el jefe de operaciones de cada aerolínea, con invitación a otras aerolíneas?
-   - **Aeronaves:** ¿el piloto vuela con una aeronave de su flota (reserva normal) o puede volar cualquier tipo permitido sin matrícula de la flota?
+   - **Aeronaves:** ¿el piloto vuela con su propia flota y una reserva normal, como en los tours? Supuesto por omisión: sí.
    - **Resultados:** ¿hay ranking o premios del evento (llegada más suave, puntaje)?
 2. **Tours:**
-   - ¿Los legs se vuelan en orden obligatorio?
-   - ¿Un leg cuenta con el PIREP aceptado, o también en revisión?
+   - ¿El tour que crea un piloto también lo aprueba el administrador de su aerolínea antes de publicarse, como los eventos?
    - ¿Hay insignia o reconocimiento al completar el tour?
-   - Un piloto de otra aerolínea inscrito en el tour: ¿vuela con la flota de su propia aerolínea y el PIREP cuenta allí, o con la de la aerolínea dueña del tour?
-   - ¿La inscripción al tour es automática o la aprueba la aerolínea que lo creó?
-3. **Mapa:**
-   - ¿Los colores de evento y tour reemplazan el color por fase de la figura, o se agrega un contorno o halo y se conserva la fase?
-   - ¿Qué pasa con un vuelo que es de evento y de tour a la vez?
+3. **Mapa:** ¿qué color lleva un vuelo que es de evento y de tour a la vez? Supuesto por omisión: el del evento, con ambas etiquetas en el recuadro.
