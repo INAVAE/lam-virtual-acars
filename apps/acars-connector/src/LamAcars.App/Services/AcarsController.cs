@@ -9,6 +9,7 @@ using LamAcars.Core.Engine;
 using LamAcars.Core.Models;
 using LamAcars.Core.Storage;
 using LamAcars.Core.Sync;
+using LamAcars.Core.Updates;
 using LamAcars.Sim;
 
 namespace LamAcars.App.Services;
@@ -88,6 +89,7 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
         CheckPmdgSetup();
         _ = Task.Run(() => _sync.RunAsync(_cts.Token));
         _ = Task.Run(PendingLoop);
+        _ = Task.Run(UpdateLoop);
         if (IsLinked) await RefreshAsync(resume: true);
     }
 
@@ -104,6 +106,60 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
             {
                 break;
             }
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // Nuevas versiones (solo aviso; la descarga la hace el piloto)
+    // ------------------------------------------------------------------------
+    public ReleaseInfo? Update { get; private set; }
+    public bool UpdateAvailable => Update is not null;
+    public string UpdateText => Update is { } u
+        ? $"Hay una versión nueva: {u.Version}. Descárgala cuando termines el vuelo; tu vuelo en curso no se interrumpe."
+        : string.Empty;
+
+    private async Task UpdateLoop()
+    {
+        var checker = new UpdateChecker(new HttpClient { Timeout = TimeSpan.FromSeconds(20) });
+        while (!_cts.IsCancellationRequested)
+        {
+            try
+            {
+                var found = await checker.CheckAsync(AppPaths.Version, _cts.Token);
+                if (found is not null && found.Version != Update?.Version)
+                {
+                    Set(nameof(Update), () => Update = found);
+                    OnPropertyChanged(nameof(UpdateAvailable));
+                    OnPropertyChanged(nameof(UpdateText));
+                    _log.Write($"Versión nueva disponible: {found.Version} ({found.PageUrl})");
+                }
+            }
+            catch (Exception e) when (e is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+            {
+                // Sin internet o GitHub no responde: se intenta en la siguiente vuelta.
+            }
+            try
+            {
+                await Task.Delay(TimeSpan.FromHours(6), _cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+        }
+    }
+
+    /// <summary>Abre la página de la versión nueva en el navegador.</summary>
+    public void OpenUpdatePage()
+    {
+        if (Update is not { } u || string.IsNullOrEmpty(u.PageUrl)) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(u.PageUrl) { UseShellExecute = true });
+        }
+        catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            _log.Write($"No se pudo abrir el navegador: {e.Message}. Descárgala de {u.PageUrl}");
         }
     }
 
@@ -340,8 +396,13 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
 
         if (s.Time - _lastUiUpdate < TimeSpan.FromMilliseconds(500)) return;
         _lastUiUpdate = s.Time;
+        FlightPhase? phase;
+        lock (_flightGate) phase = _recorder?.Phase;
+        var wind = s.WindKt is { } wk && s.WindDirDeg is { } wd ? $" · viento {wd:000}°/{wk:0} kt" : string.Empty;
+        // Motores apagados con la APU encendida: el vuelo no se cierra hasta apagarla.
+        var apuHint = phase == FlightPhase.EnginesShutdown && s.ApuRunning == true ? "\nApaga la APU para cerrar el vuelo." : string.Empty;
         Set(nameof(TelemetryText), () => TelemetryText =
-            $"{s.AltitudeFt:N0} ft · GS {s.GsKt:N0} kt · VS {s.VsFpm:+0;-0;0} fpm{(s.OnGround ? " · en tierra" : string.Empty)}{(s.Paused ? " · PAUSA" : string.Empty)}");
+            $"{s.AltitudeFt:N0} ft · GS {s.GsKt:N0} kt · VS {s.VsFpm:+0;-0;0} fpm{wind}{(s.OnGround ? " · en tierra" : string.Empty)}{(s.Paused ? " · PAUSA" : string.Empty)}{apuHint}");
     }
 
     private void OnPhaseChanged(PhaseTransition tr)

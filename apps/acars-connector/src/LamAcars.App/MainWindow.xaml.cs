@@ -38,6 +38,8 @@ public partial class MainWindow : Window
 
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await _controller.RefreshAsync();
 
+    private void Update_Click(object sender, RoutedEventArgs e) => _controller.OpenUpdatePage();
+
     private void EnablePmdg_Click(object sender, RoutedEventArgs e)
     {
         if (MessageBox.Show("Se agregará [SDK] EnableDataBroadcast=1 a las opciones de tus aviones PMDG (se guarda una copia .lam-backup). " +

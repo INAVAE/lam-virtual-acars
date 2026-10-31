@@ -94,6 +94,8 @@ public class GenericAdapter : IAircraftAdapter
         new("OVERSPEED WARNING", "bool"),
         new("STALL WARNING", "bool"),
         new("APU PCT RPM", "percent over 100"),
+        new("AMBIENT WIND DIRECTION", "degrees"),
+        new("AMBIENT WIND VELOCITY", "knots"),
     };
 
     public virtual SimSample Map(IReadOnlyDictionary<string, double> v, DateTimeOffset time, bool paused)
@@ -140,6 +142,8 @@ public class GenericAdapter : IAircraftAdapter
             // APU en marcha a partir del 95 % de RPM (arranque terminado).
             ApuRunning = Get("APU PCT RPM") is { } apu ? apu >= 0.95 : null,
             GForce = Get("G FORCE"),
+            WindDirDeg = Get("AMBIENT WIND DIRECTION") is { } wd ? ((wd % 360) + 360) % 360 : null,
+            WindKt = Get("AMBIENT WIND VELOCITY") is { } wk ? Math.Max(0, wk) : null,
             PitchDeg = pitch,
             BankDeg = Get("PLANE BANK DEGREES"),
             TouchdownVsFpm = tdNormal is { } n && Math.Abs(n) > 0.001 ? -Math.Abs(n) * 60 : null,

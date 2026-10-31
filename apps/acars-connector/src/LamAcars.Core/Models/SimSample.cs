@@ -32,6 +32,10 @@ public sealed record SimSample
     /// <summary>APU en marcha (null si la aeronave no lo informa).</summary>
     public bool? ApuRunning { get; init; }
     public double? GForce { get; init; }
+    /// <summary>Dirección verdadera de donde sopla el viento (°).</summary>
+    public double? WindDirDeg { get; init; }
+    /// <summary>Velocidad del viento (kt).</summary>
+    public double? WindKt { get; init; }
     public double? PitchDeg { get; init; }
     public double? BankDeg { get; init; }
     /// <summary>Velocidad vertical en el último contacto con el suelo (PLANE TOUCHDOWN NORMAL VELOCITY), negativa hacia abajo.</summary>

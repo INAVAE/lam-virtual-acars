@@ -11,6 +11,8 @@
     "heading_deg": 52.5,
     "vs_fpm": 0,
     "on_ground": true,
-    "phase": "taxi_out"
+    "phase": "taxi_out",
+    "wind_dir_deg": 270,
+    "wind_kt": 12
   }
 }

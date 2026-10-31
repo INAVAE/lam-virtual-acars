@@ -162,8 +162,11 @@ public sealed class PhaseMachine
 
             case FlightPhase.EnginesShutdown:
                 if (Held("restart", s.EnginesRunning > 0, t, 10)) return (FlightPhase.TaxiIn, "engines_restarted");
-                if (Held("parked", s.EnginesRunning == 0 && s.GsKt < 1 && s.ParkingBrake, t, 5)) return (FlightPhase.FlightCompleted, "parking_brake");
-                if (Held("stopped", s.EnginesRunning == 0 && s.GsKt < 1, t, 60)) return (FlightPhase.FlightCompleted, "stopped");
+                // La APU también debe estar apagada; si la aeronave no informa APU (null), no se exige.
+                if (Held("parked", s.EnginesRunning == 0 && s.GsKt < 1 && s.ParkingBrake && s.ApuRunning != true, t, 5))
+                    return (FlightPhase.FlightCompleted, "parking_brake");
+                if (Held("stopped", s.EnginesRunning == 0 && s.GsKt < 1 && s.ApuRunning != true, t, 60))
+                    return (FlightPhase.FlightCompleted, "stopped");
                 break;
 
             case FlightPhase.FlightCompleted:

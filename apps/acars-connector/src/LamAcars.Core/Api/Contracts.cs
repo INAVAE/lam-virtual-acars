@@ -88,7 +88,9 @@ public sealed record PositionDto(
     double? HeadingDeg,
     double? VsFpm,
     bool OnGround,
-    string Phase)
+    string Phase,
+    double? WindDirDeg = null,
+    double? WindKt = null)
 {
     public static PositionDto From(PositionRecord p) => new(
         p.SampledAt.ToUniversalTime(), p.Latitude, p.Longitude, Clamp(p.AltitudeFt, -2000, 70000),
@@ -97,7 +99,10 @@ public sealed record PositionDto(
         p.GsKt is { } gs ? Clamp(gs, 0, 2000) : null,
         p.HeadingDeg is { } h ? NormalizeHeading(h) : null,
         p.VsFpm is { } vs ? Clamp(vs, -20000, 20000) : null,
-        p.OnGround, p.Phase.ToWire());
+        p.OnGround, p.Phase.ToWire(), WindDir(p.WindDirDeg), WindSpeed(p.WindKt));
+
+    internal static double? WindDir(double? d) => d is { } v && double.IsFinite(v) ? Math.Round(((v % 360) + 360) % 360) : null;
+    internal static double? WindSpeed(double? k) => k is { } v && double.IsFinite(v) ? Math.Round(Math.Clamp(v, 0, 400)) : null;
 
     internal static double Clamp(double v, double min, double max) => Math.Round(Math.Min(max, Math.Max(min, v)), 6);
     internal static double NormalizeHeading(double h) => Math.Round(((h % 360) + 360) % 360, 1);
@@ -117,7 +122,9 @@ public sealed record TrackPointDto(
     double? VsFpm,
     bool OnGround,
     string Phase,
-    double? FuelKg)
+    double? FuelKg,
+    double? WindDirDeg = null,
+    double? WindKt = null)
 {
     public static TrackPointDto From(TrackPointRecord p) => new(
         p.Seq, p.SampledAt.ToUniversalTime(), p.Latitude, p.Longitude, PositionDto.Clamp(p.AltitudeFt, -2000, 70000),
@@ -126,7 +133,8 @@ public sealed record TrackPointDto(
         p.HeadingDeg is { } h ? PositionDto.NormalizeHeading(h) : null,
         p.VsFpm is { } vs ? PositionDto.Clamp(vs, -20000, 20000) : null,
         p.OnGround, p.Phase.ToWire(),
-        p.FuelKg is { } fuel && double.IsFinite(fuel) ? Math.Round(Math.Clamp(fuel, 0, 1_000_000)) : null);
+        p.FuelKg is { } fuel && double.IsFinite(fuel) ? Math.Round(Math.Clamp(fuel, 0, 1_000_000)) : null,
+        PositionDto.WindDir(p.WindDirDeg), PositionDto.WindSpeed(p.WindKt));
 }
 
 public sealed record TrackBatchRequest(Guid SessionId, IReadOnlyList<TrackPointDto> Points);

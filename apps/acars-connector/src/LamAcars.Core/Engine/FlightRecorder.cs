@@ -90,11 +90,13 @@ public sealed class FlightRecorder
             {
                 // El despegue se fecha en la primera lectura en el aire, no al confirmar la fase.
                 var lo = _liftoff ?? s;
-                Emit(FlightEventTypes.Takeoff, tr.To, lo, new Dictionary<string, object?>
+                var takeoff = new Dictionary<string, object?>
                 {
                     ["ias_kt"] = Round(lo.IasKt), ["gs_kt"] = Math.Round(lo.GsKt), ["pitch_deg"] = Round(lo.PitchDeg, 1), ["heading_deg"] = Round(lo.HeadingDeg),
                     ["fuel_kg"] = Round(lo.FuelTotalKg), ["flaps_deg"] = Round(lo.FlapsDeg, 1),
-                });
+                };
+                WindMath.AddTo(takeoff, lo);
+                Emit(FlightEventTypes.Takeoff, tr.To, lo, takeoff);
             }
             if (tr.To == FlightPhase.Landing) _landing.Reset();
             if (tr.Reason is "go_around" or "touch_and_go" or "rejected_takeoff")
@@ -112,7 +114,9 @@ public sealed class FlightRecorder
         var metrics = _landing.Add(s, _machine.Phase == FlightPhase.Landing);
         if (metrics is not null)
         {
-            Emit(FlightEventTypes.Touchdown, FlightPhase.Landing, s, metrics.ToData(_landing.Bounces),
+            var touchdown = new Dictionary<string, object?>(metrics.ToData(_landing.Bounces));
+            WindMath.AddTo(touchdown, s);
+            Emit(FlightEventTypes.Touchdown, FlightPhase.Landing, s, touchdown,
                 metrics.TouchdownAt, metrics.Latitude, metrics.Longitude, metrics.AltitudeFt);
         }
 
@@ -131,7 +135,7 @@ public sealed class FlightRecorder
             if (_lastPosition is null || s.Time - _lastPosition.Value >= _positionInterval)
             {
                 _lastPosition = s.Time;
-                _sink.Position(new PositionRecord(s.Time, s.Latitude, s.Longitude, s.AltitudeFt, s.AglFt, s.IasKt, s.GsKt, s.HeadingDeg, s.VsFpm, s.OnGround, _machine.Phase));
+                _sink.Position(new PositionRecord(s.Time, s.Latitude, s.Longitude, s.AltitudeFt, s.AglFt, s.IasKt, s.GsKt, s.HeadingDeg, s.VsFpm, s.OnGround, _machine.Phase, s.WindDirDeg, s.WindKt));
             }
         }
 
@@ -274,7 +278,7 @@ public sealed class FlightRecorder
     private void AddPoint(SimSample s)
     {
         _lastPoint = s.Time;
-        _sink.TrackPoint(new TrackPointRecord(NextPointSeq++, s.Time, s.Latitude, s.Longitude, s.AltitudeFt, s.GsKt, s.IasKt, s.VsFpm, s.HeadingDeg, s.OnGround, _machine.Phase, s.FuelTotalKg));
+        _sink.TrackPoint(new TrackPointRecord(NextPointSeq++, s.Time, s.Latitude, s.Longitude, s.AltitudeFt, s.GsKt, s.IasKt, s.VsFpm, s.HeadingDeg, s.OnGround, _machine.Phase, s.FuelTotalKg, s.WindDirDeg, s.WindKt));
     }
 
     private void Emit(string type, FlightPhase phase, SimSample s, IReadOnlyDictionary<string, object?> data,
