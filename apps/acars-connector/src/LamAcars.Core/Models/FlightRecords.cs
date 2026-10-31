@@ -45,7 +45,8 @@ public sealed record TrackPointRecord(
     double? VsFpm,
     double? HeadingDeg,
     bool OnGround,
-    FlightPhase Phase);
+    FlightPhase Phase,
+    double? FuelKg = null);
 
 public sealed record PositionRecord(
     DateTimeOffset SampledAt,

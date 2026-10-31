@@ -64,8 +64,22 @@ public class FlightRecorderTests
         // ~1,060 s de crucero a 1 punto cada 30 s; ascenso inicial ~36 s a 1 cada 2 s.
         Assert.InRange(cruise, 30, 45);
         Assert.InRange(initialClimb, 12, 22);
-        // Todo el vuelo (65 min) son ~590 puntos: uno o dos lotes.
-        Assert.InRange(sink.Points.Count, 400, 700);
+        // Todo el vuelo (65 min), con el rodaje cada 3 s, cabe en pocos lotes de 600.
+        Assert.InRange(sink.Points.Count, 450, 1200);
+        // En tierra la traza es densa para dibujar el rodaje.
+        var taxi = sink.Points.Where(p => p.Phase == FlightPhase.TaxiOut).Select(p => p.SampledAt).ToList();
+        Assert.True(taxi.Zip(taxi.Skip(1), (a, b) => (b - a).TotalSeconds).All(d => d <= 3.5));
+    }
+
+    [Fact]
+    public void La_traza_y_el_aterrizaje_llevan_el_combustible()
+    {
+        var sink = Record(out _);
+        Assert.All(sink.Points, p => Assert.NotNull(p.FuelKg));
+        // El combustible baja (o se mantiene) a lo largo del vuelo.
+        Assert.True(sink.Points[^1].FuelKg < sink.Points[0].FuelKg);
+        var touchdown = sink.Events.Single(e => e.Type == FlightEventTypes.Touchdown);
+        Assert.IsType<double>(touchdown.Data["fuel_kg"]);
     }
 
     [Fact]

@@ -138,7 +138,8 @@ public sealed class FlightRecorder
         FlightPhase.Takeoff or FlightPhase.InitialClimb or FlightPhase.Approach or FlightPhase.Landing => TimeSpan.FromSeconds(2),
         FlightPhase.Climb or FlightPhase.Descent => TimeSpan.FromSeconds(5),
         FlightPhase.Cruise => TimeSpan.FromSeconds(30),
-        FlightPhase.Pushback or FlightPhase.TaxiOut or FlightPhase.TaxiIn => TimeSpan.FromSeconds(10),
+        // En tierra cada 3 s: el trazo sigue las calles de rodaje en el mapa del PIREP.
+        FlightPhase.Pushback or FlightPhase.TaxiOut or FlightPhase.TaxiIn => TimeSpan.FromSeconds(3),
         _ => TimeSpan.FromSeconds(60),
     };
 
@@ -173,7 +174,7 @@ public sealed class FlightRecorder
     private void AddPoint(SimSample s)
     {
         _lastPoint = s.Time;
-        _sink.TrackPoint(new TrackPointRecord(NextPointSeq++, s.Time, s.Latitude, s.Longitude, s.AltitudeFt, s.GsKt, s.IasKt, s.VsFpm, s.HeadingDeg, s.OnGround, _machine.Phase));
+        _sink.TrackPoint(new TrackPointRecord(NextPointSeq++, s.Time, s.Latitude, s.Longitude, s.AltitudeFt, s.GsKt, s.IasKt, s.VsFpm, s.HeadingDeg, s.OnGround, _machine.Phase, s.FuelTotalKg));
     }
 
     private void Emit(string type, FlightPhase phase, SimSample s, IReadOnlyDictionary<string, object?> data,

@@ -30,6 +30,8 @@ El token es opaco (`lamd_` + 43 caracteres base64url, 256 bits). El servidor gua
 | `POST /session/start` | `{ flight_id, aircraft: { title, icao, registration }, client_version }` | `{ session_id, resumed, phase, last_event_seq, last_point_seq, flight, config }` |
 | `POST /position` | `{ session_id, position }` | `{ ok }` |
 | `POST /track-batch` | `{ session_id, points[≤600] }` | `{ received, inserted, duplicates }` |
+
+Cada punto de la traza puede llevar `fuel_kg` (combustible total a bordo, opcional; desde el conector 0.1.16). El evento `touchdown` lleva también `fuel_kg`.
 | `POST /events` (también `/event`) | `{ session_id, events[≤50] }` | `{ received, inserted, duplicates }` |
 | `POST /session/end` | `{ session_id, reason: completed\|aborted, latitude, longitude }` | `{ status, flight_id, final_airport }` (repetir el cierre devuelve `already_closed`) |
 

@@ -113,6 +113,8 @@ export type PositionRequest = z.infer<typeof positionRequest>;
 
 export const trackPoint = positionSample.omit({ agl_ft: true }).extend({
   seq: z.number().int().min(0),
+  /** Combustible total a bordo (kg). Opcional: los conectores anteriores a 0.1.16 no lo envían. */
+  fuel_kg: z.number().min(0).max(1_000_000).nullish(),
 });
 export type TrackPoint = z.infer<typeof trackPoint>;
 

@@ -35,10 +35,11 @@ public class ContractTests
     public void Lote_de_traza()
     {
         var example = Example("track-batch.request.json");
-        var point = TrackPointDto.From(new TrackPointRecord(0, DateTimeOffset.UtcNow, 19.4, -99.1, 7316, 140, 142, 52, 0, true, FlightPhase.Takeoff));
+        var point = TrackPointDto.From(new TrackPointRecord(0, DateTimeOffset.UtcNow, 19.4, -99.1, 7316, 140, 142, 52, 0, true, FlightPhase.Takeoff, 5320.4));
         var json = Serialize(new TrackBatchRequest(Guid.NewGuid(), [point]));
         Assert.Equal(Keys(example), Keys(json));
         Assert.Equal(Keys(example.GetProperty("points")[0]), Keys(json.GetProperty("points")[0]));
+        Assert.Equal(5320, json.GetProperty("points")[0].GetProperty("fuel_kg").GetDouble());
     }
 
     [Fact]

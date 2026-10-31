@@ -116,7 +116,8 @@ public sealed record TrackPointDto(
     double? HeadingDeg,
     double? VsFpm,
     bool OnGround,
-    string Phase)
+    string Phase,
+    double? FuelKg)
 {
     public static TrackPointDto From(TrackPointRecord p) => new(
         p.Seq, p.SampledAt.ToUniversalTime(), p.Latitude, p.Longitude, PositionDto.Clamp(p.AltitudeFt, -2000, 70000),
@@ -124,7 +125,8 @@ public sealed record TrackPointDto(
         p.GsKt is { } gs ? PositionDto.Clamp(gs, 0, 2000) : null,
         p.HeadingDeg is { } h ? PositionDto.NormalizeHeading(h) : null,
         p.VsFpm is { } vs ? PositionDto.Clamp(vs, -20000, 20000) : null,
-        p.OnGround, p.Phase.ToWire());
+        p.OnGround, p.Phase.ToWire(),
+        p.FuelKg is { } fuel && double.IsFinite(fuel) ? Math.Round(Math.Clamp(fuel, 0, 1_000_000)) : null);
 }
 
 public sealed record TrackBatchRequest(Guid SessionId, IReadOnlyList<TrackPointDto> Points);
