@@ -7,9 +7,9 @@
 - [ ] 7.1 Figura del avión en el mapa según tamaño y tipo (ligero, turbohélice, regional, pasillo único, fuselaje ancho, cuatrimotor).
 - [ ] 7.2 Al elegir un avión: su trayectoria volada con fases y parámetros (como en el PIREP) y la ruta faltante al destino en línea roja punteada, actualizándose hasta la llegada.
 - [ ] 7.3 Selección de varios aviones, con sus rutas visibles a la vez.
-- [ ] 7.4 Eventos con tres escenarios (mismo origen y destino; cualquier origen a un destino; un origen a varios destinos). Los crea cualquier piloto y los aprueba el administrador de su aerolínea; el creador aprueba los registros. El PIREP cuenta para la aerolínea de cada piloto. En el mapa, la figura toma el color del evento y muestra nombre, folio y duración.
-- [ ] 7.5 Tours creados por un piloto o un administrador, con legs en orden o libres y tipos permitidos. Abiertos a pilotos de cualquier aerolínea, que vuelan con su flota. El creador aprueba las inscripciones (se puede aprobar sola si el piloto es de la misma aerolínea). Un leg cuenta aunque su PIREP esté en revisión, con un máximo configurable de legs sin revisión. En el mapa, la figura toma el color del tour y muestra "Tour · Leg n/N".
-- [ ] Confirmar las preguntas que quedan en el documento (las demás ya las decidió el usuario el 2026-10-31).
+- [ ] 7.4 Eventos con tres escenarios (mismo origen y destino; cualquier origen a un destino; un origen a varios destinos). Los crea cualquier piloto y los aprueba el administrador de su aerolínea; el creador aprueba los registros. El PIREP cuenta para la aerolínea de cada piloto, que vuela con su flota. Ranking y premio definidos por el creador. En el mapa, la figura toma el color del evento y muestra nombre, folio y duración.
+- [ ] 7.5 Tours creados por un piloto (aprobados por el administrador de su aerolínea) o un administrador, con insignia que ganan quienes los terminan, con legs en orden o libres y tipos permitidos. Abiertos a pilotos de cualquier aerolínea, que vuelan con su flota. El creador aprueba las inscripciones (se puede aprobar sola si el piloto es de la misma aerolínea). Un leg cuenta aunque su PIREP esté en revisión, con un máximo configurable de legs sin revisión; si se rechaza, se repite. Un piloto no puede estar en un evento y un tour a la vez. En el mapa, la figura toma el color del tour y muestra "Tour · Leg n/N".
+- Todas las decisiones están tomadas (2026-10-31); la fase está lista para construirse.
 
 ## Fase 5, PIREP automático (construida; falta revisar un PIREP real en la web)
 
