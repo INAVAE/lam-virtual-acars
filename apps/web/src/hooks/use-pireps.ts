@@ -37,7 +37,7 @@ export function usePireps(view: PirepListView, airlineId: string | null, status:
 export type PirepListItem = NonNullable<ReturnType<typeof usePireps>['data']>[number];
 
 const PIREP_DETAIL_SELECT =
-  '*, airline:airlines!pireps_airline_id_fkey(name, icao_code, slug, logo_path, brand_primary_color), pilot:profiles!pireps_user_id_fkey(display_name, pilot_number), reviewer:profiles!pireps_reviewed_by_fkey(display_name), type:aircraft_types!pireps_aircraft_type_id_fkey(icao_code, manufacturer, model), origin:airports!pireps_origin_airport_id_fkey(icao_code, name, city), destination:airports!pireps_destination_airport_id_fkey(icao_code, name, city), arrival:airports!pireps_arrival_airport_id_fkey(icao_code, name, city)' as const;
+  '*, airline:airlines!pireps_airline_id_fkey(name, icao_code, slug, logo_path, brand_primary_color), pilot:profiles!pireps_user_id_fkey(display_name, pilot_number), reviewer:profiles!pireps_reviewed_by_fkey(display_name), type:aircraft_types!pireps_aircraft_type_id_fkey(icao_code, manufacturer, model), origin:airports!pireps_origin_airport_id_fkey(icao_code, name, city, latitude, longitude), destination:airports!pireps_destination_airport_id_fkey(icao_code, name, city, latitude, longitude), arrival:airports!pireps_arrival_airport_id_fkey(icao_code, name, city, latitude, longitude)' as const;
 
 export function usePirep(id: string | undefined) {
   return useQuery({
@@ -55,9 +55,12 @@ export type PirepDetail = NonNullable<NonNullable<ReturnType<typeof usePirep>['d
 
 export type TrackPoint = Pick<
   Tables<'flight_track_points'>,
-  'seq' | 'sampled_at' | 'latitude' | 'longitude' | 'altitude_ft' | 'gs_kt' | 'ias_kt' | 'vs_fpm' | 'on_ground' | 'phase'
+  'seq' | 'sampled_at' | 'latitude' | 'longitude' | 'altitude_ft' | 'gs_kt' | 'ias_kt' | 'vs_fpm' | 'heading_deg' | 'on_ground' | 'phase'
 >;
-export type FlightEvent = Pick<Tables<'flight_events'>, 'id' | 'seq' | 'type' | 'phase' | 'occurred_at' | 'altitude_ft' | 'data'>;
+export type FlightEvent = Pick<
+  Tables<'flight_events'>,
+  'id' | 'seq' | 'type' | 'phase' | 'occurred_at' | 'latitude' | 'longitude' | 'altitude_ft' | 'data'
+>;
 
 /** Traza completa del vuelo (en páginas de 1,000 puntos) y sus eventos. */
 export function usePirepTrack(flightId: string | undefined, sessionId: string | undefined) {
@@ -71,7 +74,7 @@ export function usePirepTrack(flightId: string | undefined, sessionId: string | 
       for (let from = 0; from < 20_000; from += 1000) {
         const { data, error } = await supabase
           .from('flight_track_points')
-          .select('seq, sampled_at, latitude, longitude, altitude_ft, gs_kt, ias_kt, vs_fpm, on_ground, phase')
+          .select('seq, sampled_at, latitude, longitude, altitude_ft, gs_kt, ias_kt, vs_fpm, heading_deg, on_ground, phase')
           .eq('flight_id', flightId!)
           .eq('session_id', sessionId!)
           .order('seq')
@@ -82,7 +85,7 @@ export function usePirepTrack(flightId: string | undefined, sessionId: string | 
       }
       const { data: events, error } = await supabase
         .from('flight_events')
-        .select('id, seq, type, phase, occurred_at, altitude_ft, data')
+        .select('id, seq, type, phase, occurred_at, latitude, longitude, altitude_ft, data')
         .eq('session_id', sessionId!)
         .order('seq')
         .limit(1000);

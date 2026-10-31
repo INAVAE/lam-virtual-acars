@@ -97,3 +97,81 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* -----------------------------------------------------------------------------
+ * Mapa del PIREP (Leaflet)
+ * -------------------------------------------------------------------------- */
+.lam-map.leaflet-container {
+  background: var(--bg);
+  font: inherit;
+}
+.lam-map .leaflet-control-zoom a,
+.lam-map .leaflet-control-attribution {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+.lam-map .leaflet-control-attribution a {
+  color: var(--text-muted);
+}
+.leaflet-tooltip.lam-tip {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 6px 8px;
+}
+.leaflet-tooltip.lam-tip::before {
+  display: none;
+}
+.lam-ap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transform: translate(-6px, -50%);
+  white-space: nowrap;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  text-shadow: 0 0 3px var(--bg), 0 0 3px var(--bg), 0 0 3px var(--bg);
+}
+.lam-ap span {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 2px currentColor;
+}
+.lam-ap-origin span {
+  background: #22c55e;
+}
+.lam-ap-destination span {
+  background: #ef4444;
+}
+.lam-ap-arrival span {
+  background: #f59e0b;
+}
+.lam-ev {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  background: var(--ev);
+  color: #fff;
+  border: 2px solid var(--bg);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
+}
+.lam-plane {
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
+  transition: transform 80ms linear;
+}

@@ -1,9 +1,11 @@
 import type { PirepMetrics } from '@lam/shared-types';
 import { ArrowLeft, Check, Plane, TriangleAlert, X } from 'lucide-react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { AirlineLogo } from '@/components/airline-logo';
+import { FlightAnalysisPanel } from '@/components/flight-analysis-panel';
+import type { MapAirport } from '@/components/flight-map';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +19,6 @@ import {
   useReviewPirep,
   type FlightEvent,
   type PirepDetail,
-  type TrackPoint,
 } from '@/hooks/use-pireps';
 import { useAuth } from '@/lib/auth';
 import { useAirlineScope } from '@/lib/airline-scope';
@@ -27,7 +28,6 @@ import { formatLocalDateTime, formatNumber, formatPilotNumber } from '@/lib/form
 import { useAirlinePermissions } from '@/lib/permissions';
 import { phaseLabel } from '@/lib/phases';
 import {
-  altitudeProfile,
   findingDetail,
   formatMinutes,
   formatVs,
@@ -37,7 +37,6 @@ import {
   parseMetrics,
   pirepStatusLabels,
   pirepStatusTone,
-  projectTrack,
   scoreTone,
 } from '@/lib/pirep';
 
@@ -56,50 +55,6 @@ function zulu(iso: string | null): string {
 
 function num(value: number | null, suffix: string, digits = 0): string {
   return value === null ? '—' : `${value.toFixed(digits)}${suffix}`;
-}
-
-// -----------------------------------------------------------------------------
-// Mapa de la traza y perfil de altitud (SVG propio, sin mapas externos)
-// -----------------------------------------------------------------------------
-function TrackPanel({ points, loading }: { points: TrackPoint[]; loading: boolean }) {
-  const map = useMemo(() => projectTrack(points, 640, 360), [points]);
-  const profile = useMemo(() => altitudeProfile(points, 640, 140), [points]);
-
-  return (
-    <Panel title="Trayectoria" description="Traza enviada por LAM ACARS. Se conserva 90 días.">
-      {loading ? (
-        <Skeleton className="h-72" />
-      ) : points.length < 2 ? (
-        <p className="text-sm text-muted">No hay traza disponible para este vuelo.</p>
-      ) : (
-        <div className="space-y-3">
-          <svg viewBox="0 0 640 360" role="img" aria-label="Trayectoria del vuelo" className="w-full rounded-md border border-line bg-bg">
-            <path d={map.path} fill="none" stroke="var(--accent)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-            {map.start ? <circle cx={map.start[0]} cy={map.start[1]} r={5} fill="var(--color-ok, #16a34a)" /> : null}
-            {map.end ? <circle cx={map.end[0]} cy={map.end[1]} r={5} fill="var(--color-danger, #dc2626)" /> : null}
-          </svg>
-          <div>
-            <p className="mb-1 text-xs uppercase tracking-wide text-muted">Perfil de altitud (máx. escala {formatNumber(profile.maxFt)} ft)</p>
-            <svg viewBox="0 0 640 140" role="img" aria-label="Perfil de altitud" className="w-full rounded-md border border-line bg-bg">
-              <path d={profile.area} fill="var(--accent)" opacity={0.15} />
-              <path d={profile.line} fill="none" stroke="var(--accent)" strokeWidth={2} />
-            </svg>
-          </div>
-          <p className="flex gap-4 text-xs text-muted">
-            <span>
-              <span className="mr-1 inline-block size-2 rounded-full bg-ok align-middle" aria-hidden />
-              Salida
-            </span>
-            <span>
-              <span className="mr-1 inline-block size-2 rounded-full bg-danger align-middle" aria-hidden />
-              Llegada
-            </span>
-            <span>{formatNumber(points.length)} puntos</span>
-          </p>
-        </div>
-      )}
-    </Panel>
-  );
 }
 
 // -----------------------------------------------------------------------------
@@ -393,6 +348,12 @@ export function PirepDetailPage() {
   const metrics = parseMetrics(p.metrics);
   const isOwner = p.user_id === user?.id;
   const canReview = permissions.canStaff && (!isOwner || isOrgAdmin);
+  const airports: MapAirport[] = [];
+  if (p.origin) airports.push({ icao: p.origin.icao_code, name: p.origin.name, latitude: p.origin.latitude, longitude: p.origin.longitude, role: 'origin' });
+  if (p.destination)
+    airports.push({ icao: p.destination.icao_code, name: p.destination.name, latitude: p.destination.latitude, longitude: p.destination.longitude, role: 'destination' });
+  if (p.diverted && p.arrival)
+    airports.push({ icao: p.arrival.icao_code, name: p.arrival.name, latitude: p.arrival.latitude, longitude: p.arrival.longitude, role: 'arrival' });
   const fuelOff = metrics.fuel_block_off_kg;
   const fuelOn = metrics.fuel_block_on_kg;
 
@@ -498,9 +459,10 @@ export function PirepDetailPage() {
         </dl>
       </section>
 
+      <FlightAnalysisPanel points={track.data?.points ?? []} events={track.data?.events ?? []} airports={airports} loading={track.isPending} />
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">
-          <TrackPanel points={track.data?.points ?? []} loading={track.isPending} />
           <LandingFacts pirep={p} metrics={metrics} />
         </div>
         <div className="space-y-6">

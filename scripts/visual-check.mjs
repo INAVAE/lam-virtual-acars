@@ -315,7 +315,8 @@ const TRACK = Array.from({ length: 80 }, (_, i) => {
     altitude_ft: Math.round(alt),
     gs_kt: f < 0.1 || f > 0.95 ? 18 : 420,
     ias_kt: f < 0.1 || f > 0.95 ? 18 : 280,
-    vs_fpm: 0,
+    vs_fpm: f < 0.1 || f > 0.95 ? 0 : f < 0.35 ? 1800 : f < 0.6 ? 0 : -1200,
+    heading_deg: 195,
     on_ground: f < 0.1 || f > 0.95,
     phase: f < 0.1 ? 'taxi_out' : f < 0.35 ? 'climb' : f < 0.6 ? 'cruise' : f < 0.95 ? 'descent' : 'taxi_in',
   };
@@ -330,7 +331,7 @@ const EVENTS = [
   ['phase_change', 'cruise', 23, { from: 'climb', to: 'cruise' }],
   ['touchdown', 'landing', 52, { vs_fpm: -294, g_force: 1.25, flaps_deg: 30 }],
   ['block_on', 'taxi_in', 56, { fuel_kg: 4061 }],
-].map(([type, phase, min, data], i) => ({ id: id(1300 + i), seq: i, type, phase, occurred_at: at(min), altitude_ft: null, data }));
+].map(([type, phase, min, data], i) => ({ id: id(1300 + i), seq: i, type, phase, occurred_at: at(min), latitude: null, longitude: null, altitude_ft: null, data }));
 const pirepRow = (n, callsign, status, score, extra = {}) => ({
   id: n === 0 ? PIREP_ID : id(1200 + n),
   airline_id: MXL.id,
@@ -385,9 +386,9 @@ const pirepRow = (n, callsign, status, score, extra = {}) => ({
   pilot: { display_name: PROFILE.display_name, pilot_number: PROFILE.pilot_number },
   reviewer: status === 'pending' ? null : { display_name: PROFILE.display_name },
   type: { icao_code: 'B738', manufacturer: 'Boeing', model: '737-800' },
-  origin: { icao_code: 'MMMX', name: 'Aeropuerto Internacional de la Ciudad de México', city: 'Ciudad de México' },
-  destination: { icao_code: 'MMAA', name: 'Aeropuerto Internacional de Acapulco', city: 'Acapulco' },
-  arrival: { icao_code: 'MMAA', name: 'Aeropuerto Internacional de Acapulco', city: 'Acapulco' },
+  origin: { icao_code: 'MMMX', name: 'Aeropuerto Internacional de la Ciudad de México', city: 'Ciudad de México', latitude: 19.4363, longitude: -99.0721 },
+  destination: { icao_code: 'MMAA', name: 'Aeropuerto Internacional de Acapulco', city: 'Acapulco', latitude: 16.7571, longitude: -99.754 },
+  arrival: { icao_code: 'MMAA', name: 'Aeropuerto Internacional de Acapulco', city: 'Acapulco', latitude: 16.7571, longitude: -99.754 },
   ...extra,
 });
 const PIREPS = [
@@ -679,6 +680,19 @@ await shoot('24-pireps-review', 'pireps', {
   },
 });
 await shoot('25-pirep-detail', `pireps/${PIREP_ID}`, { waitFor: 'Rodaje rápido' });
+await shoot('25b-pirep-analysis-hover', `pireps/${PIREP_ID}`, {
+  waitFor: 'Análisis del vuelo',
+  action: async (page) => {
+    const chart = page.locator('svg[aria-label^="Perfil de altitud"]');
+    await chart.scrollIntoViewIfNeeded();
+    const box = await chart.boundingBox();
+    if (!box) throw new Error('No se encontró la gráfica');
+    await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.4);
+    await page.getByText('Recorrido').first().waitFor();
+    await page.getByRole('radio', { name: 'Por altitud' }).click();
+    await page.waitForTimeout(1500);
+  },
+});
 await shoot('26-pirep-detail-mobile', `pireps/${PIREP_ID}`, { viewport: { width: 390, height: 844 }, waitFor: 'Rodaje rápido' });
 await shoot('27-pirep-detail-light', `pireps/${PIREP_ID}`, { theme: 'light', waitFor: 'Rodaje rápido' });
 await shoot('28-airline-scoring', `airlines/${MXL.slug}`, { airlineId: MXL.id, waitFor: 'Puntuación de PIREP' });

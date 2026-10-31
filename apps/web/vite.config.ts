@@ -23,7 +23,8 @@ function contentSecurityPolicy(supabaseUrl: string): Plugin {
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
-    `img-src 'self' data: blob: ${supabaseOrigin}`.trim(),
+    // Teselas del mapa del PIREP (CARTO sobre OpenStreetMap).
+    `img-src 'self' data: blob: ${supabaseOrigin} https://*.basemaps.cartocdn.com`.trim(),
     `connect-src 'self' ${supabaseOrigin} ${realtimeOrigin}`.trim(),
     "base-uri 'self'",
     "form-action 'self'",
