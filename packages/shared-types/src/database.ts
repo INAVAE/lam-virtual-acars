@@ -138,4 +138,27 @@ export interface PirepMetrics {
   sim_aircraft_title?: string;
   sim_aircraft_icao?: string;
   client_version?: string;
+  fuel?: PirepFuel;
+}
+
+export interface PirepFuelStage {
+  kg: number;
+  minutes: number;
+  kg_per_hour?: number;
+}
+
+/** Combustible del vuelo (pireps.metrics.fuel), en kg. */
+export interface PirepFuel {
+  block_off_kg?: number;
+  takeoff_kg?: number;
+  landing_kg?: number;
+  block_on_kg?: number;
+  taxi_out_kg?: number;
+  trip_kg?: number;
+  taxi_in_kg?: number;
+  used_kg?: number;
+  samples?: number;
+  refueled_kg?: number;
+  stages?: Partial<Record<'taxi_out' | 'climb' | 'cruise' | 'descent' | 'taxi_in', PirepFuelStage>>;
+  plan?: { block_kg?: number; trip_kg?: number; reserve_kg?: number; landing_kg?: number; units?: string };
 }

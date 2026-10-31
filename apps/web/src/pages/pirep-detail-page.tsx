@@ -1,4 +1,4 @@
-import type { PirepMetrics } from '@lam/shared-types';
+import type { PirepFuel, PirepMetrics } from '@lam/shared-types';
 import { ArrowLeft, Check, Plane, TriangleAlert, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
@@ -299,6 +299,163 @@ function LandingFacts({ pirep, metrics }: { pirep: PirepDetail; metrics: PirepMe
   );
 }
 
+// -----------------------------------------------------------------------------
+// Combustible
+// -----------------------------------------------------------------------------
+const STAGES: { key: keyof NonNullable<PirepFuel['stages']>; label: string }[] = [
+  { key: 'taxi_out', label: 'Rodaje de salida' },
+  { key: 'climb', label: 'Despegue y ascenso' },
+  { key: 'cruise', label: 'Crucero' },
+  { key: 'descent', label: 'Descenso y aproximación' },
+  { key: 'taxi_in', label: 'Rodaje de llegada' },
+];
+
+function kg(value: number | undefined | null): string {
+  return value === undefined || value === null ? '—' : `${formatNumber(Math.round(value))} kg`;
+}
+
+function Delta({ real, plan, lowerIsBetter }: { real: number | undefined; plan: number | undefined; lowerIsBetter: boolean }) {
+  if (real === undefined || plan === undefined || plan === 0) return <span className="text-muted">—</span>;
+  const diff = real - plan;
+  const pct = Math.round((diff / plan) * 100);
+  const good = lowerIsBetter ? diff <= 0 : diff >= 0;
+  return (
+    <span className={good ? 'text-ok-ink' : 'text-warn-ink'}>
+      {diff > 0 ? '+' : diff < 0 ? '−' : ''}
+      {formatNumber(Math.abs(Math.round(diff)))} kg ({pct > 0 ? '+' : ''}
+      {pct}%)
+    </span>
+  );
+}
+
+function FuelPanel({ fuel }: { fuel: PirepFuel }) {
+  const plan = fuel.plan;
+  const stages = STAGES.filter((s) => fuel.stages?.[s.key]);
+  const belowReserve = plan?.reserve_kg !== undefined && fuel.landing_kg !== undefined && fuel.landing_kg < plan.reserve_kg;
+  return (
+    <Panel title="Combustible" description="Niveles medidos por LAM ACARS y comparación con el plan de SimBrief.">
+      <div className="space-y-4">
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+          <Fact label="Calzos fuera" mono>
+            {kg(fuel.block_off_kg)}
+          </Fact>
+          <Fact label="Despegue" mono>
+            {kg(fuel.takeoff_kg)}
+          </Fact>
+          <Fact label="Aterrizaje" mono>
+            <span className={belowReserve ? 'text-danger-ink' : undefined}>{kg(fuel.landing_kg)}</span>
+          </Fact>
+          <Fact label="Calzos puestos" mono>
+            {kg(fuel.block_on_kg)}
+          </Fact>
+          <Fact label="Rodaje de salida" mono>
+            {kg(fuel.taxi_out_kg)}
+          </Fact>
+          <Fact label="En viaje" mono>
+            {kg(fuel.trip_kg)}
+          </Fact>
+          <Fact label="Rodaje de llegada" mono>
+            {kg(fuel.taxi_in_kg)}
+          </Fact>
+          <Fact label="Total usado" mono>
+            {kg(fuel.used_kg)}
+          </Fact>
+        </dl>
+
+        {stages.length > 0 ? (
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted">Consumo por etapa</p>
+            <table className="mt-1 w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-muted">
+                  <th className="py-1 font-normal">Etapa</th>
+                  <th className="py-1 text-right font-normal">Consumo</th>
+                  <th className="py-1 text-right font-normal">Tiempo</th>
+                  <th className="py-1 text-right font-normal">Flujo</th>
+                </tr>
+              </thead>
+              <tbody className="font-mono">
+                {stages.map((s) => {
+                  const v = fuel.stages![s.key]!;
+                  return (
+                    <tr key={s.key} className="border-t border-line">
+                      <td className="py-1.5 font-sans">{s.label}</td>
+                      <td className="py-1.5 text-right">{kg(v.kg)}</td>
+                      <td className="py-1.5 text-right">{formatMinutes(Math.round(v.minutes))}</td>
+                      <td className="py-1.5 text-right">{v.kg_per_hour !== undefined ? `${formatNumber(v.kg_per_hour)} kg/h` : '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-muted">El consumo por etapa llega con la traza del conector 0.1.16 o posterior.</p>
+        )}
+
+        {plan ? (
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted">Plan de SimBrief contra real</p>
+            <table className="mt-1 w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-muted">
+                  <th className="py-1 font-normal" />
+                  <th className="py-1 text-right font-normal">Plan</th>
+                  <th className="py-1 text-right font-normal">Real</th>
+                  <th className="py-1 text-right font-normal">Diferencia</th>
+                </tr>
+              </thead>
+              <tbody className="font-mono">
+                <tr className="border-t border-line">
+                  <td className="py-1.5 font-sans">Combustible de bloque</td>
+                  <td className="py-1.5 text-right">{kg(plan.block_kg)}</td>
+                  <td className="py-1.5 text-right">{kg(fuel.block_off_kg)}</td>
+                  <td className="py-1.5 text-right">
+                    <Delta real={fuel.block_off_kg} plan={plan.block_kg} lowerIsBetter={false} />
+                  </td>
+                </tr>
+                <tr className="border-t border-line">
+                  <td className="py-1.5 font-sans">Consumo en viaje</td>
+                  <td className="py-1.5 text-right">{kg(plan.trip_kg)}</td>
+                  <td className="py-1.5 text-right">{kg(fuel.trip_kg)}</td>
+                  <td className="py-1.5 text-right">
+                    <Delta real={fuel.trip_kg} plan={plan.trip_kg} lowerIsBetter />
+                  </td>
+                </tr>
+                <tr className="border-t border-line">
+                  <td className="py-1.5 font-sans">Al aterrizar (plan aprox.)</td>
+                  <td className="py-1.5 text-right">{kg(plan.landing_kg)}</td>
+                  <td className="py-1.5 text-right">{kg(fuel.landing_kg)}</td>
+                  <td className="py-1.5 text-right">
+                    <Delta real={fuel.landing_kg} plan={plan.landing_kg} lowerIsBetter={false} />
+                  </td>
+                </tr>
+                <tr className="border-t border-line">
+                  <td className="py-1.5 font-sans">Reserva final</td>
+                  <td className="py-1.5 text-right">{kg(plan.reserve_kg)}</td>
+                  <td className="py-1.5 text-right" colSpan={2}>
+                    {fuel.landing_kg === undefined ? (
+                      <span className="text-muted">sin dato al aterrizar</span>
+                    ) : belowReserve ? (
+                      <span className="text-danger-ink">aterrizó bajo la reserva</span>
+                    ) : (
+                      <span className="text-ok-ink">por encima de la reserva</span>
+                    )}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            {plan.units === 'lb' ? <p className="mt-1 text-xs text-muted">El plan estaba en libras; se convirtió a kg.</p> : null}
+          </div>
+        ) : (
+          <p className="text-sm text-muted">Sin plan de SimBrief para comparar.</p>
+        )}
+        {fuel.refueled_kg ? <Alert>Se detectó una carga de combustible de {kg(fuel.refueled_kg)} durante la sesión.</Alert> : null}
+      </div>
+    </Panel>
+  );
+}
+
 function FindingsPanel({ pirep }: { pirep: PirepDetail }) {
   const findings = parseFindings(pirep.findings);
   return (
@@ -459,11 +616,18 @@ export function PirepDetailPage() {
         </dl>
       </section>
 
-      <FlightAnalysisPanel points={track.data?.points ?? []} events={track.data?.events ?? []} airports={airports} loading={track.isPending} />
+      <FlightAnalysisPanel
+        points={track.data?.points ?? []}
+        events={track.data?.events ?? []}
+        airports={airports}
+        loading={track.isPending}
+        reserveKg={metrics.fuel?.plan?.reserve_kg ?? null}
+      />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">
           <LandingFacts pirep={p} metrics={metrics} />
+          {metrics.fuel ? <FuelPanel fuel={metrics.fuel} /> : null}
         </div>
         <div className="space-y-6">
           <FindingsPanel pirep={p} />

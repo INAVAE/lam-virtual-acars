@@ -12,6 +12,7 @@ import {
   eventMarkers,
   flightExtremes,
   formatZuluTime,
+  fuelSeries,
   PHASE_GROUPS,
   phaseGroup,
   phaseSpans,
@@ -27,6 +28,8 @@ interface FlightAnalysisPanelProps {
   events: readonly AnalysisEvent[];
   airports: readonly MapAirport[];
   loading: boolean;
+  /** Reserva final del plan de SimBrief (kg), si hay plan. */
+  reserveKg?: number | null;
 }
 
 /**
@@ -34,7 +37,7 @@ interface FlightAnalysisPanelProps {
  * mismo cursor. Pasar el puntero por la ruta o por las gráficas muestra el
  * punto en ambos; un clic lo fija.
  */
-export function FlightAnalysisPanel({ points, events, airports, loading }: FlightAnalysisPanelProps) {
+export function FlightAnalysisPanel({ points, events, airports, loading, reserveKg = null }: FlightAnalysisPanelProps) {
   const { theme } = useTheme();
   const [colorMode, setColorMode] = useState<ColorMode>('phase');
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -47,6 +50,7 @@ export function FlightAnalysisPanel({ points, events, airports, loading }: Fligh
   const distances = useMemo(() => cumulativeDistance(points), [points]);
   const spans = useMemo(() => phaseSpans(points), [points]);
   const markers = useMemo(() => eventMarkers(events), [events]);
+  const fuel = useMemo(() => fuelSeries(points, times, events), [points, times, events]);
   const extremes = useMemo(() => flightExtremes(points), [points]);
   const groupsPresent = useMemo(() => new Set(points.map((p) => phaseGroup(p.phase))), [points]);
 
@@ -84,6 +88,14 @@ export function FlightAnalysisPanel({ points, events, airports, loading }: Fligh
     { label: 'Descenso máx.', value: extremes.maxDescent ? `${formatNumber(extremes.maxDescent.value)} fpm` : '—', index: extremes.maxDescent?.index },
     { label: 'Recorrido', value: `${formatNumber(Math.round(distances[distances.length - 1] ?? 0))} NM`, index: undefined },
   ];
+  const knownFuel = fuel.values.filter((v): v is number => v !== null);
+  if (knownFuel.length > 1) {
+    stats.push({
+      label: fuel.approximate ? 'Combustible usado ≈' : 'Combustible usado',
+      value: `${formatNumber(Math.max(0, knownFuel[0]! - knownFuel[knownFuel.length - 1]!))} kg`,
+      index: undefined,
+    });
+  }
 
   return (
     <Panel
@@ -197,7 +209,7 @@ export function FlightAnalysisPanel({ points, events, airports, loading }: Fligh
           </ul>
 
           {/* Extremos: un clic lleva al punto */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
             {stats.map((s) => (
               <button
                 key={s.label}
@@ -219,6 +231,8 @@ export function FlightAnalysisPanel({ points, events, airports, loading }: Fligh
             distances={distances}
             spans={spans}
             markers={markers}
+            fuel={fuel}
+            reserveKg={reserveKg}
             activeIndex={activeIndex}
             pinned={pinnedIndex !== null}
             onHover={setHoverIndex}

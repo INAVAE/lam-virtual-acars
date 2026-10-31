@@ -6,6 +6,8 @@ import {
   flightExtremes,
   formatElapsed,
   formatLatLon,
+  fuelFlowAt,
+  fuelSeries,
   nearestIndexByPosition,
   nearestIndexByTime,
   niceTicks,
@@ -114,5 +116,24 @@ describe('flight-analysis', () => {
     expect(niceTicks(0)).toEqual([0]);
     expect(formatElapsed(65 * 60_000)).toBe('T+1:05');
     expect(formatLatLon(19.4363, -99.0721)).toBe('19.4363°N 99.0721°W');
+  });
+
+  it('combustible de la traza o interpolado entre eventos', () => {
+    const times = TRACK.map((p) => Date.parse(p.sampled_at));
+    const withFuel = TRACK.map((p, i) => ({ ...p, fuel_kg: 6000 - i * 100 }));
+    const real = fuelSeries(withFuel, times, []);
+    expect(real.approximate).toBe(false);
+    expect(real.values[3]).toBe(5700);
+    // 100 kg por minuto = 6,000 kg/h
+    expect(fuelFlowAt(real.values, times, 3)).toBe(6000);
+
+    const events = [
+      { id: 'a', seq: 0, type: 'block_off', phase: 'pushback', occurred_at: TRACK[0]!.sampled_at, altitude_ft: null, data: { fuel_kg: 6000 } },
+      { id: 'b', seq: 1, type: 'block_on', phase: 'taxi_in', occurred_at: TRACK[4]!.sampled_at, altitude_ft: null, data: { fuel_kg: 5600 } },
+    ];
+    const approx = fuelSeries(TRACK, times, events);
+    expect(approx.approximate).toBe(true);
+    expect(approx.values.slice(0, 6)).toEqual([6000, 5900, 5800, 5700, 5600, null]);
+    expect(fuelSeries(TRACK, times, []).values.every((v) => v === null)).toBe(true);
   });
 });

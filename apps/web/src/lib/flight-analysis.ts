@@ -16,6 +16,8 @@ export interface AnalysisPoint {
   heading_deg: number | null;
   on_ground: boolean;
   phase: string;
+  /** Combustible a bordo (kg); nulo en vuelos registrados antes del conector 0.1.16. */
+  fuel_kg?: number | null;
 }
 
 export interface AnalysisEvent {
@@ -295,6 +297,68 @@ export function eventMarkers(events: readonly AnalysisEvent[]): EventMarker[] {
     }
   }
   return out;
+}
+
+// -----------------------------------------------------------------------------
+// Combustible
+// -----------------------------------------------------------------------------
+export interface FuelSeries {
+  values: (number | null)[];
+  /** true si la curva se interpoló entre los eventos (vuelos sin combustible en la traza). */
+  approximate: boolean;
+}
+
+/** Niveles de combustible conocidos en los eventos (calzos, despegue, contacto, calzos puestos). */
+export function fuelAnchors(events: readonly AnalysisEvent[]): { time: number; kg: number }[] {
+  const out: { time: number; kg: number }[] = [];
+  for (const e of events) {
+    if (!['block_off', 'takeoff', 'touchdown', 'block_on'].includes(e.type)) continue;
+    const d = (e.data && typeof e.data === 'object' ? e.data : {}) as Record<string, unknown>;
+    const kg = num(d, 'fuel_kg');
+    if (kg !== null) out.push({ time: Date.parse(e.occurred_at), kg });
+  }
+  return out.sort((a, b) => a.time - b.time);
+}
+
+/**
+ * Combustible en cada punto: el de la traza si existe; si no, interpolado entre
+ * los eventos que lo llevan (solo dentro de su intervalo).
+ */
+export function fuelSeries(points: readonly AnalysisPoint[], times: readonly number[], events: readonly AnalysisEvent[]): FuelSeries {
+  if (points.some((p) => p.fuel_kg !== null && p.fuel_kg !== undefined)) {
+    return { values: points.map((p) => (p.fuel_kg === undefined ? null : p.fuel_kg)), approximate: false };
+  }
+  const anchors = fuelAnchors(events);
+  if (anchors.length < 2) return { values: points.map(() => null), approximate: true };
+  const values = times.map((t) => {
+    if (t < anchors[0]!.time || t > anchors[anchors.length - 1]!.time) return null;
+    let i = 0;
+    while (i < anchors.length - 2 && anchors[i + 1]!.time < t) i++;
+    const a = anchors[i]!;
+    const b = anchors[i + 1]!;
+    const f = b.time === a.time ? 0 : (t - a.time) / (b.time - a.time);
+    return Math.round(a.kg + (b.kg - a.kg) * Math.min(1, Math.max(0, f)));
+  });
+  return { values, approximate: true };
+}
+
+/** Consumo (kg/h) alrededor del punto i, promediado en una ventana de tiempo. */
+export function fuelFlowAt(values: readonly (number | null)[], times: readonly number[], i: number, windowMs = 120_000): number | null {
+  const t = times[i];
+  if (t === undefined || values[i] === null || values[i] === undefined) return null;
+  let a = i;
+  let b = i;
+  while (a > 0 && t - times[a - 1]! <= windowMs / 2 && values[a - 1] !== null) a--;
+  while (b < times.length - 1 && times[b + 1]! - t <= windowMs / 2 && values[b + 1] !== null) b++;
+  if (a === b) {
+    if (i > 0 && values[i - 1] !== null) a = i - 1;
+    else if (i < times.length - 1 && values[i + 1] !== null) b = i + 1;
+    else return null;
+  }
+  const hours = (times[b]! - times[a]!) / 3_600_000;
+  if (hours <= 0) return null;
+  const burn = (values[a]! - values[b]!) / hours;
+  return burn < 0 ? null : Math.round(burn);
 }
 
 // -----------------------------------------------------------------------------

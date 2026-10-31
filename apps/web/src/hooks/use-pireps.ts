@@ -55,7 +55,7 @@ export type PirepDetail = NonNullable<NonNullable<ReturnType<typeof usePirep>['d
 
 export type TrackPoint = Pick<
   Tables<'flight_track_points'>,
-  'seq' | 'sampled_at' | 'latitude' | 'longitude' | 'altitude_ft' | 'gs_kt' | 'ias_kt' | 'vs_fpm' | 'heading_deg' | 'on_ground' | 'phase'
+  'seq' | 'sampled_at' | 'latitude' | 'longitude' | 'altitude_ft' | 'gs_kt' | 'ias_kt' | 'vs_fpm' | 'heading_deg' | 'on_ground' | 'phase' | 'fuel_kg'
 >;
 export type FlightEvent = Pick<
   Tables<'flight_events'>,
@@ -74,7 +74,7 @@ export function usePirepTrack(flightId: string | undefined, sessionId: string | 
       for (let from = 0; from < 20_000; from += 1000) {
         const { data, error } = await supabase
           .from('flight_track_points')
-          .select('seq, sampled_at, latitude, longitude, altitude_ft, gs_kt, ias_kt, vs_fpm, heading_deg, on_ground, phase')
+          .select('seq, sampled_at, latitude, longitude, altitude_ft, gs_kt, ias_kt, vs_fpm, heading_deg, on_ground, phase, fuel_kg')
           .eq('flight_id', flightId!)
           .eq('session_id', sessionId!)
           .order('seq')

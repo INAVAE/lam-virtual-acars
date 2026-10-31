@@ -883,6 +883,7 @@ export type Database = {
           airline_id: string
           altitude_ft: number
           flight_id: string
+          fuel_kg: number | null
           gs_kt: number | null
           heading_deg: number | null
           ias_kt: number | null
@@ -900,6 +901,7 @@ export type Database = {
           airline_id: string
           altitude_ft: number
           flight_id: string
+          fuel_kg?: number | null
           gs_kt?: number | null
           heading_deg?: number | null
           ias_kt?: number | null
@@ -917,6 +919,7 @@ export type Database = {
           airline_id?: string
           altitude_ft?: number
           flight_id?: string
+          fuel_kg?: number | null
           gs_kt?: number | null
           heading_deg?: number | null
           ias_kt?: number | null

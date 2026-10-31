@@ -55,6 +55,7 @@ function formatValue(value: number, unit: string | null): string {
   if (unit === 'G') return `${value.toFixed(2)} G`;
   if (unit === '°') return `${value.toFixed(1)}°`;
   if (unit === 'kt') return `${Math.round(value)} kt`;
+  if (unit === 'kg') return `${formatNumber(Math.round(value))} kg`;
   return formatNumber(value);
 }
 

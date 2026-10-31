@@ -3,6 +3,7 @@ import {
   formatElapsed,
   formatLatLon,
   formatZuluTime,
+  fuelFlowAt,
   nearestIndexByTime,
   niceTicks,
   PHASE_GROUPS,
@@ -10,6 +11,7 @@ import {
   segmentsBy,
   type AnalysisPoint,
   type EventMarker,
+  type FuelSeries,
   type PhaseSpan,
 } from '@/lib/flight-analysis';
 import { formatNumber } from '@/lib/format';
@@ -21,6 +23,10 @@ interface FlightProfileChartProps {
   distances: readonly number[];
   spans: readonly PhaseSpan[];
   markers: readonly EventMarker[];
+  /** Combustible por punto (kg) y si es aproximado. */
+  fuel: FuelSeries;
+  /** Reserva final del plan de SimBrief (kg), para la línea de referencia. */
+  reserveKg: number | null;
   activeIndex: number | null;
   pinned: boolean;
   onHover: (index: number | null) => void;
@@ -37,11 +43,12 @@ const RIBBON = { top: 0, h: 8 };
 const EVENTS = { top: 14, h: 22 };
 const ALT = { top: 44, h: 170 };
 const SPD = { top: 252, h: 150 };
-const AXIS_Y = SPD.top + SPD.h + 18;
-const HEIGHT = AXIS_Y + 8;
+const FUEL = { top: 440, h: 120 };
 
 const IAS_COLOR = '#fbbf24';
 const GS_COLOR = '#94a3b8';
+const FUEL_COLOR = '#a3e635';
+const RESERVE_COLOR = '#ef4444';
 
 function pathFor(xs: number[], ys: (number | null)[], from = 0, to = xs.length - 1): string {
   let d = '';
@@ -63,7 +70,7 @@ function pathFor(xs: number[], ys: (number | null)[], from = 0, to = xs.length -
  * tiempo, con fondo por etapa, eventos y un cursor que muestra todos los
  * datos del punto. El cursor se sincroniza con el mapa.
  */
-export function FlightProfileChart({ points, times, distances, spans, markers, activeIndex, pinned, onHover, onSelect, onPin }: FlightProfileChartProps) {
+export function FlightProfileChart({ points, times, distances, spans, markers, fuel, reserveKg, activeIndex, pinned, onHover, onSelect, onPin }: FlightProfileChartProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(800);
   const [hoveredMarker, setHoveredMarker] = useState<EventMarker | null>(null);
@@ -76,6 +83,10 @@ export function FlightProfileChart({ points, times, distances, spans, markers, a
     return () => observer.disconnect();
   }, []);
 
+  const hasFuel = fuel.values.some((v) => v !== null);
+  const bottom = hasFuel ? FUEL.top + FUEL.h : SPD.top + SPD.h;
+  const AXIS_Y = bottom + 18;
+  const HEIGHT = AXIS_Y + 8;
   const t0 = times[0] ?? 0;
   const t1 = times[times.length - 1] ?? 1;
   const plotW = width - LEFT - RIGHT;
@@ -90,7 +101,13 @@ export function FlightProfileChart({ points, times, distances, spans, markers, a
     const ySpd = (v: number) => SPD.top + SPD.h - (Math.max(0, v) / spdTop) * SPD.h;
     const xs = times.map((t) => LEFT + ((t - t0) / Math.max(t1 - t0, 1)) * plotW);
     const altYs = points.map((p) => yAlt(p.altitude_ft));
+    const fuelMax = niceTicks(Math.max(1000, ...fuel.values.map((v) => v ?? 0), reserveKg ?? 0), 3);
+    const fuelTop = fuelMax[fuelMax.length - 1]!;
+    const yFuel = (v: number) => FUEL.top + FUEL.h - (Math.max(0, v) / fuelTop) * FUEL.h;
     return {
+      fuelTicks: fuelMax,
+      yFuel,
+      fuelPath: pathFor(xs, fuel.values.map((v) => (v === null ? null : yFuel(v)))),
       altTicks: altMax,
       spdTicks: spdMax,
       yAlt,
@@ -105,7 +122,7 @@ export function FlightProfileChart({ points, times, distances, spans, markers, a
         .slice(1)
         .map((s) => ({ x: xs[s.from]!, y: altYs[s.from]!, color: s.color, phase: points[s.from]!.phase })),
     };
-  }, [points, times, t0, t1, plotW]);
+  }, [points, times, t0, t1, plotW, fuel, reserveKg]);
 
   const timeTicks = useMemo(() => {
     const span = t1 - t0;
@@ -144,6 +161,7 @@ export function FlightProfileChart({ points, times, distances, spans, markers, a
 
   const active = activeIndex !== null ? points[activeIndex] : undefined;
   const ax = activeIndex !== null ? geo.xs[activeIndex] : undefined;
+  const flow = activeIndex !== null && hasFuel ? fuelFlowAt(fuel.values, times, activeIndex) : null;
   const nearMarkers = active ? markers.filter((m) => Math.abs(m.time - times[activeIndex!]!) <= 30_000) : [];
   const tooltipLeft = ax !== undefined && ax > width - 250 ? ax - 236 : (ax ?? 0) + 14;
 
@@ -200,7 +218,7 @@ export function FlightProfileChart({ points, times, distances, spans, markers, a
         </text>
         {timeTicks.map((t) => (
           <g key={`t${t}`}>
-            <line x1={x(t)} x2={x(t)} y1={ALT.top} y2={SPD.top + SPD.h} stroke="var(--border)" strokeOpacity={0.5} />
+            <line x1={x(t)} x2={x(t)} y1={ALT.top} y2={bottom} stroke="var(--border)" strokeOpacity={0.5} />
             <text x={x(t)} y={AXIS_Y} textAnchor="middle" className="fill-muted font-mono text-[10px]">
               {formatZuluTime(t).slice(0, 5)}Z
             </text>
@@ -232,13 +250,62 @@ export function FlightProfileChart({ points, times, distances, spans, markers, a
           </text>
         </g>
 
+        {/* Combustible */}
+        {hasFuel ? (
+          <g>
+            {spans.map((s, i) => (
+              <rect
+                key={`f${i}`}
+                x={x(s.start)}
+                y={FUEL.top}
+                width={Math.max(1, x(s.end) - x(s.start))}
+                height={FUEL.h}
+                fill={PHASE_GROUPS[s.group].color}
+                opacity={0.08}
+              />
+            ))}
+            {geo.fuelTicks.map((v) => (
+              <g key={`fu${v}`}>
+                <line x1={LEFT} x2={width - RIGHT} y1={geo.yFuel(v)} y2={geo.yFuel(v)} stroke="var(--border)" strokeDasharray="2 4" />
+                <text x={LEFT - 6} y={geo.yFuel(v) + 4} textAnchor="end" className="fill-muted font-mono text-[10px]">
+                  {v >= 1000 ? `${Math.round(v / 100) / 10}t` : v}
+                </text>
+              </g>
+            ))}
+            <text
+              x={8}
+              y={FUEL.top + FUEL.h / 2}
+              transform={`rotate(-90 8 ${FUEL.top + FUEL.h / 2})`}
+              textAnchor="middle"
+              dominantBaseline="hanging"
+              className="fill-muted text-[10px] uppercase tracking-wide"
+            >
+              Comb. (kg)
+            </text>
+            {reserveKg !== null ? (
+              <g>
+                <line x1={LEFT} x2={width - RIGHT} y1={geo.yFuel(reserveKg)} y2={geo.yFuel(reserveKg)} stroke={RESERVE_COLOR} strokeDasharray="6 4" strokeOpacity={0.8} />
+                <text x={LEFT + 6} y={geo.yFuel(reserveKg) - 4} className="text-[10px]" fill={RESERVE_COLOR}>
+                  Reserva del plan · {formatNumber(reserveKg)} kg
+                </text>
+              </g>
+            ) : null}
+            <path d={geo.fuelPath} fill="none" stroke={FUEL_COLOR} strokeWidth={2} strokeDasharray={fuel.approximate ? '6 4' : undefined} strokeLinejoin="round" />
+            {fuel.approximate ? (
+              <text x={width - RIGHT} y={FUEL.top - 6} textAnchor="end" className="fill-muted text-[10px]">
+                Aproximado entre eventos (vuelo anterior al conector 0.1.16)
+              </text>
+            ) : null}
+          </g>
+        ) : null}
+
         {/* Eventos */}
         {markers.map((m) => {
           const mx = x(m.time);
           const key = m.kind === 'takeoff' || m.kind === 'touchdown' || m.kind === 'go_around' || m.kind === 'warning';
           return (
             <g key={m.id}>
-              {key ? <line x1={mx} x2={mx} y1={EVENTS.top + EVENTS.h} y2={SPD.top + SPD.h} stroke={m.color} strokeOpacity={0.6} strokeDasharray="3 3" /> : null}
+              {key ? <line x1={mx} x2={mx} y1={EVENTS.top + EVENTS.h} y2={bottom} stroke={m.color} strokeOpacity={0.6} strokeDasharray="3 3" /> : null}
               <g
                 transform={`translate(${mx} ${EVENTS.top + EVENTS.h / 2})`}
                 onPointerEnter={() => setHoveredMarker(m)}
@@ -258,7 +325,10 @@ export function FlightProfileChart({ points, times, distances, spans, markers, a
         {/* Cursor */}
         {active && ax !== undefined ? (
           <g pointerEvents="none">
-            <line x1={ax} x2={ax} y1={EVENTS.top + EVENTS.h} y2={SPD.top + SPD.h} stroke="var(--text)" strokeOpacity={0.7} strokeDasharray={pinned ? undefined : '4 3'} />
+            <line x1={ax} x2={ax} y1={EVENTS.top + EVENTS.h} y2={bottom} stroke="var(--text)" strokeOpacity={0.7} strokeDasharray={pinned ? undefined : '4 3'} />
+            {fuel.values[activeIndex!] !== null && fuel.values[activeIndex!] !== undefined ? (
+              <circle cx={ax} cy={geo.yFuel(fuel.values[activeIndex!]!)} r={4} fill={FUEL_COLOR} stroke="var(--surface)" strokeWidth={2} />
+            ) : null}
             <circle cx={ax} cy={geo.altYs[activeIndex!]} r={5} fill={phaseColor(active.phase)} stroke="var(--surface)" strokeWidth={2} />
             {active.ias_kt !== null ? <circle cx={ax} cy={geo.ySpd(active.ias_kt)} r={4.5} fill={IAS_COLOR} stroke="var(--surface)" strokeWidth={2} /> : null}
             {active.gs_kt !== null ? <circle cx={ax} cy={geo.ySpd(active.gs_kt)} r={3.5} fill={GS_COLOR} stroke="var(--surface)" strokeWidth={1.5} /> : null}
@@ -270,7 +340,7 @@ export function FlightProfileChart({ points, times, distances, spans, markers, a
           x={LEFT}
           y={ALT.top}
           width={plotW}
-          height={SPD.top + SPD.h - ALT.top}
+          height={bottom - ALT.top}
           fill="transparent"
           className="cursor-crosshair"
           onPointerMove={onMove}
@@ -320,6 +390,18 @@ export function FlightProfileChart({ points, times, distances, spans, markers, a
               <dt className="font-sans text-[10px] uppercase text-muted">Recorrido</dt>
               <dd>{formatNumber(Math.round(distances[activeIndex!] ?? 0))} NM</dd>
             </div>
+            {hasFuel ? (
+              <>
+                <div>
+                  <dt className="font-sans text-[10px] uppercase text-muted">Combustible{fuel.approximate ? ' ≈' : ''}</dt>
+                  <dd style={{ color: FUEL_COLOR }}>{fuel.values[activeIndex!] === null ? '—' : `${formatNumber(fuel.values[activeIndex!]!)} kg`}</dd>
+                </div>
+                <div>
+                  <dt className="font-sans text-[10px] uppercase text-muted">Flujo</dt>
+                  <dd>{flow === null ? '—' : `${formatNumber(flow)} kg/h`}</dd>
+                </div>
+              </>
+            ) : null}
           </dl>
           <p className="mt-1.5 font-mono text-[10px] text-muted">{formatLatLon(active.latitude, active.longitude)}</p>
           {nearMarkers.map((m) => (
