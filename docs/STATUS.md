@@ -9,12 +9,14 @@
 - Base de datos: `pireps`, `pirep_rule_definitions` (18 reglas), `pirep_scoring_rules` por aerolínea, `airline_settings.pirep_min_score` y la vista `pilot_statistics`. El cierre de una sesión completada genera el PIREP con faltas y puntaje; tarea de respaldo cada 10 minutos. `review_pirep` y `comment_pirep`; aceptar suma block time y ciclo a la aeronave. 44 pruebas pgTAP nuevas (199 en total).
 - PIREP del vuelo real MXL106 (2026-10-28) generado al aplicar la migración: 90 puntos (toma firme −549 fpm medida con la versión anterior del conector, rodaje 32 kt), block 0:56, 207 NM, 2,068 kg; en revisión.
 - Web: página PIREP (mis reportes, por revisar, todos), detalle con trayectoria y perfil de altitud, revisión y comentarios, reglas de puntuación en la aerolínea, horas y PIREP por revisar en el dashboard, enlace desde el historial de My Flights. Revisión visual: 28 pantallas sin errores (6 nuevas).
+- Análisis del vuelo (2026-10-30): mapa Leaflet con OpenStreetMap, ruta por etapa o por altitud, gráficas de altitud, velocidad y combustible con cursor sincronizado y recuadro de datos.
+- Combustible (2026-10-30): `flight_track_points.fuel_kg`, resumen en `pireps.metrics.fuel` (consumo por etapa, plan de SimBrief), regla opcional de reserva y panel en la web. Conector 0.1.16 (combustible en traza y aterrizaje, rodaje cada 3 s; 78 pruebas). 211 pruebas pgTAP.
 - Documento: `docs/architecture/pirep.md`.
 
 ### Para cerrar la Fase 5
 
 - [ ] Revisar en la web el PIREP de MXL106 y aceptarlo (debe sumar 56 min y un ciclo a FVA106, hoy en 0, y a las horas del piloto).
-- [ ] Volar un vuelo completo con el conector 0.1.15 y comprobar el PIREP generado al cerrar (flaps y tren en el aterrizaje).
+- [ ] Volar un vuelo completo con el conector 0.1.16 y comprobar el PIREP generado al cerrar (flaps, tren, combustible por etapa y rodaje denso en el mapa).
 - [ ] Probar la aprobación automática en una aerolínea con el ajuste activado.
 
 ## Fase 4, LAM ACARS Connector (terminada; PMDG 737 verificado con el SDK en tierra)
