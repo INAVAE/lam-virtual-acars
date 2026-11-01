@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
 import { useCancelBooking, useImportOfp, useMyFlights, type FlightView, type MyFlight } from '@/hooks/use-bookings';
+import { useEventTags, type EventRegistrationTag } from '@/hooks/use-events';
 import { useTourLegTags, type TourLegTag } from '@/hooks/use-tours';
 import { useProfile } from '@/hooks/use-lam-data';
 import { useAirlineScope } from '@/lib/airline-scope';
@@ -164,7 +165,7 @@ function AcarsStatus({ flight }: { flight: MyFlight }) {
 // -----------------------------------------------------------------------------
 // Tarjeta de un vuelo reservado
 // -----------------------------------------------------------------------------
-function UpcomingFlight({ flight, hasSimbriefUser, tag }: { flight: MyFlight; hasSimbriefUser: boolean; tag?: TourLegTag }) {
+function UpcomingFlight({ flight, hasSimbriefUser, tag, eventTag }: { flight: MyFlight; hasSimbriefUser: boolean; tag?: TourLegTag; eventTag?: EventRegistrationTag }) {
   const cancel = useCancelBooking();
   const importOfp = useImportOfp();
   const scheduled = flight.status === 'scheduled';
@@ -217,6 +218,15 @@ function UpcomingFlight({ flight, hasSimbriefUser, tag }: { flight: MyFlight; ha
               style={{ borderColor: tag.tour.color, color: tag.tour.color }}
             >
               <strong>Tour {tag.tour.code}</strong> · {tag.tour.name} · Leg {tag.leg_number}
+            </Link>
+          ) : null}
+          {eventTag?.event ? (
+            <Link
+              to={`/events/${eventTag.event.id}`}
+              className="mt-1 inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs"
+              style={{ borderColor: eventTag.event.color, color: eventTag.event.color }}
+            >
+              <strong>Evento {eventTag.event.folio}</strong> · {eventTag.event.name}
             </Link>
           ) : null}
         </div>
@@ -330,7 +340,7 @@ function UpcomingFlight({ flight, hasSimbriefUser, tag }: { flight: MyFlight; ha
 }
 
 // -----------------------------------------------------------------------------
-function History({ flights, tags }: { flights: MyFlight[]; tags: Readonly<Record<string, TourLegTag>> }) {
+function History({ flights, tags, eventTags }: { flights: MyFlight[]; tags: Readonly<Record<string, TourLegTag>>; eventTags: Readonly<Record<string, EventRegistrationTag>> }) {
   return (
     <Table minWidth="60rem">
       <thead>
@@ -356,6 +366,7 @@ function History({ flights, tags }: { flights: MyFlight[]; tags: Readonly<Record
                 <p className="text-xs text-muted">
                   {f.airline?.name}
                   {f.tour_leg_id && tags[f.tour_leg_id]?.tour ? ` · Tour ${tags[f.tour_leg_id]!.tour!.code} leg ${tags[f.tour_leg_id]!.leg_number}` : ''}
+                  {f.event_registration_id && eventTags[f.event_registration_id]?.event ? ` · Evento ${eventTags[f.event_registration_id]!.event!.folio}` : ''}
                 </p>
               </Td>
               <Td className="font-mono">
@@ -398,6 +409,8 @@ export function MyFlightsPage() {
   const hasSimbriefUser = Boolean(profile.data?.simbrief_username?.trim());
   const legIds = (flights.data ?? []).flatMap((f) => (f.tour_leg_id ? [f.tour_leg_id] : []));
   const tags = useTourLegTags(legIds).data ?? {};
+  const registrationIds = (flights.data ?? []).flatMap((f) => (f.event_registration_id ? [f.event_registration_id] : []));
+  const eventTags = useEventTags(registrationIds).data ?? {};
 
   return (
     <div className="space-y-6">
@@ -426,7 +439,9 @@ export function MyFlightsPage() {
         flights.data && flights.data.length > 0 ? (
           <div className="space-y-4">
             {flights.data.map((f) => (
-              <UpcomingFlight key={f.id} flight={f} hasSimbriefUser={hasSimbriefUser} tag={f.tour_leg_id ? tags[f.tour_leg_id] : undefined} />
+              <UpcomingFlight key={f.id} flight={f} hasSimbriefUser={hasSimbriefUser} tag={f.tour_leg_id ? tags[f.tour_leg_id] : undefined}
+                eventTag={f.event_registration_id ? eventTags[f.event_registration_id] : undefined}
+              />
             ))}
           </div>
         ) : (
@@ -440,7 +455,7 @@ export function MyFlightsPage() {
           </div>
         )
       ) : (
-        <History flights={flights.data ?? []} tags={tags} />
+        <History flights={flights.data ?? []} tags={tags} eventTags={eventTags} />
       )}
     </div>
   );

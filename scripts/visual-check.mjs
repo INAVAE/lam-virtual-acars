@@ -589,6 +589,44 @@ const TOUR_DETAIL = {
   ],
 };
 const BADGES = [{ tour_id: id(1690), code: 'BAJIO-25', name: 'Bajío en un día', color: '#eab308', badge_path: null, airline_icao: 'MXL', awarded_at: minsAgo(20000), legs: 4 }];
+
+// -----------------------------------------------------------------------------
+// Fase 7.4: Eventos
+// -----------------------------------------------------------------------------
+const eventSummary = (n, extra = {}) => ({
+  id: id(1800 + n), folio: `EVT-2026-000${n + 1}`, name: 'Fly-in Ciudad de México', description: 'Todos llegan a la capital desde el aeropuerto que elijan. Gana la toma más suave.',
+  scenario: 'any_origin_same_destination', starts_at: minsAgo(-30), ends_at: minsAgo(-270), color: '#f59e0b', status: 'published',
+  prize_criterion: 'softest_landing', prize_description: 'Insignia dorada y mención en el Discord', prize_places: 3, review_comment: null, published_at: minsAgo(3000),
+  aircraft_type_ids: [], aircraft_types: [], airline_ids: [], airlines: [], origin: null, destination: tapt('MMMX'), airline: tairline,
+  creator: { id: USER_ID, name: PROFILE.display_name }, participants: 4, can_edit: true, can_approve: false, pending_registrations: 1,
+  my_registration: { id: id(1850), status: 'approved', airline_id: MXL.id, proposed_airport_id: 2, review_comment: null, active_flight_id: null, flights: 1 }, ...extra,
+});
+const EVENTS_LIST = [
+  eventSummary(0),
+  eventSummary(1, { name: 'Puente Monterrey–Guadalajara', scenario: 'same_origin_same_destination', origin: tapt('MMMY'), destination: tapt('MMGL'), color: '#3b82f6',
+    starts_at: minsAgo(-60 * 50), ends_at: minsAgo(-60 * 54), prize_criterion: 'first_arrival', participants: 9, can_edit: false, pending_registrations: null,
+    my_registration: null, aircraft_types: ['A20N', 'B738'], aircraft_type_ids: [1, 2], creator: { id: id(701), name: 'Ana Torres' } }),
+  eventSummary(2, { name: 'Salida al Caribe', scenario: 'same_origin_any_destination', origin: tapt('MMUN'), destination: null, color: '#14b8a6', status: 'submitted',
+    starts_at: minsAgo(-60 * 120), ends_at: minsAgo(-60 * 126), prize_criterion: 'longest_distance', participants: 0, can_approve: true, pending_registrations: 0,
+    my_registration: null, creator: { id: id(702), name: 'Luis Ramírez' } }),
+];
+const EVENT_DETAIL = {
+  ...EVENTS_LIST[0],
+  ranking: [
+    ['Ana Torres', 1002, 'MXL', 'MXL777', 'B738', 'MMGL', -96, 94],
+    [PROFILE.display_name, 1001, 'MXL', 'MXL106', 'A20N', 'MMGL', -142, 91],
+    ['Sofía Méndez', 1004, 'VOI', 'VOI441', 'A20N', 'MMTJ', -188, 88],
+    ['Luis Ramírez', 1003, 'MXL', 'MXL310', 'B738', 'MMMY', -260, 83],
+  ].map(([name, number, icao, cs, type, from, vs, score], i) => ({
+    position: i + 1, user_id: id(1860 + i), name, number, airline_icao: icao, pirep_id: PIREP_ID, pirep_status: i === 2 ? 'pending' : 'accepted', callsign: cs,
+    aircraft_type: type, origin: from, destination: 'MMMX', score, landing_vs_fpm: vs, block_on_at: minsAgo(20 - i * 3), distance_nm: 250 + i * 200, block_minutes: 70 + i * 20,
+  })),
+  registrations: [
+    { registration_id: id(1870), user_id: id(704), name: 'Jorge Peña', number: 1005, airline_icao: 'VOI', airline_name: 'Volaris (virtual)', status: 'pending', notes: 'Saldré de Tijuana', proposed_airport: 'MMTJ', created_at: minsAgo(30), flights: 0 },
+    { registration_id: id(1871), user_id: id(701), name: 'Ana Torres', number: 1002, airline_icao: 'MXL', airline_name: MXL.name, status: 'approved', notes: null, proposed_airport: 'MMGL', created_at: minsAgo(900), flights: 1 },
+    { registration_id: id(1850), user_id: USER_ID, name: PROFILE.display_name, number: 1001, airline_icao: 'MXL', airline_name: MXL.name, status: 'approved', notes: null, proposed_airport: 'MMGL', created_at: minsAgo(800), flights: 1 },
+  ],
+};
 const MONTHS = Array.from({ length: 12 }, (_, i) => {
   const d = new Date();
   d.setUTCDate(1);
@@ -806,6 +844,8 @@ async function handleSupabase(route) {
     get_tours: TOURS,
     get_tour: TOUR_DETAIL,
     get_pilot_badges: BADGES,
+    get_events: EVENTS_LIST,
+    get_event: EVENT_DETAIL,
   };
   const rpcName = url.pathname.startsWith('/rest/v1/rpc/') ? url.pathname.slice('/rest/v1/rpc/'.length) : null;
   if (rpcName === 'get_live_flight_trace') {
@@ -1133,6 +1173,15 @@ await shoot('37-tour-detail', `tours/${id(1600)}`, {
 });
 await shoot('38-tour-editor', `tours/${id(1600)}/edit`, { waitFor: 'Editar TMX01' });
 await shoot('39-tours-mobile', `tours/${id(1600)}`, { viewport: { width: 390, height: 844 }, waitFor: 'Mi participación' });
+await shoot('40-events', 'events', { waitFor: 'Fly-in Ciudad de México' });
+await shoot('41-event-detail', `events/${id(1800)}`, {
+  waitFor: 'Mi registro',
+  action: async (page) => {
+    await page.getByText('Registros por aprobar').waitFor();
+    await page.waitForTimeout(1200);
+  },
+});
+await shoot('42-event-editor', 'events/new', { waitFor: 'Crear evento' });
 await shoot('34-operations', 'operations', { waitFor: 'Operations Center', action: async (page) => page.getByText('MXL221').first().waitFor() });
 await shoot('35-operations-pireps', 'operations', {
   waitFor: 'Operations Center',

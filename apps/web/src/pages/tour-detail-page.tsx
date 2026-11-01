@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { AirlineLogo } from '@/components/airline-logo';
 import { ConfirmButton } from '@/components/confirm-button';
+import { RejectDialog } from '@/components/reject-dialog';
 import { TourBadge } from '@/components/tour-badge';
 import { TourMap } from '@/components/tour-map';
 import { Alert } from '@/components/ui/alert';
@@ -15,7 +16,6 @@ import { Input, Select } from '@/components/ui/input';
 import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, Td, Th } from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
 import { useFleet } from '@/hooks/use-fleet';
 import { useAirlines, useMyMemberships } from '@/hooks/use-lam-data';
 import {
@@ -65,44 +65,6 @@ function ProgressBar({ value, total, color }: { value: number; total: number; co
     <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Avance del tour">
       <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
     </div>
-  );
-}
-
-/** Rechazar con motivo (publicación del tour o inscripción). */
-function RejectDialog({ title, onClose, onReject }: { title: string; onClose: () => void; onReject: (comment: string) => Promise<void> }) {
-  const [comment, setComment] = useState('');
-  const [busy, setBusy] = useState(false);
-  async function submit() {
-    setBusy(true);
-    try {
-      await onReject(comment.trim());
-      onClose();
-    } catch (error) {
-      toast.error(describeError(error));
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <Dialog
-      open
-      onClose={onClose}
-      title={title}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button variant="danger" loading={busy} disabled={comment.trim().length === 0} onClick={() => void submit()}>
-            Rechazar
-          </Button>
-        </>
-      }
-    >
-      <Field id="reject-comment" label="Motivo" hint="Lo verá quien lo envió.">
-        <Textarea id="reject-comment" rows={3} value={comment} onChange={(e) => setComment(e.target.value)} maxLength={1000} />
-      </Field>
-    </Dialog>
   );
 }
 

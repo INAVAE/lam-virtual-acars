@@ -547,6 +547,175 @@ export type Database = {
         }
         Relationships: []
       }
+      event_registrations: {
+        Row: {
+          airline_id: string
+          created_at: string
+          event_id: string
+          id: string
+          notes: string | null
+          proposed_airport_id: number | null
+          review_comment: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["enrollment_status"]
+          user_id: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          airline_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          proposed_airport_id?: number | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["enrollment_status"]
+          user_id: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          airline_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          proposed_airport_id?: number | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["enrollment_status"]
+          user_id?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_registrations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_registrations_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          aircraft_type_ids: number[]
+          airline_id: string
+          airline_ids: string[]
+          cancelled_at: string | null
+          color: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          destination_airport_id: number | null
+          ends_at: string
+          folio: string
+          id: string
+          name: string
+          origin_airport_id: number | null
+          prize_criterion: string
+          prize_description: string | null
+          prize_places: number
+          published_at: string | null
+          review_comment: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scenario: Database["public"]["Enums"]["event_scenario"]
+          starts_at: string
+          status: Database["public"]["Enums"]["event_status"]
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          aircraft_type_ids?: number[]
+          airline_id: string
+          airline_ids?: string[]
+          cancelled_at?: string | null
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          destination_airport_id?: number | null
+          ends_at: string
+          folio?: string
+          id?: string
+          name: string
+          origin_airport_id?: number | null
+          prize_criterion?: string
+          prize_description?: string | null
+          prize_places?: number
+          published_at?: string | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scenario: Database["public"]["Enums"]["event_scenario"]
+          starts_at: string
+          status?: Database["public"]["Enums"]["event_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aircraft_type_ids?: number[]
+          airline_id?: string
+          airline_ids?: string[]
+          cancelled_at?: string | null
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          destination_airport_id?: number | null
+          ends_at?: string
+          folio?: string
+          id?: string
+          name?: string
+          origin_airport_id?: number | null
+          prize_criterion?: string
+          prize_description?: string | null
+          prize_places?: number
+          published_at?: string | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scenario?: Database["public"]["Enums"]["event_scenario"]
+          starts_at?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flight_bookings: {
         Row: {
           aircraft_id: string | null
@@ -963,6 +1132,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           destination_airport_id: number
+          event_registration_id: string | null
           flight_number: string
           flight_plan_remarks: string | null
           id: string
@@ -992,6 +1162,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           destination_airport_id: number
+          event_registration_id?: string | null
           flight_number: string
           flight_plan_remarks?: string | null
           id?: string
@@ -1021,6 +1192,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           destination_airport_id?: number
+          event_registration_id?: string | null
           flight_number?: string
           flight_plan_remarks?: string | null
           id?: string
@@ -1093,6 +1265,13 @@ export type Database = {
             columns: ["tour_leg_id"]
             isOneToOne: false
             referencedRelation: "tour_legs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flights_event_registration_id_fkey"
+            columns: ["event_registration_id"]
+            isOneToOne: false
+            referencedRelation: "event_registrations"
             referencedColumns: ["id"]
           },
           {
@@ -2171,6 +2350,35 @@ export type Database = {
       get_tours: { Args: never; Returns: Json }
       get_tour: { Args: { p_tour_id: string }; Returns: Json }
       get_pilot_badges: { Args: { p_user_id?: string }; Returns: Json }
+      save_event: { Args: { p_event: Json; p_event_id: string | null }; Returns: string }
+      submit_event: { Args: { p_event_id: string }; Returns: Database["public"]["Enums"]["event_status"] }
+      review_event: {
+        Args: { p_approve: boolean; p_comment?: string; p_event_id: string }
+        Returns: undefined
+      }
+      cancel_event: { Args: { p_event_id: string; p_reason?: string }; Returns: undefined }
+      register_event: {
+        Args: { p_airline_id: string; p_event_id: string; p_notes?: string; p_proposed_airport_id?: number }
+        Returns: Json
+      }
+      review_event_registration: {
+        Args: { p_approve: boolean; p_comment?: string; p_registration_id: string }
+        Returns: undefined
+      }
+      withdraw_event_registration: { Args: { p_registration_id: string }; Returns: undefined }
+      book_event_flight: {
+        Args: {
+          p_aircraft_id: string
+          p_callsign: string
+          p_destination_airport_id?: number
+          p_flight_number: string
+          p_origin_airport_id?: number
+          p_registration_id: string
+        }
+        Returns: Json
+      }
+      get_events: { Args: never; Returns: Json }
+      get_event: { Args: { p_event_id: string }; Returns: Json }
       get_live_flights: { Args: { p_airline_id?: string }; Returns: Json }
       get_operations_overview: { Args: { p_airline_id?: string }; Returns: Json }
       get_pilot_performance: {
@@ -2221,6 +2429,11 @@ export type Database = {
       pirep_status: "pending" | "accepted" | "rejected" | "archived"
       tour_status: "draft" | "submitted" | "published" | "closed" | "rejected"
       enrollment_status: "pending" | "approved" | "rejected" | "withdrawn" | "completed"
+      event_status: "draft" | "submitted" | "published" | "cancelled" | "rejected"
+      event_scenario:
+        | "same_origin_same_destination"
+        | "any_origin_same_destination"
+        | "same_origin_any_destination"
     }
     CompositeTypes: {
       [_ in never]: never

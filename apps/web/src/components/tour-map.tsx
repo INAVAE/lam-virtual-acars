@@ -42,6 +42,8 @@ export function TourMap({
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
   const tilesRef = useRef<L.TileLayer | null>(null);
+  // Encuadre pendiente: se repite cuando el contenedor cambia de tamaño (p. ej. al cargar en un teléfono).
+  const fitRef = useRef<(() => void) | null>(null);
   const selectRef = useRef(onSelect);
   selectRef.current = onSelect;
 
@@ -51,7 +53,14 @@ export function TourMap({
     map.setView([22.5, -101.5], 4);
     mapRef.current = map;
     layerRef.current = L.layerGroup().addTo(map);
-    const observer = new ResizeObserver(() => map.invalidateSize());
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize();
+      fitRef.current?.();
+    });
+    map.on('dragstart zoomstart', (e) => {
+      // Si el piloto mueve el mapa, deja de reencuadrar solo.
+      if ((e as L.LeafletEvent & { originalEvent?: Event }).originalEvent) fitRef.current = null;
+    });
     observer.observe(containerRef.current);
     return () => {
       observer.disconnect();
@@ -115,7 +124,8 @@ export function TourMap({
         .bindTooltip(`<strong>${escapeHtml(a.icao)}</strong>`, { permanent: true, direction: 'right', offset: [6, 0], className: 'lam-tip' })
         .addTo(layer);
     }
-    if (bounds.length > 0) map.fitBounds(L.latLngBounds(bounds), { padding: [36, 36], maxZoom: 7 });
+    fitRef.current = bounds.length > 0 ? () => map.fitBounds(L.latLngBounds(bounds), { padding: [36, 36], maxZoom: 7 }) : null;
+    fitRef.current?.();
   }, [legs, color, states]);
 
   return <div ref={containerRef} style={{ height }} className="lam-map z-0 w-full overflow-hidden rounded-lg border border-line" role="region" aria-label="Mapa de los legs del tour" />;

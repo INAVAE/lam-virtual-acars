@@ -385,7 +385,7 @@ const modules: { name: string; phase: number; done: boolean }[] = [
   { name: 'PIREP automático y evaluación', phase: 5, done: true },
   { name: 'Mapa en vivo y Operations Center', phase: 6, done: true },
   { name: 'Mapa estilo IVAO y Tours', phase: 7, done: true },
-  { name: 'Eventos', phase: 7, done: false },
+  { name: 'Eventos', phase: 7, done: true },
 ];
 
 function PlatformStatusPanel() {

@@ -1,6 +1,7 @@
 import {
   Activity,
   Building2,
+  CalendarClock,
   CalendarPlus,
   FileText,
   Flag,
@@ -42,6 +43,7 @@ export const navigation: NavGroup[] = [
       { label: 'Flight Booking', icon: CalendarPlus, to: '/booking' },
       { label: 'My Flights', icon: PlaneTakeoff, to: '/my-flights' },
       { label: 'PIREP', icon: FileText, to: '/pireps' },
+      { label: 'Events', icon: CalendarClock, to: '/events' },
       { label: 'Tours', icon: Flag, to: '/tours' },
     ],
   },
