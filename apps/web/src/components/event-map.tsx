@@ -27,8 +27,10 @@ export function EventMap({ origin, destination, color, theme, height = '300px' }
     mapRef.current = map;
     layerRef.current = L.layerGroup().addTo(map);
     const observer = new ResizeObserver(() => {
-      map.invalidateSize();
-      fitRef.current?.();
+      // El observador puede llegar tarde, cuando el mapa ya no existe.
+      if (mapRef.current !== map) return;
+      map.invalidateSize({ animate: false });
+      if (map.getSize().x > 0 && map.getSize().y > 0) fitRef.current?.();
     });
     map.on('dragstart zoomstart', (e) => {
       // Si el piloto mueve el mapa, deja de reencuadrar solo.
@@ -77,11 +79,12 @@ export function EventMap({ origin, destination, color, theme, height = '300px' }
     const first = points[0]?.[0];
     fitRef.current =
       points.length === 2
-        ? () => map.fitBounds(L.latLngBounds(points.map(([a]) => [a.latitude, a.longitude] as L.LatLngTuple)), { padding: [40, 40], maxZoom: 7 })
+        ? () => map.fitBounds(L.latLngBounds(points.map(([a]) => [a.latitude, a.longitude] as L.LatLngTuple)), { padding: [40, 40], maxZoom: 7, animate: false })
         : first
-          ? () => map.setView([first.latitude, first.longitude], 5)
+          ? () => map.setView([first.latitude, first.longitude], 5, { animate: false })
           : null;
-    fitRef.current?.();
+    // Sin tamaño todavía (contenedor oculto o aún sin layout): el observador encuadra después.
+    if (map.getSize().x > 0 && map.getSize().y > 0) fitRef.current?.();
   }, [origin, destination, color]);
 
   return <div ref={containerRef} style={{ height }} className="lam-map z-0 w-full overflow-hidden rounded-lg border border-line" role="region" aria-label="Mapa del evento" />;

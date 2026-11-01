@@ -54,8 +54,10 @@ export function TourMap({
     mapRef.current = map;
     layerRef.current = L.layerGroup().addTo(map);
     const observer = new ResizeObserver(() => {
-      map.invalidateSize();
-      fitRef.current?.();
+      // El observador puede llegar tarde, cuando el mapa ya no existe.
+      if (mapRef.current !== map) return;
+      map.invalidateSize({ animate: false });
+      if (map.getSize().x > 0 && map.getSize().y > 0) fitRef.current?.();
     });
     map.on('dragstart zoomstart', (e) => {
       // Si el piloto mueve el mapa, deja de reencuadrar solo.
@@ -124,8 +126,9 @@ export function TourMap({
         .bindTooltip(`<strong>${escapeHtml(a.icao)}</strong>`, { permanent: true, direction: 'right', offset: [6, 0], className: 'lam-tip' })
         .addTo(layer);
     }
-    fitRef.current = bounds.length > 0 ? () => map.fitBounds(L.latLngBounds(bounds), { padding: [36, 36], maxZoom: 7 }) : null;
-    fitRef.current?.();
+    fitRef.current = bounds.length > 0 ? () => map.fitBounds(L.latLngBounds(bounds), { padding: [36, 36], maxZoom: 7, animate: false }) : null;
+    // Sin tamaño todavía (contenedor oculto o aún sin layout): el observador encuadra después.
+    if (map.getSize().x > 0 && map.getSize().y > 0) fitRef.current?.();
   }, [legs, color, states]);
 
   return <div ref={containerRef} style={{ height }} className="lam-map z-0 w-full overflow-hidden rounded-lg border border-line" role="region" aria-label="Mapa de los legs del tour" />;

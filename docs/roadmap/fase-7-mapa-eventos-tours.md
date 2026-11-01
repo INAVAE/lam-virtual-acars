@@ -1,7 +1,11 @@
-# Fase 7 (pendiente): mapa al estilo IVAO, Eventos y Tours
+# Fase 7: mapa al estilo IVAO, Eventos y Tours
 
-Estado: **pendiente**. Pedida por el usuario el 2026-10-31; se construye en la siguiente sesión.
-Nada de esto está implementado todavía.
+Estado: **construida** el 2026-10-31 (migraciones `20261102060000_phase7_live_map`, `20261102070000_phase7_tours` y `20261102080000_phase7_events`; pruebas pgTAP 011–013). Lo de abajo es la propuesta original; donde cambió, manda el código:
+
+- La traza en vivo usa `get_live_flight_trace` (nueva) en lugar de ampliar `get_live_flight_track`, y se pide cada 15 s.
+- El avance de un tour no tiene tabla propia: sale de los vuelos (`flights.tour_leg_id`, `tour_enrollment_id`) y sus PIREP.
+- Los eventos guardan el registro del vuelo en `flights.event_registration_id`; el PIREP llega al evento por el vuelo.
+- Las reservas de evento abren 12 horas antes del inicio; el ranking cuenta vuelos que empiezan desde 2 horas antes hasta el fin.
 
 Orden sugerido:
 

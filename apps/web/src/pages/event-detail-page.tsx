@@ -201,7 +201,9 @@ function RegistrationPanel({ event, now }: { event: EventDetail; now: number }) 
         }
       >
         <div className="space-y-3">
-          <Badge tone={enrollmentStatusTone[mine.status]}>{registrationStatusLabels[mine.status]}</Badge>
+          <p>
+            <Badge tone={enrollmentStatusTone[mine.status]}>{registrationStatusLabels[mine.status]}</Badge>
+          </p>
           {mine.status === 'pending' ? <p className="text-sm text-muted">El creador del evento revisa tu registro.</p> : null}
           {mine.status === 'approved' ? (
             mine.active_flight_id ? (

@@ -1,15 +1,17 @@
 # Estado del proyecto
 
-Última actualización: 2026-10-31
+Última actualización: 2026-10-31 (Fase 7)
 
-## Fase 7, mapa al estilo IVAO, Eventos y Tours (pendiente; detalle en docs/roadmap/fase-7-mapa-eventos-tours.md)
+## Fase 7, mapa al estilo IVAO, Eventos y Tours (construida el 2026-10-31; detalle en docs/roadmap/fase-7-mapa-eventos-tours.md)
 
-- [ ] 7.1 Figura del avión en el mapa según tamaño y tipo (ligero, turbohélice, regional, pasillo único, fuselaje ancho, cuatrimotor).
-- [ ] 7.2 Al elegir un avión: su trayectoria volada con fases y parámetros (como en el PIREP) y la ruta faltante al destino en línea roja punteada, actualizándose hasta la llegada.
-- [ ] 7.3 Selección de varios aviones, con sus rutas visibles a la vez.
-- [ ] 7.4 Eventos con tres escenarios (mismo origen y destino; cualquier origen a un destino; un origen a varios destinos). Los crea cualquier piloto y los aprueba el administrador de su aerolínea; el creador aprueba los registros. El PIREP cuenta para la aerolínea de cada piloto, que vuela con su flota. Ranking y premio definidos por el creador. En el mapa, la figura toma el color del evento y muestra nombre, folio y duración.
-- [ ] 7.5 Tours creados por un piloto (aprobados por el administrador de su aerolínea) o un administrador, con insignia que ganan quienes los terminan, con legs en orden o libres y tipos permitidos. Abiertos a pilotos de cualquier aerolínea, que vuelan con su flota. El creador aprueba las inscripciones (se puede aprobar sola si el piloto es de la misma aerolínea). Un leg cuenta aunque su PIREP esté en revisión, con un máximo configurable de legs sin revisión; si se rechaza, se repite. Un piloto no puede estar en un evento y un tour a la vez. En el mapa, la figura toma el color del tour y muestra "Tour · Leg n/N".
-- Todas las decisiones están tomadas (2026-10-31); la fase está lista para construirse.
+- [x] 7.1 Figura del avión según su categoría (`aircraft_types.map_category`: ligero, jet ejecutivo, turbohélice, regional, pasillo único, fuselaje ancho, cuatrimotor), con tamaño de 18 a 37 px. Se calcula sola y el superadministrador la cambia en Fleet → Tipos.
+- [x] 7.2 Al elegir un avión: su trayectoria completa por fases con recuadro de parámetros y marcadores (`get_live_flight_trace`, por partes cada 15 s) y la ruta faltante en rojo punteado hasta el destino, que se oculta al aterrizar. Perfil del vuelo enfocado como en el PIREP.
+- [x] 7.3 Selección de hasta 10 aviones con chips, foco y "Limpiar"; queda en la URL (`?flights=`) y en el navegador.
+- [x] 7.5 Tours: `tours`, `tour_legs`, `tour_enrollments`, `pilot_badges`, bucket `tour-badges`; creación, aprobación del administrador, inscripción de cualquier aerolínea (aprobación del creador o automática para la misma aerolínea), reserva de legs con la flota propia, orden y máximo de legs en revisión, repetición si el PIREP se rechaza, insignia al terminar (en Settings y Dashboard). 37 pruebas pgTAP.
+- [x] 7.4 Eventos: `events` (folio EVT-AAAA-NNNN) y `event_registrations`; tres escenarios, aprobación del administrador, registros aprobados por el creador, reservas desde 12 h antes, ranking por el criterio del premio (mejor puntaje, toma más suave, primero en llegar, mayor distancia). 30 pruebas pgTAP.
+- [x] Exclusividad evento/tour al inscribirse; en el mapa la figura toma el color del evento o del tour y muestra folio y horario, o tour y leg. My Flights etiqueta los vuelos de tour y de evento.
+- 364 pruebas pgTAP. Capturas 31, 31b y 36–42.
+- Pendiente: probar con un vuelo real un leg de tour y un vuelo de evento.
 
 ## Fase 5, PIREP automático (construida; falta revisar un PIREP real en la web)
 
