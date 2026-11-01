@@ -37,7 +37,7 @@ export function TourBadge({
       ) : (
         <span className="flex flex-col items-center leading-tight">
           <Award className="size-[40%]" aria-hidden />
-          <span className="max-w-[90%] truncate whitespace-nowrap font-mono font-semibold" style={code.length > 6 ? { fontSize: '0.78em' } : undefined}>
+          <span className="whitespace-nowrap font-mono font-semibold" style={code.length > 6 ? { fontSize: '0.78em' } : undefined}>
             {code}
           </span>
         </span>
