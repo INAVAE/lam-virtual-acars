@@ -12,7 +12,7 @@ export interface TourAirline {
   icao: string | null;
   slug: string;
   logo_path: string | null;
-  color: string | null;
+  color: string;
 }
 
 export interface MyEnrollment {
