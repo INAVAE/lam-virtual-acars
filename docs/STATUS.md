@@ -11,7 +11,8 @@
 - [x] 7.4 Eventos: `events` (folio EVT-AAAA-NNNN) y `event_registrations`; tres escenarios, aprobación del administrador, registros aprobados por el creador, reservas desde 12 h antes, ranking por el criterio del premio (mejor puntaje, toma más suave, primero en llegar, mayor distancia). 30 pruebas pgTAP.
 - [x] Exclusividad evento/tour al inscribirse; en el mapa la figura toma el color del evento o del tour y muestra folio y horario, o tour y leg. My Flights etiqueta los vuelos de tour y de evento.
 - 364 pruebas pgTAP. Capturas 31, 31b y 36–42.
-- Pendiente: probar con un vuelo real un leg de tour y un vuelo de evento.
+- Verificado con un vuelo real (2026-10-31): evento EVT-2026-0001 "Puente Aéreo MMMX - MMAA - Cargo" (escenario 1, mejor puntaje). Registro aprobado, reserva FDX022 con la flota de MXL (B738, 737-800BCF), 651 puntos de traza con viento, PIREP de 100 puntos sin faltas, toma −312 fpm, block 0:50, 197 NM; aceptado en revisión (MXL no tiene aprobación automática) y primer lugar del ranking.
+- Pendiente: probar con un vuelo real un leg de tour.
 
 ## Fase 5, PIREP automático (construida; falta revisar un PIREP real en la web)
 
