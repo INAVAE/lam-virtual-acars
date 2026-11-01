@@ -3,6 +3,7 @@ import {
   Building2,
   CalendarPlus,
   FileText,
+  Flag,
   LayoutDashboard,
   MapPin,
   Monitor,
@@ -41,6 +42,7 @@ export const navigation: NavGroup[] = [
       { label: 'Flight Booking', icon: CalendarPlus, to: '/booking' },
       { label: 'My Flights', icon: PlaneTakeoff, to: '/my-flights' },
       { label: 'PIREP', icon: FileText, to: '/pireps' },
+      { label: 'Tours', icon: Flag, to: '/tours' },
     ],
   },
   {

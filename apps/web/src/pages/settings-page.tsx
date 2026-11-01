@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field, fieldAria } from '@/components/ui/field';
 import { Input, Select } from '@/components/ui/input';
+import { PilotBadgesPanel } from '@/components/tour-badge';
 import { Panel } from '@/components/ui/panel';
 import { AcarsDevicesPanel } from '@/components/acars-devices-panel';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -326,6 +327,7 @@ export function SettingsPage() {
           <Panel title="Perfil de piloto">
             <ProfileForm profile={profile.data} />
           </Panel>
+          <PilotBadgesPanel title="Insignias de tours" />
           <Panel title="Hora" description="La operación usa UTC (Zulu). Elige tu zona para ver también la hora local en todo el sitio, incluidas las gráficas.">
             <TimeSettings profile={profile.data} />
           </Panel>

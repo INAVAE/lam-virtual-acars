@@ -547,6 +547,48 @@ const liveTrace = (f) => {
   });
 };
 const LIVE_TRACES = Object.fromEntries(LIVE.map((f) => [f.flight_id, liveTrace(f)]));
+
+// -----------------------------------------------------------------------------
+// Fase 7.5: Tours
+// -----------------------------------------------------------------------------
+const tapt = (icao) => {
+  const a = AIRPORTS.find((x) => x.icao_code === icao);
+  return { id: a.id, icao: a.icao_code, name: a.name, city: a.city, latitude: a.latitude, longitude: a.longitude };
+};
+const tairline = { id: MXL.id, name: MXL.name, icao: MXL.icao_code, slug: MXL.slug, logo_path: MXL.logo_path, color: MXL.brand_primary_color };
+const TOUR_LEGS = [['MMMX', 'MMGL', 249], ['MMGL', 'MMTJ', 990], ['MMTJ', 'MMMY', 1010], ['MMMY', 'MMUN', 1130], ['MMUN', 'MMMX', 700]].map(([o, d, nm], i) => ({
+  id: id(1700 + i), leg_number: i + 1, distance_nm: nm, notes: i === 1 ? 'Cruce del Pacífico mexicano' : null, origin: tapt(o), destination: tapt(d),
+}));
+const tourSummary = (n, extra = {}) => ({
+  id: id(1600 + n), code: 'TMX01', name: 'Joyas de México', description: 'Cinco legs por las principales ciudades del país, de la capital al Caribe y de regreso.',
+  color: '#a855f7', badge_path: null, status: 'published', starts_on: null, ends_on: null, ordered_legs: true, allow_unreviewed_progress: true,
+  max_unreviewed_legs: 2, auto_approve_same_airline: true, aircraft_type_ids: [1, 2], aircraft_types: ['A20N', 'B738'], review_comment: null,
+  submitted_at: minsAgo(9000), published_at: minsAgo(8000), airline: tairline, creator: { id: USER_ID, name: PROFILE.display_name },
+  legs_count: 5, distance_nm: 4079, participants: 6, finishers: 1, can_edit: true, can_approve: false, pending_enrollments: 2,
+  my_enrollment: { id: id(1650), status: 'approved', airline_id: MXL.id, legs_accepted: 1, legs_flown: 2 }, ...extra,
+});
+const TOURS = [
+  tourSummary(0),
+  tourSummary(1, { code: 'CARIBE-26', name: 'Caribe en turbohélice', color: '#14b8a6', aircraft_types: ['AT76'], aircraft_type_ids: [5], legs_count: 8, distance_nm: 2300,
+    ordered_legs: false, participants: 3, finishers: 0, can_edit: false, pending_enrollments: null, my_enrollment: null, creator: { id: id(701), name: 'Ana Torres' },
+    starts_on: '2026-11-01', ends_on: '2026-12-31' }),
+  tourSummary(2, { code: 'NORTE-77', name: 'Ruta del Norte en 777', color: '#f97316', aircraft_types: ['B77W'], aircraft_type_ids: [3], legs_count: 4, distance_nm: 5200,
+    status: 'submitted', can_approve: true, can_edit: true, participants: 0, finishers: 0, pending_enrollments: 0, my_enrollment: null, creator: { id: id(702), name: 'Luis Ramírez' } }),
+];
+const TOUR_DETAIL = {
+  ...TOURS[0],
+  legs: TOUR_LEGS,
+  my_legs: ['accepted', 'in_review', 'open', 'open', 'open'].map((state, i) => ({
+    leg_id: id(1700 + i), leg_number: i + 1, state, flight_id: i < 2 ? id(1720 + i) : null, pirep_id: i < 2 ? PIREP_ID : null,
+    pirep_status: i === 0 ? 'accepted' : i === 1 ? 'pending' : null, attempts: i < 2 ? 1 : 0,
+  })),
+  participants_list: [
+    { enrollment_id: id(1660), user_id: id(703), name: 'Sofía Méndez', number: 1004, airline_icao: 'VOI', airline_name: 'Volaris (virtual)', status: 'pending', auto_approved: false, created_at: minsAgo(120), completed_at: null, legs_accepted: 0, legs_flown: 0 },
+    { enrollment_id: id(1661), user_id: id(701), name: 'Ana Torres', number: 1002, airline_icao: 'MXL', airline_name: MXL.name, status: 'completed', auto_approved: true, created_at: minsAgo(9000), completed_at: minsAgo(600), legs_accepted: 5, legs_flown: 5 },
+    { enrollment_id: id(1650), user_id: USER_ID, name: PROFILE.display_name, number: 1001, airline_icao: 'MXL', airline_name: MXL.name, status: 'approved', auto_approved: true, created_at: minsAgo(5000), completed_at: null, legs_accepted: 1, legs_flown: 2 },
+  ],
+};
+const BADGES = [{ tour_id: id(1690), code: 'BAJIO-25', name: 'Bajío en un día', color: '#eab308', badge_path: null, airline_icao: 'MXL', awarded_at: minsAgo(20000), legs: 4 }];
 const MONTHS = Array.from({ length: 12 }, (_, i) => {
   const d = new Date();
   d.setUTCDate(1);
@@ -761,6 +803,9 @@ async function handleSupabase(route) {
     get_operations_overview: OPS,
     get_pilot_performance: PERFORMANCE,
     get_pilot_landing_stats: LANDING_STATS,
+    get_tours: TOURS,
+    get_tour: TOUR_DETAIL,
+    get_pilot_badges: BADGES,
   };
   const rpcName = url.pathname.startsWith('/rest/v1/rpc/') ? url.pathname.slice('/rest/v1/rpc/'.length) : null;
   if (rpcName === 'get_live_flight_trace') {
@@ -1078,6 +1123,16 @@ await shoot('33-statistics-landings', 'statistics', {
     await page.waitForTimeout(500);
   },
 });
+await shoot('36-tours', 'tours', { waitFor: 'Joyas de México' });
+await shoot('37-tour-detail', `tours/${id(1600)}`, {
+  waitFor: 'Mi participación',
+  action: async (page) => {
+    await page.getByText('Inscripciones por aprobar').waitFor();
+    await page.waitForTimeout(1200);
+  },
+});
+await shoot('38-tour-editor', `tours/${id(1600)}/edit`, { waitFor: 'Editar TMX01' });
+await shoot('39-tours-mobile', `tours/${id(1600)}`, { viewport: { width: 390, height: 844 }, waitFor: 'Mi participación' });
 await shoot('34-operations', 'operations', { waitFor: 'Operations Center', action: async (page) => page.getByText('MXL221').first().waitFor() });
 await shoot('35-operations-pireps', 'operations', {
   waitFor: 'Operations Center',

@@ -209,6 +209,15 @@ function UpcomingFlight({ flight, hasSimbriefUser }: { flight: MyFlight; hasSimb
             </span>{' '}
             · {operationTypeLabel(flight.operation_type)}
           </p>
+          {flight.tour_leg?.tour ? (
+            <Link
+              to={`/tours/${flight.tour_leg.tour.id}`}
+              className="mt-1 inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs"
+              style={{ borderColor: flight.tour_leg.tour.color, color: flight.tour_leg.tour.color }}
+            >
+              <strong>Tour {flight.tour_leg.tour.code}</strong> · {flight.tour_leg.tour.name} · Leg {flight.tour_leg.leg_number}
+            </Link>
+          ) : null}
         </div>
         <div className="text-right">
           <Badge tone={flightStatusTone[flight.status]}>{flightStatusLabels[flight.status]}</Badge>
@@ -343,7 +352,10 @@ function History({ flights }: { flights: MyFlight[] }) {
               <Td className="whitespace-nowrap">{formatLocalDateTime(f.completed_at ?? f.cancelled_at ?? f.created_at)}</Td>
               <Td>
                 <p className="font-mono font-medium">{f.callsign}</p>
-                <p className="text-xs text-muted">{f.airline?.name}</p>
+                <p className="text-xs text-muted">
+                  {f.airline?.name}
+                  {f.tour_leg?.tour ? ` · Tour ${f.tour_leg.tour.code} leg ${f.tour_leg.leg_number}` : ''}
+                </p>
               </Td>
               <Td className="font-mono">
                 {f.origin?.icao_code} <ArrowRight className="inline size-3.5 text-muted" aria-label="a" /> {f.destination?.icao_code}

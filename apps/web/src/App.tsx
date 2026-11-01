@@ -26,6 +26,9 @@ import { PublicHomePage } from '@/pages/public-home-page';
 import { RoutesPage } from '@/pages/routes-page';
 import { SettingsPage } from '@/pages/settings-page';
 import { StatisticsPage } from '@/pages/statistics-page';
+import { TourDetailPage } from '@/pages/tour-detail-page';
+import { TourEditorPage } from '@/pages/tour-editor-page';
+import { ToursPage } from '@/pages/tours-page';
 
 export function App() {
   return (
@@ -56,6 +59,10 @@ export function App() {
           <Route path="my-flights" element={<MyFlightsPage />} />
           <Route path="pireps" element={<PirepsPage />} />
           <Route path="pireps/:id" element={<PirepDetailPage />} />
+          <Route path="tours" element={<ToursPage />} />
+          <Route path="tours/new" element={<TourEditorPage />} />
+          <Route path="tours/:id" element={<TourDetailPage />} />
+          <Route path="tours/:id/edit" element={<TourEditorPage />} />
           <Route path="airlines" element={<AirlinesPage />} />
           <Route path="airlines/:slug" element={<AirlineDetailPage />} />
           <Route path="pilots" element={<PilotsPage />} />

@@ -972,6 +972,8 @@ export type Database = {
           planned_distance_nm: number
           planned_minutes: number
           route_id: string | null
+          tour_enrollment_id: string | null
+          tour_leg_id: string | null
           scheduled_departure_at: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["flight_status"]
@@ -999,6 +1001,8 @@ export type Database = {
           planned_distance_nm: number
           planned_minutes: number
           route_id?: string | null
+          tour_enrollment_id?: string | null
+          tour_leg_id?: string | null
           scheduled_departure_at?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["flight_status"]
@@ -1026,6 +1030,8 @@ export type Database = {
           planned_distance_nm?: number
           planned_minutes?: number
           route_id?: string | null
+          tour_enrollment_id?: string | null
+          tour_leg_id?: string | null
           scheduled_departure_at?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["flight_status"]
@@ -1076,6 +1082,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "flights_tour_enrollment_id_fkey"
+            columns: ["tour_enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "tour_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flights_tour_leg_id_fkey"
+            columns: ["tour_leg_id"]
+            isOneToOne: false
+            referencedRelation: "tour_legs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "flights_route_id_fkey"
             columns: ["route_id"]
             isOneToOne: false
@@ -1085,6 +1105,270 @@ export type Database = {
           {
             foreignKeyName: "flights_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilot_badges: {
+        Row: {
+          awarded_at: string
+          enrollment_id: string
+          id: string
+          revoked_at: string | null
+          tour_id: string
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          enrollment_id: string
+          id?: string
+          revoked_at?: string | null
+          tour_id: string
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          enrollment_id?: string
+          id?: string
+          revoked_at?: string | null
+          tour_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilot_badges_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tours"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilot_badges_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: true
+            referencedRelation: "tour_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilot_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tour_enrollments: {
+        Row: {
+          airline_id: string
+          auto_approved: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          review_comment: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["enrollment_status"]
+          tour_id: string
+          user_id: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          airline_id: string
+          auto_approved?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["enrollment_status"]
+          tour_id: string
+          user_id: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          airline_id?: string
+          auto_approved?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["enrollment_status"]
+          tour_id?: string
+          user_id?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_enrollments_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tours"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_enrollments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_enrollments_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tour_legs: {
+        Row: {
+          destination_airport_id: number
+          distance_nm: number
+          id: string
+          leg_number: number
+          notes: string | null
+          origin_airport_id: number
+          tour_id: string
+        }
+        Insert: {
+          destination_airport_id: number
+          distance_nm: number
+          id?: string
+          leg_number: number
+          notes?: string | null
+          origin_airport_id: number
+          tour_id: string
+        }
+        Update: {
+          destination_airport_id?: number
+          distance_nm?: number
+          id?: string
+          leg_number?: number
+          notes?: string | null
+          origin_airport_id?: number
+          tour_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_legs_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tours"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_legs_origin_airport_id_fkey"
+            columns: ["origin_airport_id"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_legs_destination_airport_id_fkey"
+            columns: ["destination_airport_id"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tours: {
+        Row: {
+          aircraft_type_ids: number[]
+          airline_id: string
+          allow_unreviewed_progress: boolean
+          auto_approve_same_airline: boolean
+          badge_path: string | null
+          closed_at: string | null
+          code: string
+          color: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_on: string | null
+          id: string
+          max_unreviewed_legs: number
+          name: string
+          ordered_legs: boolean
+          published_at: string | null
+          review_comment: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          starts_on: string | null
+          status: Database["public"]["Enums"]["tour_status"]
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          aircraft_type_ids?: number[]
+          airline_id: string
+          allow_unreviewed_progress?: boolean
+          auto_approve_same_airline?: boolean
+          badge_path?: string | null
+          closed_at?: string | null
+          code: string
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_on?: string | null
+          id?: string
+          max_unreviewed_legs?: number
+          name: string
+          ordered_legs?: boolean
+          published_at?: string | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          starts_on?: string | null
+          status?: Database["public"]["Enums"]["tour_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aircraft_type_ids?: number[]
+          airline_id?: string
+          allow_unreviewed_progress?: boolean
+          auto_approve_same_airline?: boolean
+          badge_path?: string | null
+          closed_at?: string | null
+          code?: string
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_on?: string | null
+          id?: string
+          max_unreviewed_legs?: number
+          name?: string
+          ordered_legs?: boolean
+          published_at?: string | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          starts_on?: string | null
+          status?: Database["public"]["Enums"]["tour_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tours_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tours_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1858,6 +2142,35 @@ export type Database = {
         Args: { p_after_event_seq?: number; p_after_seq?: number; p_flight_id: string }
         Returns: Json
       }
+      save_tour: {
+        Args: { p_legs?: Json; p_tour: Json; p_tour_id: string | null }
+        Returns: string
+      }
+      submit_tour: { Args: { p_tour_id: string }; Returns: Database["public"]["Enums"]["tour_status"] }
+      review_tour: {
+        Args: { p_approve: boolean; p_comment?: string; p_tour_id: string }
+        Returns: undefined
+      }
+      close_tour: { Args: { p_tour_id: string }; Returns: undefined }
+      enroll_tour: { Args: { p_airline_id: string; p_tour_id: string }; Returns: Json }
+      review_tour_enrollment: {
+        Args: { p_approve: boolean; p_comment?: string; p_enrollment_id: string }
+        Returns: undefined
+      }
+      withdraw_tour_enrollment: { Args: { p_enrollment_id: string }; Returns: undefined }
+      book_tour_leg: {
+        Args: {
+          p_aircraft_id: string
+          p_callsign: string
+          p_enrollment_id: string
+          p_flight_number: string
+          p_leg_id: string
+        }
+        Returns: Json
+      }
+      get_tours: { Args: never; Returns: Json }
+      get_tour: { Args: { p_tour_id: string }; Returns: Json }
+      get_pilot_badges: { Args: { p_user_id?: string }; Returns: Json }
       get_live_flights: { Args: { p_airline_id?: string }; Returns: Json }
       get_operations_overview: { Args: { p_airline_id?: string }; Returns: Json }
       get_pilot_performance: {
@@ -1906,6 +2219,8 @@ export type Database = {
       membership_status: "pending" | "active" | "suspended" | "rejected"
       org_role: "superadmin"
       pirep_status: "pending" | "accepted" | "rejected" | "archived"
+      tour_status: "draft" | "submitted" | "published" | "closed" | "rejected"
+      enrollment_status: "pending" | "approved" | "rejected" | "withdrawn" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never

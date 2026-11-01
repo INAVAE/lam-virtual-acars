@@ -5,6 +5,7 @@ import { AirlineLogo } from '@/components/airline-logo';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PilotBadgesPanel } from '@/components/tour-badge';
 import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -382,7 +383,9 @@ const modules: { name: string; phase: number; done: boolean }[] = [
   { name: 'Reservas e integración con SimBrief', phase: 3, done: true },
   { name: 'LAM ACARS Connector para MSFS 2024', phase: 4, done: true },
   { name: 'PIREP automático y evaluación', phase: 5, done: true },
-  { name: 'Mapa en vivo y Operations Center', phase: 6, done: false },
+  { name: 'Mapa en vivo y Operations Center', phase: 6, done: true },
+  { name: 'Mapa estilo IVAO y Tours', phase: 7, done: true },
+  { name: 'Eventos', phase: 7, done: false },
 ];
 
 function PlatformStatusPanel() {
@@ -448,6 +451,7 @@ export function DashboardPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">
           <MyAirlinesPanel />
+          <PilotBadgesPanel title="Mis insignias" />
           {isOrgAdmin ? <OrganizationAirlinesPanel /> : null}
         </div>
         <PlatformStatusPanel />
