@@ -192,3 +192,24 @@ export function useBookTourLeg() {
     onSettled: () => refreshTours(queryClient, ['my-flights', 'fleet', 'dashboard-summary', 'airline-bookings']),
   });
 }
+
+export interface TourLegTag {
+  id: string;
+  leg_number: number;
+  tour: { id: string; code: string; name: string; color: string } | null;
+}
+
+/** Tour y número de leg de los vuelos que son de un tour (para etiquetarlos). */
+export function useTourLegTags(legIds: readonly string[]) {
+  const ids = [...new Set(legIds)].sort();
+  return useQuery({
+    queryKey: ['tour-leg-tags', ids.join(',')],
+    enabled: ids.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<Record<string, TourLegTag>> => {
+      const { data, error } = await getSupabase().from('tour_legs').select('id, leg_number, tour:tours!tour_legs_tour_id_fkey(id, code, name, color)').in('id', ids);
+      if (error) throw error;
+      return Object.fromEntries((data as unknown as TourLegTag[]).map((l) => [l.id, l]));
+    },
+  });
+}

@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
 import { useCancelBooking, useImportOfp, useMyFlights, type FlightView, type MyFlight } from '@/hooks/use-bookings';
+import { useTourLegTags, type TourLegTag } from '@/hooks/use-tours';
 import { useProfile } from '@/hooks/use-lam-data';
 import { useAirlineScope } from '@/lib/airline-scope';
 import {
@@ -163,7 +164,7 @@ function AcarsStatus({ flight }: { flight: MyFlight }) {
 // -----------------------------------------------------------------------------
 // Tarjeta de un vuelo reservado
 // -----------------------------------------------------------------------------
-function UpcomingFlight({ flight, hasSimbriefUser }: { flight: MyFlight; hasSimbriefUser: boolean }) {
+function UpcomingFlight({ flight, hasSimbriefUser, tag }: { flight: MyFlight; hasSimbriefUser: boolean; tag?: TourLegTag }) {
   const cancel = useCancelBooking();
   const importOfp = useImportOfp();
   const scheduled = flight.status === 'scheduled';
@@ -209,13 +210,13 @@ function UpcomingFlight({ flight, hasSimbriefUser }: { flight: MyFlight; hasSimb
             </span>{' '}
             · {operationTypeLabel(flight.operation_type)}
           </p>
-          {flight.tour_leg?.tour ? (
+          {tag?.tour ? (
             <Link
-              to={`/tours/${flight.tour_leg.tour.id}`}
+              to={`/tours/${tag.tour.id}`}
               className="mt-1 inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs"
-              style={{ borderColor: flight.tour_leg.tour.color, color: flight.tour_leg.tour.color }}
+              style={{ borderColor: tag.tour.color, color: tag.tour.color }}
             >
-              <strong>Tour {flight.tour_leg.tour.code}</strong> · {flight.tour_leg.tour.name} · Leg {flight.tour_leg.leg_number}
+              <strong>Tour {tag.tour.code}</strong> · {tag.tour.name} · Leg {tag.leg_number}
             </Link>
           ) : null}
         </div>
@@ -329,7 +330,7 @@ function UpcomingFlight({ flight, hasSimbriefUser }: { flight: MyFlight; hasSimb
 }
 
 // -----------------------------------------------------------------------------
-function History({ flights }: { flights: MyFlight[] }) {
+function History({ flights, tags }: { flights: MyFlight[]; tags: Readonly<Record<string, TourLegTag>> }) {
   return (
     <Table minWidth="60rem">
       <thead>
@@ -354,7 +355,7 @@ function History({ flights }: { flights: MyFlight[] }) {
                 <p className="font-mono font-medium">{f.callsign}</p>
                 <p className="text-xs text-muted">
                   {f.airline?.name}
-                  {f.tour_leg?.tour ? ` · Tour ${f.tour_leg.tour.code} leg ${f.tour_leg.leg_number}` : ''}
+                  {f.tour_leg_id && tags[f.tour_leg_id]?.tour ? ` · Tour ${tags[f.tour_leg_id]!.tour!.code} leg ${tags[f.tour_leg_id]!.leg_number}` : ''}
                 </p>
               </Td>
               <Td className="font-mono">
@@ -395,6 +396,8 @@ export function MyFlightsPage() {
   const [view, setView] = useState<FlightView>('upcoming');
   const flights = useMyFlights(view, selected?.id ?? null);
   const hasSimbriefUser = Boolean(profile.data?.simbrief_username?.trim());
+  const legIds = (flights.data ?? []).flatMap((f) => (f.tour_leg_id ? [f.tour_leg_id] : []));
+  const tags = useTourLegTags(legIds).data ?? {};
 
   return (
     <div className="space-y-6">
@@ -423,7 +426,7 @@ export function MyFlightsPage() {
         flights.data && flights.data.length > 0 ? (
           <div className="space-y-4">
             {flights.data.map((f) => (
-              <UpcomingFlight key={f.id} flight={f} hasSimbriefUser={hasSimbriefUser} />
+              <UpcomingFlight key={f.id} flight={f} hasSimbriefUser={hasSimbriefUser} tag={f.tour_leg_id ? tags[f.tour_leg_id] : undefined} />
             ))}
           </div>
         ) : (
@@ -437,7 +440,7 @@ export function MyFlightsPage() {
           </div>
         )
       ) : (
-        <History flights={flights.data ?? []} />
+        <History flights={flights.data ?? []} tags={tags} />
       )}
     </div>
   );
