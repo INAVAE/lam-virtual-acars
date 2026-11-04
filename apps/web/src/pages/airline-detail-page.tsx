@@ -304,6 +304,8 @@ const settingsSchema = z.object({
   delay_tolerance_minutes: z.coerce.number().int().min(0).max(600, 'Máximo 600 minutos'),
   require_aircraft_at_origin: z.boolean(),
   require_type_rating: z.boolean(),
+  control_fleet_availability: z.boolean(),
+  pilots_register_routes: z.boolean(),
   auto_approve_pireps: z.boolean(),
   pirep_min_score: z.coerce.number().int().min(0, 'Mínimo 0').max(100, 'Máximo 100'),
   public_tracking: z.boolean(),
@@ -317,6 +319,8 @@ function toSettingsForm(s: AirlineSettings): SettingsForm {
     delay_tolerance_minutes: s.delay_tolerance_minutes,
     require_aircraft_at_origin: s.require_aircraft_at_origin,
     require_type_rating: s.require_type_rating,
+    control_fleet_availability: s.control_fleet_availability,
+    pilots_register_routes: s.pilots_register_routes,
     auto_approve_pireps: s.auto_approve_pireps,
     pirep_min_score: s.pirep_min_score,
     public_tracking: s.public_tracking,
@@ -330,8 +334,10 @@ function SettingsPanel({ airlineId, canManage }: { airlineId: string; canManage:
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<SettingsForm>({ resolver: zodResolver(settingsSchema) });
+  const fleetControlled = watch('control_fleet_availability');
 
   useEffect(() => {
     if (settings.data) reset(toSettingsForm(settings.data));
@@ -364,16 +370,33 @@ function SettingsPanel({ airlineId, canManage }: { airlineId: string; canManage:
             <Input type="number" min={0} max={600} {...fieldAria('st-delay', errors.delay_tolerance_minutes?.message)} {...register('delay_tolerance_minutes')} />
           </Field>
           <Checkbox
+            id="st-rating"
+            label="Exigir habilitación de tipo"
+            hint="Activado: el piloto solo reserva tipos de aeronave para los que el staff lo habilitó en Pilots. Apagado: cada piloto vuela el tipo que prefiera."
+            {...register('require_type_rating')}
+          />
+          <Checkbox
+            id="st-fleet"
+            label="Controlar la disponibilidad de la flota"
+            hint="Activado: una aeronave reservada, en vuelo, en mantenimiento o fuera de servicio no se puede reservar, y Fleet muestra estado, base y ubicación. Apagado: cualquier piloto vuela cualquier aeronave de la flota."
+            {...register('control_fleet_availability')}
+          />
+          <Checkbox
             id="st-origin"
             label="La aeronave debe estar en el origen"
-            hint="Para reservar, la aeronave tiene que estar en el aeropuerto de salida."
+            hint={
+              fleetControlled
+                ? 'Para reservar, la aeronave tiene que estar en el aeropuerto de salida.'
+                : 'Sin efecto mientras la flota no se controle.'
+            }
+            className={fleetControlled ? undefined : 'opacity-60'}
             {...register('require_aircraft_at_origin')}
           />
           <Checkbox
-            id="st-rating"
-            label="Exigir habilitación de tipo"
-            hint="El piloto solo reserva tipos de aeronave para los que el staff lo habilitó en Pilots."
-            {...register('require_type_rating')}
+            id="st-routes"
+            label="Los pilotos registran rutas"
+            hint="Cualquier piloto registra la ruta que quiere volar. Queda pendiente y se activa sola con el primer PIREP aceptado que llegue a su destino. Las rutas del staff nacen activas."
+            {...register('pilots_register_routes')}
           />
           <Checkbox
             id="st-auto"

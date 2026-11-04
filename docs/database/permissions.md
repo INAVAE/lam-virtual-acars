@@ -45,7 +45,7 @@ Una persona puede tener roles distintos en distintas aerolíneas. Solo cuentan l
 | `airports` | Leer | Leer | Leer | Todo (incluida la importación de OurAirports) |
 | `aircraft_types` | Leer | Leer | Leer | Todo |
 | `aircraft` | Leer la flota de sus aerolíneas | Igual | Alta, edición y baja en su aerolínea | Todo |
-| `routes`, `route_aircraft_types` | Leer las de sus aerolíneas | Igual | Alta, edición, baja e importación CSV en su aerolínea | Todo |
+| `routes`, `route_aircraft_types` | Leer las de sus aerolíneas; registrar rutas con `register_route` (si la aerolínea lo permite) y borrar su ruta pendiente sin reservas activas | Igual | Alta, edición, baja e importación CSV en su aerolínea | Todo |
 | Storage `airline-logos` | Ver (público) | Ver | Subir y borrar en la carpeta de su aerolínea | Todo |
 
 Reglas adicionales que impone la base de datos:
@@ -85,7 +85,7 @@ Reglas de reserva (todas en `private.booking_block_reason` y `book_flight`):
 | Callsign de 3 a 10 letras o números | `invalid_callsign` |
 | Una reserva activa por aeronave | Índice único parcial `flight_bookings_one_active_per_aircraft` |
 
-Una aeronave reservada queda en estado Asignada; mientras lo esté, nadie puede cambiar su estado, tipo o ubicación ni borrarla. Cancelar o vencer la reserva la deja Disponible.
+Con la flota controlada (`airline_settings.control_fleet_availability`, activado por omisión), una aeronave reservada queda en estado Asignada; mientras lo esté, nadie puede cambiar su estado, tipo o ubicación ni borrarla. Cancelar o vencer la reserva la deja Disponible. Con la flota libre, el sistema no cambia el estado: varios pilotos pueden reservar la misma matrícula, y Mantenimiento, Fuera de servicio y la regla de aeronave en el origen no se aplican.
 
 ## Reglas contra la escalada de privilegios
 

@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
+import { useAirlineSettings } from '@/hooks/use-airline-admin';
 import { useLiveFlights } from '@/hooks/use-live-flights';
 import { useNow } from '@/hooks/use-now';
 import { useOperationsOverview, usePilotPerformance } from '@/hooks/use-stats-ops';
@@ -287,9 +288,11 @@ function PirepQueue({ rows, now }: { rows: OpsPirepQueueItem[]; now: number }) {
 // -----------------------------------------------------------------------------
 // Flota
 // -----------------------------------------------------------------------------
-function FleetTable({ rows }: { rows: OpsFleetItem[] }) {
+function FleetTable({ rows, controlled }: { rows: OpsFleetItem[]; controlled: boolean }) {
   const [filter, setFilter] = useState<'all' | 'in_use' | 'away'>('all');
-  const visible = rows.filter((a) => (filter === 'in_use' ? a.usage !== null : filter === 'away' ? a.away_from_base : true));
+  const visible = rows.filter((a) =>
+    filter === 'in_use' ? a.usage !== null : filter === 'away' ? controlled && a.away_from_base : true,
+  );
   return (
     <div className="space-y-3">
       <label className="flex items-center gap-2 text-sm text-muted">
@@ -297,16 +300,20 @@ function FleetTable({ rows }: { rows: OpsFleetItem[] }) {
         <Select value={filter} onChange={(e) => setFilter(e.target.value as typeof filter)} className="w-auto">
           <option value="all">Toda la flota ({rows.length})</option>
           <option value="in_use">En uso ({rows.filter((a) => a.usage !== null).length})</option>
-          <option value="away">Fuera de base ({rows.filter((a) => a.away_from_base).length})</option>
+          {controlled ? <option value="away">Fuera de base ({rows.filter((a) => a.away_from_base).length})</option> : null}
         </Select>
       </label>
-      <Table minWidth="60rem">
+      <Table minWidth={controlled ? '60rem' : '48rem'}>
         <thead>
           <tr>
             <Th>Matrícula</Th>
             <Th>Tipo</Th>
-            <Th>Estado</Th>
-            <Th>Ubicación</Th>
+            {controlled ? (
+              <>
+                <Th>Estado</Th>
+                <Th>Ubicación</Th>
+              </>
+            ) : null}
             <Th>Uso</Th>
             <Th className="text-right">Horas</Th>
             <Th className="text-right">Ciclos</Th>
@@ -315,7 +322,7 @@ function FleetTable({ rows }: { rows: OpsFleetItem[] }) {
         </thead>
         <tbody>
           {visible.length === 0 ? (
-            <EmptyRow colSpan={8}>Sin aeronaves en esta vista.</EmptyRow>
+            <EmptyRow colSpan={controlled ? 8 : 6}>Sin aeronaves en esta vista.</EmptyRow>
           ) : (
             visible.map((a) => (
               <tr key={a.id}>
@@ -324,18 +331,25 @@ function FleetTable({ rows }: { rows: OpsFleetItem[] }) {
                   {a.fleet_number ? <span className="block text-xs text-muted">Flota {a.fleet_number}</span> : null}
                 </Td>
                 <Td className="font-mono">{a.aircraft_type}</Td>
-                <Td>
-                  <Badge tone={a.status === 'available' ? 'ok' : a.status === 'maintenance' ? 'warn' : 'neutral'}>{aircraftStatusLabels[a.status as keyof typeof aircraftStatusLabels] ?? a.status}</Badge>
-                </Td>
-                <Td>
-                  <span className="font-mono">{a.current_airport ?? '—'}</span>
-                  {a.away_from_base ? <span className="block text-xs text-warn-ink">Fuera de base ({a.base_airport})</span> : a.base_airport ? <span className="block text-xs text-muted">Base {a.base_airport}</span> : null}
-                </Td>
+                {controlled ? (
+                  <>
+                    <Td>
+                      <Badge tone={a.status === 'available' ? 'ok' : a.status === 'maintenance' ? 'warn' : 'neutral'}>{aircraftStatusLabels[a.status as keyof typeof aircraftStatusLabels] ?? a.status}</Badge>
+                    </Td>
+                    <Td>
+                      <span className="font-mono">{a.current_airport ?? '—'}</span>
+                      {a.away_from_base ? <span className="block text-xs text-warn-ink">Fuera de base ({a.base_airport})</span> : a.base_airport ? <span className="block text-xs text-muted">Base {a.base_airport}</span> : null}
+                    </Td>
+                  </>
+                ) : null}
                 <Td>
                   {a.usage === 'flying' ? (
                     <Badge tone="info">Volando · {a.usage_callsign}</Badge>
                   ) : a.usage === 'booked' ? (
-                    <Badge>Reservada · {a.usage_callsign ?? 'sin vuelo'}</Badge>
+                    <Badge>
+                      Reservada · {a.usage_callsign ?? 'sin vuelo'}
+                      {(a.active_bookings ?? 0) > 1 ? ` y ${(a.active_bookings ?? 0) - 1} más` : ''}
+                    </Badge>
                   ) : (
                     <span className="text-sm text-muted">Libre</span>
                   )}
@@ -477,6 +491,9 @@ export function OperationsPage() {
   const now = useNow(5000);
   const live = useLiveFlights(airlineId);
   const ops = useOperationsOverview(airlineId, canStaff);
+  const settings = useAirlineSettings(airlineId ?? undefined);
+  // Con todas las aerolíneas a la vista se muestran estado y ubicación.
+  const fleetControlled = airlineId ? (settings.data?.control_fleet_availability ?? true) : true;
 
   if (!ready) return <Skeleton className="h-64" />;
   if (!canStaff) {
@@ -538,7 +555,7 @@ export function OperationsPage() {
         ) : tab === 'pireps' ? (
           <PirepQueue rows={o.pirep_queue} now={now} />
         ) : (
-          <FleetTable rows={o.fleet} />
+          <FleetTable rows={o.fleet} controlled={fleetControlled} />
         )}
       </div>
     </div>

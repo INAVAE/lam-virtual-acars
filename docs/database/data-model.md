@@ -60,6 +60,9 @@ erDiagram
     uuid airline_id PK
     smallint max_active_bookings
     smallint booking_expiry_hours
+    bool require_type_rating
+    bool control_fleet_availability
+    bool pilots_register_routes
     bool auto_approve_pireps
     bool public_tracking
   }
@@ -105,9 +108,9 @@ erDiagram
 | --- | --- |
 | `airports` | Catálogo global (ICAO, IATA, nombre, ciudad, país, coordenadas, elevación, tipo, origen OurAirports o manual) |
 | `aircraft_types` | Catálogo global por designador ICAO (25 tipos iniciales) con estela, motor, capacidad y velocidad de crucero |
-| `aircraft` | Flota por aerolínea: matrícula única, número de flota, configuración, estado, base, ubicación, horas y ciclos |
-| `routes` | Plantillas de vuelo: número, origen, destino, distancia calculada, duración, hora UTC, días (máscara de bits), tipo de operación |
-| `route_aircraft_types` | Tipos de aeronave permitidos por ruta |
+| `aircraft` | Flota por aerolínea: matrícula única, número de flota, configuración, estado, base, ubicación, horas y ciclos. Estado, base y ubicación solo se usan si la aerolínea controla la disponibilidad (`airline_settings.control_fleet_availability`) |
+| `routes` | Plantillas de vuelo: número, origen, destino, distancia calculada, duración, hora UTC, días (máscara de bits), tipo de operación. `activated_at` nulo = pendiente (la registró un piloto con `register_route` y aún no tiene un PIREP aceptado que llegó a su destino); `registered_by`, `activated_pirep_id` |
+| `route_aircraft_types` | Tipos de aeronave permitidos por ruta (opcional: sin tipos, cualquiera). Los tipos volados salen de `get_route_type_usage` |
 
 Logotipos: bucket público `airline-logos` en Storage, una carpeta por aerolínea (`{airline_id}/logo-*.png`).
 

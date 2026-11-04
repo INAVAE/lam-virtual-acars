@@ -1,8 +1,10 @@
 import type { RouteAircraftOption } from '@lam/shared-types';
-import { ArrowRight, CalendarPlus, MapPin } from 'lucide-react';
+import { OPERATION_TYPES } from '@lam/shared-types';
+import { ArrowRight, CalendarPlus, MapPin, MapPinPlus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
+import { AirportPicker } from '@/components/airport-picker';
 import { ConfirmButton } from '@/components/confirm-button';
 import { ScopeRequired } from '@/components/scope-required';
 import { Alert } from '@/components/ui/alert';
@@ -27,7 +29,16 @@ import {
 import { useAircraftTypes } from '@/hooks/use-fleet';
 import type { Airline } from '@/hooks/use-lam-data';
 import { useMyRatings } from '@/hooks/use-ratings';
-import { useRoutes, type RouteFilters, type RouteRow } from '@/hooks/use-routes';
+import {
+  useDeleteRoute,
+  useRegisterRoute,
+  useRouteTypeUsage,
+  useRoutes,
+  useRoutesBetween,
+  type RouteFilters,
+  type RouteRow,
+} from '@/hooks/use-routes';
+import { useAuth } from '@/lib/auth';
 import {
   CALLSIGN_PATTERN,
   blockReasonLabel,
@@ -38,8 +49,9 @@ import {
 } from '@/lib/booking';
 import { cn } from '@/lib/cn';
 import { describeError } from '@/lib/errors';
-import { aircraftStatusLabels, formatNumber, formatPilotNumber, operationTypeLabel } from '@/lib/format';
+import { aircraftStatusLabels, formatNumber, formatPilotNumber, operationTypeLabel, operationTypeLabels } from '@/lib/format';
 import { useAirlinePermissions } from '@/lib/permissions';
+import { formatTypeUsage, isPendingRoute } from '@/lib/routes';
 import { formatDays, formatDuration } from '@/lib/schedule';
 import { DualTimeText, ScheduleTimeText } from '@/lib/time-context';
 
@@ -51,10 +63,13 @@ const PAGE_SIZE = 25;
 function AircraftOption({
   option,
   checked,
+  controlled,
   onSelect,
 }: {
   option: RouteAircraftOption;
   checked: boolean;
+  /** La aerolínea controla la disponibilidad: se muestran ubicación y estado. */
+  controlled: boolean;
   onSelect: () => void;
 }) {
   const reason = blockReasonLabel(option.block_reason);
@@ -85,14 +100,16 @@ function AircraftOption({
           <span className="text-sm text-muted">{option.type_model}</span>
           {option.fleet_number ? <span className="text-xs text-muted">#{option.fleet_number}</span> : null}
         </span>
-        <span className="mt-0.5 flex items-center gap-1 text-xs text-muted">
-          <MapPin className="size-3" aria-hidden />
-          {option.location_icao ? <span className="font-mono">{option.location_icao}</span> : 'Ubicación sin registrar'}
-          <span aria-hidden>·</span>
-          {aircraftStatusLabels[option.status]}
-        </span>
+        {controlled ? (
+          <span className="mt-0.5 flex items-center gap-1 text-xs text-muted">
+            <MapPin className="size-3" aria-hidden />
+            {option.location_icao ? <span className="font-mono">{option.location_icao}</span> : 'Ubicación sin registrar'}
+            <span aria-hidden>·</span>
+            {aircraftStatusLabels[option.status]}
+          </span>
+        ) : null}
       </span>
-      {reason ? <Badge tone="warn">{reason}</Badge> : <Badge tone="ok">Disponible</Badge>}
+      {reason ? <Badge tone="warn">{reason}</Badge> : controlled ? <Badge tone="ok">Disponible</Badge> : null}
     </label>
   );
 }
@@ -100,6 +117,8 @@ function AircraftOption({
 function BookingDialog({ airline, route, onClose }: { airline: Airline; route: RouteRow; onClose: () => void }) {
   const navigate = useNavigate();
   const options = useRouteAircraftOptions(route.id);
+  const settings = useAirlineSettings(airline.id);
+  const controlled = settings.data?.control_fleet_availability ?? true;
   const book = useBookFlight();
   const [chosenId, setAircraftId] = useState<string | null>(null);
   const [callsign, setCallsign] = useState('');
@@ -146,6 +165,12 @@ function BookingDialog({ airline, route, onClose }: { airline: Airline; route: R
       }
     >
       <div className="space-y-5">
+        {isPendingRoute(route) ? (
+          <Alert>
+            Ruta pendiente{route.registrant ? `, registrada por ${route.registrant.display_name}` : ''}. Queda activa en {airline.name} con el
+            primer PIREP aceptado que llegue a {route.destination?.icao_code}.
+          </Alert>
+        ) : null}
         <div className="grid gap-3 rounded-md border border-line bg-bg p-3 text-sm sm:grid-cols-3">
           <div>
             <p className="text-muted">Salida</p>
@@ -169,7 +194,13 @@ function BookingDialog({ airline, route, onClose }: { airline: Airline; route: R
           ) : options.data && options.data.length > 0 ? (
             <div className="max-h-72 space-y-1.5 overflow-y-auto pr-1">
               {options.data.map((o) => (
-                <AircraftOption key={o.aircraft_id} option={o} checked={aircraftId === o.aircraft_id} onSelect={() => setAircraftId(o.aircraft_id)} />
+                <AircraftOption
+                  key={o.aircraft_id}
+                  option={o}
+                  checked={aircraftId === o.aircraft_id}
+                  controlled={controlled}
+                  onSelect={() => setAircraftId(o.aircraft_id)}
+                />
               ))}
             </div>
           ) : (
@@ -232,7 +263,14 @@ function PolicyStrip({ airline, activeCount }: { airline: Airline; activeCount: 
       value: s.require_type_rating ? (ratingCodes.length > 0 ? ratingCodes.join(' ') : 'Ninguna') : 'No se exigen',
       mono: s.require_type_rating && ratingCodes.length > 0,
     },
-    { label: 'Aeronave en el origen', value: s.require_aircraft_at_origin ? 'Obligatoria' : 'No se exige' },
+    {
+      label: 'Flota',
+      value: s.control_fleet_availability
+        ? s.require_aircraft_at_origin
+          ? 'Disponible y en el origen'
+          : 'Solo aeronaves disponibles'
+        : 'Libre',
+    },
   ];
 
   return (
@@ -256,15 +294,155 @@ function PolicyStrip({ airline, activeCount }: { airline: Airline; activeCount: 
 }
 
 // -----------------------------------------------------------------------------
+// Registrar ruta (piloto): nace pendiente y se activa con el primer vuelo efectivo
+// -----------------------------------------------------------------------------
+const FLIGHT_NUMBER_PATTERN = /^[0-9]{1,4}[A-Z]?$/;
+
+function RegisterRouteDialog({
+  airline,
+  onClose,
+  onRegistered,
+}: {
+  airline: Airline;
+  onClose: () => void;
+  onRegistered: (route: RouteRow) => void;
+}) {
+  const register = useRegisterRoute();
+  const code = airline.icao_code ?? '';
+  const [number, setNumber] = useState('');
+  const [originId, setOriginId] = useState<number | null>(null);
+  const [destinationId, setDestinationId] = useState<number | null>(null);
+  const [operation, setOperation] = useState<string>(airline.operation_type === 'cargo' ? 'cargo' : 'passenger');
+  const [minutes, setMinutes] = useState('');
+  const [touched, setTouched] = useState(false);
+  const existing = useRoutesBetween(airline.id, originId, destinationId);
+
+  const flightNumber = number.replace(/\s+/g, '').toUpperCase();
+  const minutesValue = minutes.trim() === '' ? null : Number(minutes);
+  const errors = {
+    number: FLIGHT_NUMBER_PATTERN.test(flightNumber) ? undefined : 'De 1 a 4 dígitos y una letra opcional, por ejemplo 2201 o 2201A',
+    origin: originId === null ? 'Elige el origen' : undefined,
+    destination:
+      destinationId === null ? 'Elige el destino' : destinationId === originId ? 'El destino debe ser distinto del origen' : undefined,
+    minutes:
+      minutesValue === null || (Number.isInteger(minutesValue) && minutesValue >= 10 && minutesValue <= 1440)
+        ? undefined
+        : 'Entre 10 y 1440 minutos',
+  };
+  const valid = !errors.number && !errors.origin && !errors.destination && !errors.minutes;
+  const show = (e: string | undefined) => (touched ? e : undefined);
+  const numberHint = `El mismo número que usarás en SimBrief; se mostrará como ${code || 'ICAO'}${flightNumber || '2201'}.`;
+  const minutesHint = 'Opcional. Vacío: se estima con la distancia (430 kt más 30 minutos).';
+
+  async function submit() {
+    setTouched(true);
+    if (!valid) return;
+    try {
+      const route = await register.mutateAsync({
+        airlineId: airline.id,
+        flightNumber,
+        originId: originId!,
+        destinationId: destinationId!,
+        operationType: operation,
+        estimatedMinutes: minutesValue,
+      });
+      toast.success(`Ruta ${code}${route.flight_number} registrada. Queda pendiente hasta su primer vuelo aceptado.`);
+      onRegistered(route);
+    } catch (error) {
+      toast.error(describeError(error));
+    }
+  }
+
+  return (
+    <Dialog
+      open
+      size="lg"
+      onClose={onClose}
+      title="Registrar ruta"
+      description={`La ruta queda pendiente y cualquier piloto la puede reservar. Se activa en ${airline.name} con el primer PIREP aceptado que llegue a su destino.`}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button loading={register.isPending} onClick={submit}>
+            Registrar ruta
+          </Button>
+        </>
+      }
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field id="rr-number" label="Número de vuelo" error={show(errors.number)} hint={numberHint}>
+          <Input
+            className="font-mono uppercase"
+            maxLength={6}
+            autoComplete="off"
+            placeholder="2201"
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
+            {...fieldAria('rr-number', show(errors.number), numberHint)}
+          />
+        </Field>
+        <Field id="rr-operation" label="Tipo de operación">
+          <Select id="rr-operation" value={operation} onChange={(e) => setOperation(e.target.value)}>
+            {OPERATION_TYPES.map((o) => (
+              <option key={o} value={o}>
+                {operationTypeLabels[o]}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field id="rr-origin" label="Origen" error={show(errors.origin)}>
+          <AirportPicker id="rr-origin" value={originId} onChange={setOriginId} invalid={Boolean(show(errors.origin))} />
+        </Field>
+        <Field id="rr-destination" label="Destino" error={show(errors.destination)}>
+          <AirportPicker id="rr-destination" value={destinationId} onChange={setDestinationId} invalid={Boolean(show(errors.destination))} />
+        </Field>
+        <Field id="rr-minutes" label="Duración estimada (minutos)" error={show(errors.minutes)} hint={minutesHint}>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={10}
+            max={1440}
+            value={minutes}
+            onChange={(e) => setMinutes(e.target.value)}
+            {...fieldAria('rr-minutes', show(errors.minutes), minutesHint)}
+          />
+        </Field>
+        {existing.data && existing.data.length > 0 ? (
+          <div className="sm:col-span-2">
+            <Alert>
+              {code} ya tiene {existing.data.length === 1 ? 'una ruta' : `${existing.data.length} rutas`} entre estos aeropuertos:{' '}
+              <span className="font-mono">
+                {existing.data
+                  .map((r) => `${code}${r.flight_number}${!r.is_active ? ' (inactiva)' : isPendingRoute(r) ? ' (pendiente)' : ''}`)
+                  .join(', ')}
+              </span>
+              . Puedes reservarla en la lista o registrar tu propio número de vuelo.
+            </Alert>
+          </div>
+        ) : null}
+      </div>
+    </Dialog>
+  );
+}
+
+// -----------------------------------------------------------------------------
 // Rutas disponibles
 // -----------------------------------------------------------------------------
 function RouteSearch({ airline, canBook, atLimit }: { airline: Airline; canBook: boolean; atLimit: boolean }) {
   const types = useAircraftTypes();
+  const settings = useAirlineSettings(airline.id);
+  const usage = useRouteTypeUsage(airline.id);
+  const remove = useDeleteRoute();
+  const { user } = useAuth();
+  const [registering, setRegistering] = useState(false);
+  const canRegister = canBook && (settings.data?.pilots_register_routes ?? false);
   const [filters, setFilters] = useState<RouteFilters>({
     origin: '',
     destination: '',
     aircraftTypeId: null,
-    status: 'active',
+    status: 'bookable',
     page: 0,
     pageSize: PAGE_SIZE,
   });
@@ -283,50 +461,72 @@ function RouteSearch({ airline, canBook, atLimit }: { airline: Airline; canBook:
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2 sm:max-w-2xl sm:grid-cols-3">
-        <div>
-          <label htmlFor="bf-origin" className="mb-1 block text-sm text-muted">
-            Origen
-          </label>
-          <Input
-            id="bf-origin"
-            className="font-mono uppercase"
-            placeholder="MMMX"
-            maxLength={4}
-            value={draft.origin}
-            onChange={(e) => setDraft((d) => ({ ...d, origin: e.target.value }))}
-          />
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="grid flex-1 grid-cols-2 gap-2 sm:max-w-3xl sm:grid-cols-4">
+          <div>
+            <label htmlFor="bf-origin" className="mb-1 block text-sm text-muted">
+              Origen
+            </label>
+            <Input
+              id="bf-origin"
+              className="font-mono uppercase"
+              placeholder="MMMX"
+              maxLength={4}
+              value={draft.origin}
+              onChange={(e) => setDraft((d) => ({ ...d, origin: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label htmlFor="bf-destination" className="mb-1 block text-sm text-muted">
+              Destino
+            </label>
+            <Input
+              id="bf-destination"
+              className="font-mono uppercase"
+              placeholder="MMUN"
+              maxLength={4}
+              value={draft.destination}
+              onChange={(e) => setDraft((d) => ({ ...d, destination: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label htmlFor="bf-type" className="mb-1 block text-sm text-muted">
+              Aeronave
+            </label>
+            <Select
+              id="bf-type"
+              value={filters.aircraftTypeId ?? ''}
+              onChange={(e) => setFilters((f) => ({ ...f, aircraftTypeId: e.target.value ? Number(e.target.value) : null, page: 0 }))}
+            >
+              <option value="">Todas</option>
+              {(types.data ?? []).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.icao_code}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label htmlFor="bf-status" className="mb-1 block text-sm text-muted">
+              Estado
+            </label>
+            <Select
+              id="bf-status"
+              value={filters.status}
+              onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value as RouteFilters['status'], page: 0 }))}
+            >
+              <option value="bookable">Activas y pendientes</option>
+              <option value="active">Activas</option>
+              <option value="pending">Pendientes</option>
+            </Select>
+          </div>
         </div>
-        <div>
-          <label htmlFor="bf-destination" className="mb-1 block text-sm text-muted">
-            Destino
-          </label>
-          <Input
-            id="bf-destination"
-            className="font-mono uppercase"
-            placeholder="MMUN"
-            maxLength={4}
-            value={draft.destination}
-            onChange={(e) => setDraft((d) => ({ ...d, destination: e.target.value }))}
-          />
-        </div>
-        <div>
-          <label htmlFor="bf-type" className="mb-1 block text-sm text-muted">
-            Aeronave
-          </label>
-          <Select
-            id="bf-type"
-            value={filters.aircraftTypeId ?? ''}
-            onChange={(e) => setFilters((f) => ({ ...f, aircraftTypeId: e.target.value ? Number(e.target.value) : null, page: 0 }))}
-          >
-            <option value="">Todas</option>
-            {(types.data ?? []).map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.icao_code}
-              </option>
-            ))}
-          </Select>
-        </div>
+        {canRegister ? (
+          <Button variant="secondary" onClick={() => setRegistering(true)}>
+            <MapPinPlus className="size-4" aria-hidden />
+            Registrar ruta
+          </Button>
+        ) : null}
       </div>
 
       {atLimit && canBook ? (
@@ -358,17 +558,23 @@ function RouteSearch({ airline, canBook, atLimit }: { airline: Airline; canBook:
             <tbody>
               {routes.data?.rows.length === 0 ? (
                 <EmptyRow colSpan={8}>
-                  {filters.origin || filters.destination || filters.aircraftTypeId
-                    ? 'Ninguna ruta activa coincide con la búsqueda.'
-                    : `${airline.name} todavía no publica rutas activas.`}
+                  {filters.origin || filters.destination || filters.aircraftTypeId || filters.status !== 'bookable'
+                    ? 'Ninguna ruta coincide con la búsqueda.'
+                    : canRegister
+                      ? `${airline.name} todavía no tiene rutas. Registra la que quieras volar.`
+                      : `${airline.name} todavía no publica rutas activas.`}
                 </EmptyRow>
               ) : (
-                routes.data?.rows.map((r) => (
+                routes.data?.rows.map((r) => {
+                  const pending = isPendingRoute(r);
+                  const flown = formatTypeUsage(usage.data?.get(r.id));
+                  return (
                   <tr key={r.id}>
                     <Td>
-                      <p className="font-mono font-medium">
+                      <p className="flex flex-wrap items-center gap-1.5 font-mono font-medium">
                         {code}
                         {r.flight_number}
+                        {pending ? <Badge tone="info">Pendiente</Badge> : null}
                       </p>
                       <p className="text-xs text-muted">{operationTypeLabel(r.operation_type)}</p>
                     </Td>
@@ -386,19 +592,49 @@ function RouteSearch({ airline, canBook, atLimit }: { airline: Airline; canBook:
                     <Td className="text-right tabular-nums">{formatDuration(r.estimated_minutes)}</Td>
                     <Td className="whitespace-nowrap">{r.departure_time_utc ? <ScheduleTimeText value={r.departure_time_utc} inline={false} /> : <span className="text-muted">Libre</span>}</Td>
                     <Td>{formatDays(r.days_of_week)}</Td>
-                    <Td className="font-mono text-xs">
-                      {r.route_aircraft_types.length > 0
-                        ? r.route_aircraft_types.map((t) => t.aircraft_types?.icao_code).filter(Boolean).join(' ')
-                        : <span className="font-sans text-muted">Cualquiera</span>}
+                    <Td className="text-xs">
+                      <p className="font-mono">
+                        {r.route_aircraft_types.length > 0
+                          ? r.route_aircraft_types.map((t) => t.aircraft_types?.icao_code).filter(Boolean).join(' ')
+                          : <span className="font-sans text-muted">Cualquiera</span>}
+                      </p>
+                      {flown ? (
+                        <p className="mt-0.5 text-muted">
+                          Volada con <span className="font-mono text-ink">{flown}</span>
+                        </p>
+                      ) : null}
                     </Td>
                     <Td className="text-right">
-                      <Button size="sm" onClick={() => setBooking(r)} disabled={!canBook || atLimit}>
-                        <CalendarPlus className="size-4" aria-hidden />
-                        Reservar
-                      </Button>
+                      <div className="flex justify-end gap-1.5">
+                        {pending && r.registered_by === user?.id ? (
+                          <ConfirmButton
+                            size="sm"
+                            variant="ghost"
+                            title={`Quitar ${code}${r.flight_number}`}
+                            message="La ruta pendiente que registraste deja de existir. Solo se puede quitar mientras no tenga reservas activas."
+                            confirmLabel="Quitar ruta"
+                            onConfirm={async () => {
+                              try {
+                                await remove.mutateAsync({ id: r.id, airlineId: airline.id });
+                                toast.success('Ruta quitada');
+                              } catch (error) {
+                                toast.error(describeError(error));
+                                throw error;
+                              }
+                            }}
+                          >
+                            Quitar
+                          </ConfirmButton>
+                        ) : null}
+                        <Button size="sm" onClick={() => setBooking(r)} disabled={!canBook || atLimit}>
+                          <CalendarPlus className="size-4" aria-hidden />
+                          Reservar
+                        </Button>
+                      </div>
                     </Td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </Table>
@@ -412,6 +648,16 @@ function RouteSearch({ airline, canBook, atLimit }: { airline: Airline; canBook:
       )}
 
       {booking ? <BookingDialog airline={airline} route={booking} onClose={() => setBooking(null)} /> : null}
+      {registering ? (
+        <RegisterRouteDialog
+          airline={airline}
+          onClose={() => setRegistering(false)}
+          onRegistered={(route) => {
+            setRegistering(false);
+            if (!atLimit) setBooking(route);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

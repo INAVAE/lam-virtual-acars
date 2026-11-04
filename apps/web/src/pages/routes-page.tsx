@@ -26,6 +26,7 @@ import type { Airline } from '@/hooks/use-lam-data';
 import {
   useDeleteRoute,
   useImportRoutes,
+  useRouteTypeUsage,
   useRoutes,
   useSaveRoute,
   type RouteFilters,
@@ -35,6 +36,7 @@ import { csvCell, csvToObjects } from '@/lib/csv';
 import { describeError } from '@/lib/errors';
 import { formatNumber, operationTypeLabel, operationTypeLabels } from '@/lib/format';
 import { useAirlinePermissions } from '@/lib/permissions';
+import { formatTypeUsage, isPendingRoute } from '@/lib/routes';
 import { ALL_DAYS, WEEKDAYS, formatDays, formatDuration } from '@/lib/schedule';
 import { ScheduleTimeText } from '@/lib/time-context';
 
@@ -52,7 +54,7 @@ const routeSchema = z
       .regex(/^[0-9]{1,4}[A-Z]?$/, 'De 1 a 4 dígitos y una letra opcional, por ejemplo 123 o 123A'),
     origin_airport_id: z.number({ invalid_type_error: 'Elige el origen' }).nullable(),
     destination_airport_id: z.number({ invalid_type_error: 'Elige el destino' }).nullable(),
-    aircraft_type_ids: z.array(z.number()).min(1, 'Elige al menos un tipo de aeronave'),
+    aircraft_type_ids: z.array(z.number()),
     departure_time_utc: z.string().regex(/^$|^([01]\d|2[0-3]):[0-5]\d$/, 'Usa formato HH:MM'),
     days_of_week: z.number().int().min(1, 'Elige al menos un día').max(127),
     estimated_minutes: z.preprocess(
@@ -238,7 +240,8 @@ function RouteDialog({
         </fieldset>
 
         <fieldset className="md:col-span-2">
-          <legend className="mb-2 text-sm font-medium">Tipos de aeronave permitidos</legend>
+          <legend className="text-sm font-medium">Tipos de aeronave permitidos</legend>
+          <p className="mb-2 text-sm text-muted">Opcional. Sin tipos marcados, la ruta acepta cualquier aeronave de la flota.</p>
           <Controller
             control={control}
             name="aircraft_type_ids"
@@ -326,7 +329,7 @@ function ImportRoutesDialog({ airline, onClose }: { airline: Airline; onClose: (
       return;
     }
     const objects = csvToObjects(await file.text());
-    const missing = ['flight_number', 'origin', 'destination', 'aircraft_types'].filter((k) => !objects[0] || !(k in objects[0]));
+    const missing = ['flight_number', 'origin', 'destination'].filter((k) => !objects[0] || !(k in objects[0]));
     if (objects.length === 0) {
       setReadError('El archivo no tiene filas de datos.');
       return;
@@ -381,8 +384,8 @@ function ImportRoutesDialog({ airline, onClose }: { airline: Airline; onClose: (
       <div className="space-y-4">
         <div className="rounded-md border border-line bg-bg p-3 text-sm">
           <p className="text-muted">
-            Columnas: <span className="font-mono text-ink">{TEMPLATE_HEADER.join(', ')}</span>. Las cuatro primeras son obligatorias.
-            Separa varios tipos con <span className="font-mono text-ink">|</span>. Días del 1 (lunes) al 7 (domingo). Hora en UTC. Si
+            Columnas: <span className="font-mono text-ink">{TEMPLATE_HEADER.join(', ')}</span>. Las tres primeras son obligatorias.
+            Separa varios tipos con <span className="font-mono text-ink">|</span>; sin tipos, la ruta acepta cualquier aeronave. Días del 1 (lunes) al 7 (domingo). Hora en UTC. Si
             un número de vuelo ya existe, la ruta se actualiza.
           </p>
           <Button
@@ -453,6 +456,7 @@ function RoutesView({ airline }: { airline: Airline }) {
   const { canManage } = useAirlinePermissions(airline.id);
   const types = useAircraftTypes();
   const remove = useDeleteRoute();
+  const usage = useRouteTypeUsage(airline.id);
   const [filters, setFilters] = useState<RouteFilters>({
     origin: '',
     destination: '',
@@ -533,6 +537,7 @@ function RoutesView({ airline }: { airline: Airline }) {
             >
               <option value="all">Todas</option>
               <option value="active">Activas</option>
+              <option value="pending">Pendientes</option>
               <option value="inactive">Inactivas</option>
             </Select>
           </div>
@@ -581,7 +586,9 @@ function RoutesView({ airline }: { airline: Airline }) {
                       : 'Esta aerolínea todavía no publica rutas.'}
                 </EmptyRow>
               ) : (
-                routes.data?.rows.map((r) => (
+                routes.data?.rows.map((r) => {
+                  const flown = formatTypeUsage(usage.data?.get(r.id));
+                  return (
                   <tr key={r.id}>
                     <Td>
                       <p className="font-mono font-medium">
@@ -604,10 +611,28 @@ function RoutesView({ airline }: { airline: Airline }) {
                     <Td className="text-right tabular-nums">{formatDuration(r.estimated_minutes)}</Td>
                     <Td className="whitespace-nowrap">{r.departure_time_utc ? <ScheduleTimeText value={r.departure_time_utc} inline={false} /> : <span className="text-muted">Libre</span>}</Td>
                     <Td>{formatDays(r.days_of_week)}</Td>
-                    <Td className="font-mono text-xs">
-                      {r.route_aircraft_types.map((t) => t.aircraft_types?.icao_code).filter(Boolean).join(' ')}
+                    <Td className="text-xs">
+                      <p className="font-mono">
+                        {r.route_aircraft_types.length > 0
+                          ? r.route_aircraft_types.map((t) => t.aircraft_types?.icao_code).filter(Boolean).join(' ')
+                          : <span className="font-sans text-muted">Cualquiera</span>}
+                      </p>
+                      {flown ? (
+                        <p className="mt-0.5 text-muted">
+                          Volada con <span className="font-mono text-ink">{flown}</span>
+                        </p>
+                      ) : null}
                     </Td>
-                    <Td>{r.is_active ? <Badge tone="ok">Activa</Badge> : <Badge>Inactiva</Badge>}</Td>
+                    <Td>
+                      {!r.is_active ? (
+                        <Badge>Inactiva</Badge>
+                      ) : isPendingRoute(r) ? (
+                        <Badge tone="info">Pendiente</Badge>
+                      ) : (
+                        <Badge tone="ok">Activa</Badge>
+                      )}
+                      {r.registrant ? <p className="mt-1 text-xs text-muted">Registró {r.registrant.display_name}</p> : null}
+                    </Td>
                     {canManage ? (
                       <Td className="text-right">
                         <div className="flex justify-end gap-1.5">
@@ -636,7 +661,8 @@ function RoutesView({ airline }: { airline: Airline }) {
                       </Td>
                     ) : null}
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </Table>
@@ -660,7 +686,10 @@ function RoutesView({ airline }: { airline: Airline }) {
 export function RoutesPage() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Routes" description="Rutas programadas de la aerolínea seleccionada. Cada ruta es una plantilla que generará vuelos." />
+      <PageHeader
+        title="Routes"
+        description="Rutas de la aerolínea seleccionada. Las del staff nacen activas; las que registran los pilotos quedan pendientes hasta su primer PIREP aceptado que llegue al destino."
+      />
       <ScopeRequired>{(airline) => <RoutesView airline={airline} />}</ScopeRequired>
     </div>
   );

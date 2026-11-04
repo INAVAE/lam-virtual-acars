@@ -2,6 +2,16 @@
 
 Última actualización: 2026-10-31 (Fase 7)
 
+## Flota libre y rutas de pilotos (2026-11-04)
+
+Retroalimentación de los pilotos: las habilitaciones y la disponibilidad de la flota complicaban el uso. Todo queda como opción en Airlines → Políticas operacionales, para no perder lo construido:
+
+- **Exigir habilitación de tipo** (ya existía; activado en las 5 aerolíneas). Apagado: cada piloto vuela el tipo que prefiera; Pilots oculta la columna y el botón, y las habilitaciones guardadas se conservan.
+- **Controlar la disponibilidad de la flota** (nuevo, activado). Apagado: cualquier piloto reserva cualquier matrícula aunque otro la tenga reservada o en vuelo; se ignoran Mantenimiento, Fuera de servicio y "aeronave en el origen"; el sistema deja de cambiar el estado. Fleet y el Operations Center solo listan las aeronaves (sin estado, base ni ubicación). Aplica también a tours y eventos. La regla de una reserva activa por aeronave pasó del índice único a las funciones de reserva.
+- **Los pilotos registran rutas** (nuevo, activado). En Flight Booking → Registrar ruta: número de vuelo (el de SimBrief, único en la aerolínea), origen, destino, operación y duración opcional. La ruta nace **pendiente**, se puede reservar y pasa sola a **activa** con el primer PIREP aceptado que llegó a su destino (`pireps_activate_route`). Las del staff nacen activas. El autor puede quitar su ruta pendiente sin reservas activas; máximo 20 pendientes por piloto y aerolínea. Si ya existe una ruta con el mismo origen y destino, el formulario la muestra.
+- **Tipos de aeronave por ruta opcionales** (formulario e importación CSV); Rutas y Flight Booking muestran "Volada con" los tipos de los vuelos completados (`get_route_type_usage`).
+- Migraciones `free_fleet_pilot_routes_*`, `import_routes_optional_types` y `ops_fleet_multiple_bookings`. 414 pruebas pgTAP (016 nueva, 33). Capturas 43–46.
+
 ## Pruebas con pilotos (2026-11-03)
 
 - **A340-600 (PIREP-2026-00004 y 00006):** la aeronave alternaba la combustión de los 4 motores en cada lectura; la fase se quedó en pushback y la cola de eventos dejó atrás la traza. Corregido en el conector 0.1.22 (motor en marcha por combustión o N2, filtro de apagado de 3 s, tope de eventos repetidos, envío que no deja esperando a la traza) y en el servidor (máximo 64 eventos de motor por sesión). Detalle en `docs/integrations/aircraft-adapters.md`.

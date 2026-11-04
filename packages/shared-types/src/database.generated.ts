@@ -336,10 +336,12 @@ export type Database = {
         Row: {
           airline_id: string
           auto_approve_pireps: boolean
+          control_fleet_availability: boolean
           pirep_min_score: number
           booking_expiry_hours: number
           delay_tolerance_minutes: number
           max_active_bookings: number
+          pilots_register_routes: boolean
           public_tracking: boolean
           require_aircraft_at_origin: boolean
           require_type_rating: boolean
@@ -349,10 +351,12 @@ export type Database = {
         Insert: {
           airline_id: string
           auto_approve_pireps?: boolean
+          control_fleet_availability?: boolean
           pirep_min_score?: number
           booking_expiry_hours?: number
           delay_tolerance_minutes?: number
           max_active_bookings?: number
+          pilots_register_routes?: boolean
           public_tracking?: boolean
           require_aircraft_at_origin?: boolean
           require_type_rating?: boolean
@@ -362,10 +366,12 @@ export type Database = {
         Update: {
           airline_id?: string
           auto_approve_pireps?: boolean
+          control_fleet_availability?: boolean
           pirep_min_score?: number
           booking_expiry_hours?: number
           delay_tolerance_minutes?: number
           max_active_bookings?: number
+          pilots_register_routes?: boolean
           public_tracking?: boolean
           require_aircraft_at_origin?: boolean
           require_type_rating?: boolean
@@ -2070,6 +2076,8 @@ export type Database = {
       }
       routes: {
         Row: {
+          activated_at: string | null
+          activated_pirep_id: string | null
           airline_id: string
           created_at: string
           days_of_week: number
@@ -2083,9 +2091,12 @@ export type Database = {
           notes: string | null
           operation_type: string
           origin_airport_id: number
+          registered_by: string | null
           updated_at: string
         }
         Insert: {
+          activated_at?: string | null
+          activated_pirep_id?: string | null
           airline_id: string
           created_at?: string
           days_of_week?: number
@@ -2099,9 +2110,12 @@ export type Database = {
           notes?: string | null
           operation_type?: string
           origin_airport_id: number
+          registered_by?: string | null
           updated_at?: string
         }
         Update: {
+          activated_at?: string | null
+          activated_pirep_id?: string | null
           airline_id?: string
           created_at?: string
           days_of_week?: number
@@ -2115,6 +2129,7 @@ export type Database = {
           notes?: string | null
           operation_type?: string
           origin_airport_id?: number
+          registered_by?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2137,6 +2152,20 @@ export type Database = {
             columns: ["origin_airport_id"]
             isOneToOne: false
             referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routes_registered_by_fkey"
+            columns: ["registered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routes_activated_pirep_id_fkey"
+            columns: ["activated_pirep_id"]
+            isOneToOne: false
+            referencedRelation: "pireps"
             referencedColumns: ["id"]
           },
         ]
@@ -2388,9 +2417,30 @@ export type Database = {
         Args: { p_airline_id?: string; p_days?: number }
         Returns: Json
       }
+      get_route_type_usage: {
+        Args: { p_airline_id: string }
+        Returns: {
+          aircraft_type_id: number
+          flights: number
+          icao_code: string
+          last_flight_at: string
+          route_id: string
+        }[]
+      }
       import_routes: {
         Args: { p_airline_id: string; p_dry_run?: boolean; p_rows: Json }
         Returns: Json
+      }
+      register_route: {
+        Args: {
+          p_airline_id: string
+          p_destination_airport_id: number
+          p_estimated_minutes?: number
+          p_flight_number: string
+          p_operation_type?: string
+          p_origin_airport_id: number
+        }
+        Returns: string
       }
       review_pirep: {
         Args: {

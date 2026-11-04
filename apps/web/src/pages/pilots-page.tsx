@@ -16,6 +16,7 @@ import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
 import { useAircraftTypes, useFleet, type AircraftType } from '@/hooks/use-fleet';
 import type { Airline } from '@/hooks/use-lam-data';
+import { useAirlineSettings } from '@/hooks/use-airline-admin';
 import { useAirlineRatings, useSaveRatings } from '@/hooks/use-ratings';
 import { useAirlineMembers, useRemoveMembership, useUpdateMembership, type AirlineMember } from '@/hooks/use-members';
 import { useAuth } from '@/lib/auth';
@@ -291,6 +292,10 @@ function PilotsView({ airline }: { airline: Airline }) {
   const ratings = useAirlineRatings(airline.id, permissions.canStaff);
   const types = useAircraftTypes();
   const fleet = useFleet(permissions.canStaff ? airline.id : null);
+  const settings = useAirlineSettings(airline.id);
+  // Sin habilitación exigida, la columna y el botón sobran; las guardadas se conservan.
+  const ratingsRequired = settings.data?.require_type_rating ?? true;
+  const showRatings = view === 'members' && ratingsRequired;
 
   const typeCode = useMemo(() => new Map((types.data ?? []).map((t) => [t.id, t.icao_code])), [types.data]);
   const fleetTypeIds = useMemo(() => new Set((fleet.data ?? []).map((a) => a.aircraft_type_id)), [fleet.data]);
@@ -347,6 +352,12 @@ function PilotsView({ airline }: { airline: Airline }) {
         </div>
       </div>
 
+      {view === 'members' && !ratingsRequired ? (
+        <p className="text-sm text-muted">
+          {airline.name} no exige habilitaciones de tipo: cada piloto vuela el tipo que prefiera. Las habilitaciones guardadas se
+          conservan por si la política se vuelve a activar en Airlines → Políticas operacionales.
+        </p>
+      ) : null}
       {members.isError ? <Alert tone="danger">{describeError(members.error)}</Alert> : null}
 
       {members.isPending ? (
@@ -359,14 +370,14 @@ function PilotsView({ airline }: { airline: Airline }) {
               <Th>Correo</Th>
               <Th>País</Th>
               <Th>Roles</Th>
-              {view === 'members' ? <Th>Habilitaciones</Th> : null}
+              {showRatings ? <Th>Habilitaciones</Th> : null}
               <Th>{view === 'pending' ? 'Solicitó' : 'Estado'}</Th>
               <Th className="text-right">Acciones</Th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <EmptyRow colSpan={view === 'members' ? 7 : 6}>
+              <EmptyRow colSpan={showRatings ? 7 : 6}>
                 {view === 'pending'
                   ? 'No hay solicitudes pendientes. Los pilotos solicitan ingreso desde su dashboard.'
                   : search
@@ -383,7 +394,7 @@ function PilotsView({ airline }: { airline: Airline }) {
                   <Td className="break-all text-muted">{m.profile?.email}</Td>
                   <Td>{countryName(m.profile?.country_code ?? null)}</Td>
                   <Td>{formatRoles(m.roles)}</Td>
-                  {view === 'members' ? (
+                  {showRatings ? (
                     <Td className="max-w-48 font-mono text-xs">
                       {(ratingsByUser.get(m.user_id) ?? [])
                         .map((id) => typeCode.get(id))
@@ -401,7 +412,7 @@ function PilotsView({ airline }: { airline: Airline }) {
                   </Td>
                   <Td className="text-right">
                     <div className="flex flex-wrap items-center justify-end gap-1.5">
-                      {m.status === 'active' && types.data ? (
+                      {m.status === 'active' && ratingsRequired && types.data ? (
                         <Button size="sm" variant="secondary" onClick={() => setRating(m)}>
                           Habilitaciones
                         </Button>

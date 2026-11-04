@@ -16,6 +16,7 @@ import { Input, Select } from '@/components/ui/input';
 import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, Td, Th } from '@/components/ui/table';
+import { useAirlineSettings } from '@/hooks/use-airline-admin';
 import { useFleet } from '@/hooks/use-fleet';
 import { useAirlines, useMyMemberships } from '@/hooks/use-lam-data';
 import {
@@ -72,6 +73,9 @@ function ProgressBar({ value, total, color }: { value: number; total: number; co
 function BookLegDialog({ tour, leg, enrollmentId, airlineId, onClose }: { tour: TourDetail; leg: TourLeg; enrollmentId: string; airlineId: string; onClose: () => void }) {
   const fleet = useFleet(airlineId);
   const book = useBookTourLeg();
+  const settings = useAirlineSettings(airlineId);
+  // Con la flota libre, cualquier aeronave de la aerolínea sirve.
+  const controlled = settings.data?.control_fleet_availability ?? true;
   const [aircraftId, setAircraftId] = useState('');
   const [callsign, setCallsign] = useState('');
   const [flightNumber, setFlightNumber] = useState('');
@@ -80,9 +84,9 @@ function BookLegDialog({ tour, leg, enrollmentId, airlineId, onClose }: { tour: 
   const options = useMemo(
     () =>
       (fleet.data ?? []).filter(
-        (a) => a.status === 'available' && (tour.aircraft_type_ids.length === 0 || tour.aircraft_type_ids.includes(a.aircraft_type_id)),
+        (a) => (!controlled || a.status === 'available') && (tour.aircraft_type_ids.length === 0 || tour.aircraft_type_ids.includes(a.aircraft_type_id)),
       ),
-    [fleet.data, tour.aircraft_type_ids],
+    [fleet.data, tour.aircraft_type_ids, controlled],
   );
   const cs = normalizeCallsign(callsign);
   const fn = flightNumber.trim().toUpperCase();

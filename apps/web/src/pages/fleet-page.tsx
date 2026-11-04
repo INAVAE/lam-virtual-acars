@@ -18,6 +18,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
+import { useAirlineSettings } from '@/hooks/use-airline-admin';
 import { Textarea } from '@/components/ui/textarea';
 import {
   useAircraftTypes,
@@ -70,11 +71,14 @@ function AircraftDialog({
   airline,
   aircraft,
   types,
+  controlled,
   onClose,
 }: {
   airline: Airline;
   aircraft: FleetAircraft | null;
   types: AircraftType[];
+  /** La aerolínea controla la disponibilidad: se editan estado, base y ubicación. */
+  controlled: boolean;
   onClose: () => void;
 }) {
   const save = useSaveAircraft();
@@ -176,33 +180,37 @@ function AircraftDialog({
             ))}
           </Select>
         </Field>
-        <Field
-          id="ac-status"
-          label="Estado"
-          hint={systemStatus ? 'La aeronave está asignada o en vuelo; el sistema cambia su estado.' : 'Asignada y En vuelo los pone el sistema.'}
-        >
-          <Select id="ac-status" disabled={systemStatus} {...register('status')}>
-            {statusOptions.map((s) => (
-              <option key={s} value={s}>
-                {aircraftStatusLabels[s]}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field id="ac-base" label="Base">
-          <Controller
-            control={control}
-            name="base_airport_id"
-            render={({ field }) => <AirportPicker id="ac-base" value={field.value} onChange={field.onChange} />}
-          />
-        </Field>
-        <Field id="ac-current" label="Ubicación actual" hint="Se actualiza sola al aterrizar en la Fase 4.">
-          <Controller
-            control={control}
-            name="current_airport_id"
-            render={({ field }) => <AirportPicker id="ac-current" value={field.value} onChange={field.onChange} />}
-          />
-        </Field>
+        {controlled ? (
+          <>
+            <Field
+              id="ac-status"
+              label="Estado"
+              hint={systemStatus ? 'La aeronave está asignada o en vuelo; el sistema cambia su estado.' : 'Asignada y En vuelo los pone el sistema.'}
+            >
+              <Select id="ac-status" disabled={systemStatus} {...register('status')}>
+                {statusOptions.map((s) => (
+                  <option key={s} value={s}>
+                    {aircraftStatusLabels[s]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field id="ac-base" label="Base">
+              <Controller
+                control={control}
+                name="base_airport_id"
+                render={({ field }) => <AirportPicker id="ac-base" value={field.value} onChange={field.onChange} />}
+              />
+            </Field>
+            <Field id="ac-current" label="Ubicación actual" hint="Se actualiza sola al aterrizar en la Fase 4.">
+              <Controller
+                control={control}
+                name="current_airport_id"
+                render={({ field }) => <AirportPicker id="ac-current" value={field.value} onChange={field.onChange} />}
+              />
+            </Field>
+          </>
+        ) : null}
         <div className="sm:col-span-2">
           <Field id="ac-notes" label="Notas" error={errors.notes?.message}>
             <Textarea {...fieldAria('ac-notes', errors.notes?.message)} {...register('notes')} />
@@ -220,14 +228,18 @@ function FleetTable({ airline, canManage }: { airline: Airline; canManage: boole
   const [editing, setEditing] = useState<FleetAircraft | 'new' | null>(null);
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const settings = useAirlineSettings(airline.id);
+  // Sin el control de disponibilidad, Fleet solo lista lo que la aerolínea tiene registrado.
+  const controlled = settings.data?.control_fleet_availability ?? true;
 
   const rows = useMemo(
     () =>
       (fleet.data ?? []).filter(
-        (a) => (!typeFilter || String(a.aircraft_type_id) === typeFilter) && (!statusFilter || a.status === statusFilter),
+        (a) => (!typeFilter || String(a.aircraft_type_id) === typeFilter) && (!controlled || !statusFilter || a.status === statusFilter),
       ),
-    [fleet.data, typeFilter, statusFilter],
+    [fleet.data, typeFilter, statusFilter, controlled],
   );
+  const columns = (controlled ? 9 : 6) + (canManage ? 1 : 0);
 
   const counts = useMemo(() => {
     const all = fleet.data ?? [];
@@ -246,10 +258,12 @@ function FleetTable({ airline, canManage }: { airline: Airline; canManage: boole
             <dt className="text-sm text-muted">Aeronaves</dt>
             <dd className="font-display text-2xl font-semibold tabular-nums">{counts.total}</dd>
           </div>
-          <div>
-            <dt className="text-sm text-muted">Disponibles</dt>
-            <dd className="font-display text-2xl font-semibold tabular-nums">{counts.available}</dd>
-          </div>
+          {controlled ? (
+            <div>
+              <dt className="text-sm text-muted">Disponibles</dt>
+              <dd className="font-display text-2xl font-semibold tabular-nums">{counts.available}</dd>
+            </div>
+          ) : null}
           <div>
             <dt className="text-sm text-muted">Horas acumuladas</dt>
             <dd className="font-display text-2xl font-semibold tabular-nums">{formatHours(counts.hours)}</dd>
@@ -269,19 +283,21 @@ function FleetTable({ airline, canManage }: { airline: Airline; canManage: boole
               ))}
             </Select>
           </div>
-          <div>
-            <label htmlFor="fleet-status" className="sr-only">
-              Filtrar por estado
-            </label>
-            <Select id="fleet-status" className="w-48" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="">Todos los estados</option>
-              {Object.entries(aircraftStatusLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </div>
+          {controlled ? (
+            <div>
+              <label htmlFor="fleet-status" className="sr-only">
+                Filtrar por estado
+              </label>
+              <Select id="fleet-status" className="w-48" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <option value="">Todos los estados</option>
+                {Object.entries(aircraftStatusLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          ) : null}
           {canManage ? (
             <Button onClick={() => setEditing('new')} disabled={!types.data}>
               <Plus className="size-4" aria-hidden />
@@ -291,20 +307,29 @@ function FleetTable({ airline, canManage }: { airline: Airline; canManage: boole
         </div>
       </div>
 
+      {!controlled ? (
+        <p className="text-sm text-muted">
+          {airline.name} no controla la disponibilidad de su flota: cualquier piloto vuela cualquier aeronave, sin estado, base ni ubicación.
+        </p>
+      ) : null}
       {fleet.isError ? <Alert tone="danger">{describeError(fleet.error)}</Alert> : null}
 
       {fleet.isPending ? (
         <Skeleton className="h-48" />
       ) : (
-        <Table minWidth="64rem">
+        <Table minWidth={controlled ? '64rem' : '48rem'}>
           <thead>
             <tr>
               <Th>Matrícula</Th>
               <Th>Tipo</Th>
               <Th>Configuración</Th>
-              <Th>Estado</Th>
-              <Th>Base</Th>
-              <Th>Ubicación</Th>
+              {controlled ? (
+                <>
+                  <Th>Estado</Th>
+                  <Th>Base</Th>
+                  <Th>Ubicación</Th>
+                </>
+              ) : null}
               <Th className="text-right">Horas</Th>
               <Th className="text-right">Ciclos</Th>
               <Th>Último vuelo</Th>
@@ -313,7 +338,7 @@ function FleetTable({ airline, canManage }: { airline: Airline; canManage: boole
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <EmptyRow colSpan={canManage ? 10 : 9}>
+              <EmptyRow colSpan={columns}>
                 {fleet.data?.length
                   ? 'Ninguna aeronave coincide con los filtros.'
                   : canManage
@@ -337,11 +362,15 @@ function FleetTable({ airline, canManage }: { airline: Airline; canManage: boole
                     <p>{a.configuration ?? <span className="text-muted">Sin definir</span>}</p>
                     <p className="text-xs text-muted">{operationTypeLabel(a.operation_type)}</p>
                   </Td>
-                  <Td>
-                    <Badge tone={aircraftStatusTone[a.status]}>{aircraftStatusLabels[a.status]}</Badge>
-                  </Td>
-                  <Td className="font-mono">{a.base?.icao_code ?? <span className="font-sans text-muted">Sin base</span>}</Td>
-                  <Td className="font-mono">{a.current?.icao_code ?? <span className="font-sans text-muted">Sin registro</span>}</Td>
+                  {controlled ? (
+                    <>
+                      <Td>
+                        <Badge tone={aircraftStatusTone[a.status]}>{aircraftStatusLabels[a.status]}</Badge>
+                      </Td>
+                      <Td className="font-mono">{a.base?.icao_code ?? <span className="font-sans text-muted">Sin base</span>}</Td>
+                      <Td className="font-mono">{a.current?.icao_code ?? <span className="font-sans text-muted">Sin registro</span>}</Td>
+                    </>
+                  ) : null}
                   <Td className="text-right tabular-nums">{formatHours(a.total_minutes)}</Td>
                   <Td className="text-right tabular-nums">{formatNumber(a.cycles)}</Td>
                   <Td>{a.last_flight_at ? formatLocalDate(a.last_flight_at) : <span className="text-muted">Sin vuelos</span>}</Td>
@@ -384,6 +413,7 @@ function FleetTable({ airline, canManage }: { airline: Airline; canManage: boole
           airline={airline}
           aircraft={editing === 'new' ? null : editing}
           types={types.data}
+          controlled={controlled}
           onClose={() => setEditing(null)}
         />
       ) : null}

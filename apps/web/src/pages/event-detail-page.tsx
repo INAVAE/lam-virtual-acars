@@ -16,6 +16,7 @@ import { Input, Select } from '@/components/ui/input';
 import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, Td, Th } from '@/components/ui/table';
+import { useAirlineSettings } from '@/hooks/use-airline-admin';
 import {
   useBookEventFlight,
   useCancelEvent,
@@ -67,6 +68,9 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 function BookEventDialog({ event, onClose }: { event: EventDetail; onClose: () => void }) {
   const reg = event.my_registration!;
   const fleet = useFleet(reg.airline_id);
+  const settings = useAirlineSettings(reg.airline_id);
+  // Con la flota libre, cualquier aeronave de la aerolínea sirve.
+  const controlled = settings.data?.control_fleet_availability ?? true;
   const book = useBookEventFlight();
   const chooses = pilotChooses(event.scenario);
   const [aircraftId, setAircraftId] = useState('');
@@ -75,8 +79,10 @@ function BookEventDialog({ event, onClose }: { event: EventDetail; onClose: () =
   const [airport, setAirport] = useState<number | null>(reg.proposed_airport_id);
   const [tried, setTried] = useState(false);
   const options = useMemo(
-    () => (fleet.data ?? []).filter((a) => a.status === 'available' && (event.aircraft_type_ids.length === 0 || event.aircraft_type_ids.includes(a.aircraft_type_id))),
-    [fleet.data, event.aircraft_type_ids],
+    () => (fleet.data ?? []).filter(
+        (a) => (!controlled || a.status === 'available') && (event.aircraft_type_ids.length === 0 || event.aircraft_type_ids.includes(a.aircraft_type_id)),
+      ),
+    [fleet.data, event.aircraft_type_ids, controlled],
   );
   const cs = normalizeCallsign(callsign);
   const fn = flightNumber.trim().toUpperCase();

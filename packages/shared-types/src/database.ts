@@ -247,6 +247,8 @@ export interface OpsFleetItem {
   usage: 'flying' | 'booked' | null;
   usage_callsign: string | null;
   usage_pilot: string | null;
+  /** Reservas activas de la aeronave; con la flota libre puede ser más de una. */
+  active_bookings?: number;
 }
 
 export interface OperationsOverview {

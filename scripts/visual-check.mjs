@@ -166,6 +166,10 @@ const ROUTES = [
   operation_type: 'passenger',
   is_active: i !== 3,
   notes: null,
+  // 801 la registró un piloto y aún no tiene su primer vuelo aceptado.
+  activated_at: i === 4 ? null : now,
+  registered_by: i === 4 ? id(501) : null,
+  registrant: i === 4 ? { display_name: 'Ana Martínez' } : null,
   origin: { icao_code: o, name: ap(o).name, city: ap(o).city },
   destination: { icao_code: d, name: ap(d).name, city: ap(d).city },
   route_aircraft_types: types.map((t) => ({ aircraft_type_id: t, aircraft_types: { icao_code: TYPES[t - 1].icao_code } })),
@@ -778,7 +782,7 @@ function rowsFor(url) {
         { id: id(951), name: 'LAPTOP-VIEJA', token_prefix: 'lamd_a9Bc', app_version: '0.1.0', created_at: now, last_used_at: null, revoked_at: now },
       ];
     case 'airline_settings':
-      return [{ airline_id: eqParam(url, 'airline_id'), max_active_bookings: 3, booking_expiry_hours: 24, require_aircraft_at_origin: false, require_type_rating: true, auto_approve_pireps: false, pirep_min_score: 80, public_tracking: true, delay_tolerance_minutes: 30, updated_at: now, updated_by: null }];
+      return [{ airline_id: eqParam(url, 'airline_id'), max_active_bookings: 3, booking_expiry_hours: 24, require_aircraft_at_origin: false, require_type_rating: true, control_fleet_availability: true, pilots_register_routes: true, auto_approve_pireps: false, pirep_min_score: 80, public_tracking: true, delay_tolerance_minutes: 30, updated_at: now, updated_by: null, ...SETTINGS_OVERRIDE }];
     case 'airports': {
       const one = eqParam(url, 'id');
       return one ? AIRPORTS.filter((a) => String(a.id) === one) : AIRPORTS;
@@ -811,6 +815,17 @@ function rowsFor(url) {
       return [];
   }
 }
+
+// Algunas capturas muestran la aerolínea con la flota libre y sin habilitaciones.
+let SETTINGS_OVERRIDE = {};
+const FREE_FLEET = { control_fleet_availability: false, require_type_rating: false };
+
+// Tipos con los que se ha volado cada ruta.
+const ROUTE_TYPE_USAGE = [
+  { route_id: id(400), aircraft_type_id: 2, icao_code: TYPES[1].icao_code, flights: 4, last_flight_at: now },
+  { route_id: id(400), aircraft_type_id: 1, icao_code: TYPES[0].icao_code, flights: 1, last_flight_at: now },
+  { route_id: id(402), aircraft_type_id: 2, icao_code: TYPES[1].icao_code, flights: 2, last_flight_at: now },
+];
 
 const CORS = {
   'access-control-allow-origin': '*',
@@ -847,6 +862,7 @@ async function handleSupabase(route) {
     get_pilot_badges: BADGES,
     get_events: EVENTS_LIST,
     get_event: EVENT_DETAIL,
+    get_route_type_usage: ROUTE_TYPE_USAGE,
   };
   const rpcName = url.pathname.startsWith('/rest/v1/rpc/') ? url.pathname.slice('/rest/v1/rpc/'.length) : null;
   if (rpcName === 'get_live_flight_trace') {
@@ -1022,6 +1038,29 @@ await shoot('16-booking-airline', 'booking', {
     await page.getByText('MXL21K').first().waitFor();
   },
 });
+SETTINGS_OVERRIDE = FREE_FLEET;
+await shoot('43-booking-free-fleet', 'booking', {
+  airlineId: MXL.id,
+  waitFor: 'MXL801',
+  action: async (page) => {
+    await page.getByText('Pendiente').first().waitFor();
+    await page.getByRole('button', { name: 'Reservar' }).first().click();
+    await page.getByRole('dialog').getByText('XA-MXE').waitFor();
+  },
+});
+await shoot('44-register-route', 'booking', {
+  airlineId: MXL.id,
+  waitFor: 'MXL100',
+  action: async (page) => {
+    await page.getByRole('button', { name: 'Registrar ruta' }).click();
+    await page.getByRole('dialog').getByLabel('Número de vuelo').fill('2201');
+    await page.getByRole('dialog').getByRole('button', { name: 'Registrar ruta' }).click();
+    await page.getByRole('dialog').getByText('Elige el origen').waitFor();
+  },
+});
+await shoot('45-fleet-free', 'fleet', { airlineId: MXL.id, waitFor: 'no controla la disponibilidad' });
+await shoot('46-routes-pending', 'routes', { airlineId: MXL.id, waitFor: 'Registró Ana Martínez' });
+SETTINGS_OVERRIDE = {};
 await shoot('17-my-flights', 'my-flights', { waitFor: 'MXL21K' });
 await shoot('18-my-flights-history', 'my-flights', {
   waitFor: 'MXL21K',
