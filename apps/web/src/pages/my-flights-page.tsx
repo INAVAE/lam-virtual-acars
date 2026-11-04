@@ -386,6 +386,7 @@ function History({ flights, tags, eventTags }: { flights: MyFlight[]; tags: Read
               <Td>
                 {f.pirep ? (
                   <Link to={`/pireps/${f.pirep.id}`} className="inline-flex items-center gap-1.5 underline-offset-2 hover:underline">
+                    <span className="font-mono text-xs text-muted">{f.pirep.folio}</span>
                     <span className="font-mono tabular-nums">{f.pirep.score}</span>
                     <Badge tone={pirepStatusTone[f.pirep.status]}>{pirepStatusLabels[f.pirep.status]}</Badge>
                   </Link>

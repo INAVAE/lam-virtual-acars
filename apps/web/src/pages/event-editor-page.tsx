@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { AirportPicker } from '@/components/airport-picker';
+import { SelectAll } from '@/components/select-all';
 import { Alert } from '@/components/ui/alert';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -248,7 +249,10 @@ function EventEditor({ initial }: { initial: EventDetail | null }) {
       <Panel title="Quién participa" description="Sin nada marcado, entra cualquier aerolínea y cualquier aeronave. Cada piloto vuela con la flota de su aerolínea.">
         <div className="space-y-4">
           <div>
-            <h3 className="mb-2 text-sm font-medium">Aerolíneas</h3>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-medium">Aerolíneas</h3>
+              <SelectAll all={(airlines.data ?? []).map((a) => a.id)} selected={airlineIds} onChange={setAirlineIds} disabled={locked} noun="todas" />
+            </div>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-2">
               {(airlines.data ?? []).map((a) => (
                 <Checkbox
@@ -263,7 +267,10 @@ function EventEditor({ initial }: { initial: EventDetail | null }) {
             </div>
           </div>
           <div>
-            <h3 className="mb-2 text-sm font-medium">Aeronaves</h3>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-medium">Aeronaves</h3>
+              <SelectAll all={(types.data ?? []).map((t) => t.id)} selected={typeIds} onChange={setTypeIds} disabled={locked} />
+            </div>
             {types.isPending ? (
               <Skeleton className="h-24" />
             ) : (

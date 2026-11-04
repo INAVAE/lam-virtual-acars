@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { AirportPicker } from '@/components/airport-picker';
 import { ConfirmButton } from '@/components/confirm-button';
 import { ScopeRequired } from '@/components/scope-required';
+import { SelectAll } from '@/components/select-all';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -242,6 +243,8 @@ function RouteDialog({
             control={control}
             name="aircraft_type_ids"
             render={({ field }) => (
+              <>
+              <SelectAll all={types.map((t) => t.id)} selected={field.value} onChange={field.onChange} className="mb-2" />
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
                 {types.map((t) => (
                   <Checkbox
@@ -259,6 +262,7 @@ function RouteDialog({
                   />
                 ))}
               </div>
+              </>
             )}
           />
           {errors.aircraft_type_ids ? <p className="mt-1 text-sm text-danger-ink">{errors.aircraft_type_ids.message}</p> : null}

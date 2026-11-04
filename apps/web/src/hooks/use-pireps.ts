@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
 
 const PIREP_LIST_SELECT =
-  'id, airline_id, user_id, callsign, flight_number, aircraft_registration, status, score, has_critical, diverted, block_minutes, flight_minutes, distance_nm, landing_vs_fpm, block_on_at, created_at, auto_approved, airline:airlines!pireps_airline_id_fkey(name, icao_code, slug, logo_path, brand_primary_color), pilot:profiles!pireps_user_id_fkey(display_name, pilot_number), type:aircraft_types!pireps_aircraft_type_id_fkey(icao_code), origin:airports!pireps_origin_airport_id_fkey(icao_code), destination:airports!pireps_destination_airport_id_fkey(icao_code), arrival:airports!pireps_arrival_airport_id_fkey(icao_code)' as const;
+  'id, folio, airline_id, user_id, callsign, flight_number, aircraft_registration, status, score, has_critical, diverted, block_minutes, flight_minutes, distance_nm, landing_vs_fpm, block_on_at, created_at, auto_approved, airline:airlines!pireps_airline_id_fkey(name, icao_code, slug, logo_path, brand_primary_color), pilot:profiles!pireps_user_id_fkey(display_name, pilot_number), type:aircraft_types!pireps_aircraft_type_id_fkey(icao_code), origin:airports!pireps_origin_airport_id_fkey(icao_code), destination:airports!pireps_destination_airport_id_fkey(icao_code), arrival:airports!pireps_arrival_airport_id_fkey(icao_code)' as const;
 
 export type PirepListView = 'mine' | 'review' | 'airline';
 

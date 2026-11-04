@@ -78,3 +78,17 @@ El vuelo se completa solo con motores apagados, avión detenido, freno de estaci
 y la APU apagada. Si el avión no informa APU (`ApuRunning` nulo), no se exige. Sin freno, basta
 con 60 s detenido, también con la APU apagada. Mientras la APU siga encendida, el conector muestra
 "Apaga la APU para cerrar el vuelo".
+
+## Motores en marcha estables (conector 0.1.22)
+
+El 2026-11-01 un A340-600 (PIREP-2026-00004 y PIREP-2026-00006, título en el simulador "ToLiss A346 PRO [Preset Pax]") alternó `GENERAL ENG COMBUSTION` entre 4 y 0 motores en cada lectura, desde el arranque hasta el final. El conector 0.1.21 registró cada cambio como arranque o apagado (6,550 pares en 28 min; 201,186 en 8 h), la fase se quedó en pushback (sin despegue, aterrizaje, combustible ni calzos puestos) y la cola de eventos dejó atrás a la traza y a la posición en vivo.
+
+Desde la 0.1.22:
+
+- **Motor en marcha:** combustión **o** `TURB ENG N2` ≥ 50 % (en turbinas, el ralentí ronda 55–70 %). En pistón el N2 es 0 y cuenta solo la combustión.
+- **Filtro de apagado** (`EngineCountFilter`): un arranque cuenta de inmediato; un apagado solo si dura 3 s sin volver a verse en marcha. Así el parpadeo no cambia la fase.
+- **Tope de eventos repetidos** (`EventFloodGuard`): máximo 16 por minuto de arranques, apagados, pausas, slew, sobrevelocidad y pérdida; lo demás se descarta con una nota `events_suppressed`. Los hitos (fases, calzos, despegue, aterrizaje) nunca se descartan.
+- **Envío:** por ronda salen como máximo 4 lotes de eventos antes de la traza, para que la traza y la posición no esperen detrás de un atasco de eventos.
+- **Servidor:** `acars_events` guarda como máximo 64 eventos de motor por sesión (protege de conectores anteriores).
+
+No hace falta un adaptador propio de iniBuilds para esto: el genérico ya cubre cualquier avión que parpadee. Si el A340 o el A380 muestran otros huecos (freno de estacionamiento, flaps, APU), se agrega un adaptador con las variables que confirme un vuelo de prueba, como se hizo con Fenix y PMDG.

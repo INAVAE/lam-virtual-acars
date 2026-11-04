@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { AirportPicker } from '@/components/airport-picker';
+import { SelectAll } from '@/components/select-all';
 import { TourBadge } from '@/components/tour-badge';
 import { Alert } from '@/components/ui/alert';
 import { Button, buttonClasses } from '@/components/ui/button';
@@ -279,7 +280,11 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
         </div>
       </Panel>
 
-      <Panel title="Aeronaves permitidas" description="Sin ninguna marcada, se vuela con cualquier tipo. Cada piloto usa la flota de su propia aerolínea.">
+      <Panel
+        title="Aeronaves permitidas"
+        description="Sin ninguna marcada, se vuela con cualquier tipo. Cada piloto usa la flota de su propia aerolínea."
+        actions={<SelectAll all={groupedTypes.map((t) => t.id)} selected={typeIds} onChange={setTypeIds} disabled={locked} />}
+      >
         {types.isPending ? (
           <Skeleton className="h-24" />
         ) : (

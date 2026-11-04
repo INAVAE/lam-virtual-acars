@@ -381,6 +381,7 @@ const MOCK_FUEL = {
   plan: { block_kg: 6144, trip_kg: 1777, reserve_kg: 1118, landing_kg: 6144 - 1777 - (fuelAt(2) - fuelAt(9.3)), units: 'kg' },
 };
 const pirepRow = (n, callsign, status, score, extra = {}) => ({
+  folio: `PIREP-2026-${String(n + 4).padStart(5, '0')}`,
   id: n === 0 ? PIREP_ID : id(1200 + n),
   airline_id: MXL.id,
   user_id: USER_ID,

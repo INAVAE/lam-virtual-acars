@@ -1,10 +1,10 @@
 import type { PirepStatus } from '@lam/shared-types';
-import { ArrowRight, TriangleAlert } from 'lucide-react';
+import { ArrowRight, Search, TriangleAlert } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Select } from '@/components/ui/input';
+import { Input, Select } from '@/components/ui/input';
 import { PageHeader } from '@/components/ui/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
@@ -52,13 +52,24 @@ function ScoreBadge({ score }: { score: number }) {
   );
 }
 
+/** Busca por folio (con o sin el prefijo), callsign, piloto, matrícula, tipo o aeropuertos. */
+function filterPireps(pireps: PirepListItem[], query: string): PirepListItem[] {
+  const q = query.trim().toUpperCase();
+  if (!q) return pireps;
+  return pireps.filter((p) =>
+    [p.folio, p.callsign, (p.pilot?.display_name ?? '').toUpperCase(), p.aircraft_registration, p.type?.icao_code ?? '', p.origin?.icao_code ?? '', p.destination?.icao_code ?? '']
+      .some((v) => v.includes(q)),
+  );
+}
+
 function PirepTable({ pireps, showPilot, empty }: { pireps: PirepListItem[]; showPilot: boolean; empty: string }) {
   const navigate = useNavigate();
-  const columns = showPilot ? 9 : 8;
+  const columns = showPilot ? 10 : 9;
   return (
     <Table minWidth="60rem">
       <thead>
         <tr>
+          <Th>Folio</Th>
           <Th>Fecha</Th>
           <Th>Callsign</Th>
           {showPilot ? <Th>Piloto</Th> : null}
@@ -85,6 +96,11 @@ function PirepTable({ pireps, showPilot, empty }: { pireps: PirepListItem[]; sho
                   void navigate(`/pireps/${p.id}`);
                 }}
               >
+                <Td className="whitespace-nowrap font-mono text-sm">
+                  <Link to={`/pireps/${p.id}`} className="underline-offset-2 hover:underline">
+                    {p.folio}
+                  </Link>
+                </Td>
                 <Td className="whitespace-nowrap">{formatLocalDateTime(p.block_on_at ?? p.created_at)}</Td>
                 <Td>
                   <Link to={`/pireps/${p.id}`} className="font-mono font-medium underline-offset-2 hover:underline">
@@ -141,6 +157,7 @@ export function PirepsPage() {
   const canReview = selected ? permissions.canStaff : isOrgAdmin;
   const [view, setView] = useState<PirepListView>('mine');
   const [status, setStatus] = useState<PirepStatus | 'all'>('all');
+  const [query, setQuery] = useState('');
   const effectiveView = canReview ? view : 'mine';
   const pireps = usePireps(effectiveView, selected?.id ?? null, status, isOrgAdmin);
   const pending = usePireps('review', selected?.id ?? null, 'all', isOrgAdmin);
@@ -174,6 +191,12 @@ export function PirepsPage() {
         ) : (
           <span />
         )}
+        <div className="flex flex-wrap items-end gap-3">
+        <label className="relative block">
+          <span className="sr-only">Buscar PIREP</span>
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Folio, callsign, piloto, aeronave…" className="h-9 w-64 pl-8" />
+        </label>
         {effectiveView !== 'review' ? (
           <label className="flex items-center gap-2 text-sm text-muted">
             Estado
@@ -186,6 +209,7 @@ export function PirepsPage() {
             </Select>
           </label>
         ) : null}
+        </div>
       </div>
 
       {pireps.isError ? <Alert tone="danger">{describeError(pireps.error)}</Alert> : null}
@@ -193,12 +217,16 @@ export function PirepsPage() {
         <Skeleton className="h-64" />
       ) : (
         <PirepTable
-          pireps={pireps.data ?? []}
+          pireps={filterPireps(pireps.data ?? [], query)}
           showPilot={effectiveView !== 'mine'}
           empty={
             effectiveView === 'review'
-              ? 'No hay PIREP pendientes de revisión.'
-              : effectiveView === 'mine'
+              ? query.trim()
+                ? 'Ningún PIREP coincide con la búsqueda.'
+                : 'No hay PIREP pendientes de revisión.'
+              : query.trim()
+                ? 'Ningún PIREP coincide con la búsqueda.'
+                : effectiveView === 'mine'
                 ? 'Aún no tienes PIREP. Completa un vuelo con LAM ACARS y aparecerá aquí.'
                 : 'La aerolínea aún no tiene PIREP.'
           }

@@ -1797,6 +1797,7 @@ export type Database = {
           flight_id: string
           flight_minutes: number | null
           flight_number: string
+          folio: string
           fuel_used_kg: number | null
           has_critical: boolean
           id: string
@@ -1842,6 +1843,7 @@ export type Database = {
           flight_id: string
           flight_minutes?: number | null
           flight_number: string
+          folio?: string
           fuel_used_kg?: number | null
           has_critical?: boolean
           id?: string
@@ -1887,6 +1889,7 @@ export type Database = {
           flight_id?: string
           flight_minutes?: number | null
           flight_number?: string
+          folio?: string
           fuel_used_kg?: number | null
           has_critical?: boolean
           id?: string

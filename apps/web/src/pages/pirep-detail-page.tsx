@@ -1,5 +1,5 @@
 import type { PirepFinding, PirepFuel, PirepMetrics, PirepWindAt } from '@lam/shared-types';
-import { Archive, ArchiveRestore, ArrowLeft, Ban, Check, Plane, RotateCcw, TriangleAlert, X } from 'lucide-react';
+import { Archive, ArchiveRestore, ArrowLeft, Ban, Check, Copy, Plane, RotateCcw, TriangleAlert, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -742,6 +742,23 @@ export function PirepDetailPage() {
       <header className="flex flex-wrap items-center gap-4">
         {p.airline ? <AirlineLogo airline={p.airline} size="md" /> : null}
         <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1.5 font-mono text-sm text-muted">
+            {p.folio}
+            <button
+              type="button"
+              className="rounded p-0.5 hover:text-ink"
+              aria-label={`Copiar el folio ${p.folio}`}
+              title="Copiar folio"
+              onClick={() => {
+                void navigator.clipboard
+                  .writeText(p.folio)
+                  .then(() => toast.success(`Folio ${p.folio} copiado`))
+                  .catch(() => toast.error('No se pudo copiar el folio'));
+              }}
+            >
+              <Copy className="size-3.5" aria-hidden />
+            </button>
+          </p>
           <h1 className="font-mono text-3xl font-semibold leading-tight tracking-wide">{p.callsign}</h1>
           <p className="text-muted">
             {p.airline?.name} · vuelo{' '}

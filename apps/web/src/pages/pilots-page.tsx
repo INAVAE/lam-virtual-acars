@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { ConfirmButton } from '@/components/confirm-button';
 import { ScopeRequired } from '@/components/scope-required';
+import { SelectAll } from '@/components/select-all';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -137,8 +138,11 @@ function RatingsDialog({
   function group(label: string, list: AircraftType[]) {
     if (list.length === 0) return null;
     return (
-      <fieldset>
-        <legend className="mb-2 text-sm font-medium">{label}</legend>
+      <fieldset aria-label={label}>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium">{label}</p>
+          <SelectAll all={list.map((t) => t.id)} selected={selected} onChange={setSelected} disabled={!canEdit} />
+        </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
           {list.map((t) => (
             <Checkbox

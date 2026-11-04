@@ -2,6 +2,13 @@
 
 Última actualización: 2026-10-31 (Fase 7)
 
+## Pruebas con pilotos (2026-11-03)
+
+- **A340-600 (PIREP-2026-00004 y 00006):** la aeronave alternaba la combustión de los 4 motores en cada lectura; la fase se quedó en pushback y la cola de eventos dejó atrás la traza. Corregido en el conector 0.1.22 (motor en marcha por combustión o N2, filtro de apagado de 3 s, tope de eventos repetidos, envío que no deja esperando a la traza) y en el servidor (máximo 64 eventos de motor por sesión). Detalle en `docs/integrations/aircraft-adapters.md`.
+- **Folio de PIREP:** `pireps.folio` (PIREP-AAAA-NNNNN), consecutivo; los 7 existentes se numeraron por fecha. Se ve en la lista (con búsqueda), en el detalle (con botón para copiar) y en My Flights.
+- **Seleccionar todos / Ninguno** en las listas de tipos de aeronave (rutas, habilitaciones, tours y eventos) y de aerolíneas de un evento.
+- 372 pruebas pgTAP (014 nueva).
+
 ## Fase 7, mapa al estilo IVAO, Eventos y Tours (construida el 2026-10-31; detalle en docs/roadmap/fase-7-mapa-eventos-tours.md)
 
 - [x] 7.1 Figura del avión según su categoría (`aircraft_types.map_category`: ligero, jet ejecutivo, turbohélice, regional, pasillo único, fuselaje ancho, cuatrimotor), con tamaño de 18 a 37 px. Se calcula sola y el superadministrador la cambia en Fleet → Tipos.
