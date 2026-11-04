@@ -881,7 +881,12 @@ async function handleSupabase(route) {
   }
   if (rpcName && rpcName in RPC) return route.fulfill({ status: 200, headers: CORS, json: RPC[rpcName] });
   if (url.pathname === '/rest/v1/rpc/route_aircraft_options') {
-    return route.fulfill({ status: 200, headers: CORS, json: AIRCRAFT_OPTIONS });
+    // Con la flota libre y sin habilitaciones, la base solo bloquea por tipo u operación.
+    const free = SETTINGS_OVERRIDE.control_fleet_availability === false;
+    const options = free
+      ? AIRCRAFT_OPTIONS.map((o) => (['aircraft_unavailable', 'not_at_origin', 'no_rating'].includes(o.block_reason) ? { ...o, block_reason: null } : o))
+      : AIRCRAFT_OPTIONS;
+    return route.fulfill({ status: 200, headers: CORS, json: options });
   }
   if (url.pathname.startsWith('/rest/v1/') && (request.method() === 'GET' || request.method() === 'HEAD')) {
     const rows = rowsFor(url);
