@@ -535,7 +535,14 @@ function FuelPanel({ fuel }: { fuel: PirepFuel }) {
         ) : (
           <p className="text-sm text-muted">Sin plan de SimBrief para comparar.</p>
         )}
-        {fuel.refueled_kg ? <Alert>Se detectó una carga de combustible de {kg(fuel.refueled_kg)} durante la sesión.</Alert> : null}
+        {fuel.preflight_loaded_kg ? (
+          <p className="text-sm text-muted">
+            Carga en tierra antes del pushback: {kg(fuel.preflight_loaded_kg)}. Es la carga normal del vuelo y no afecta el puntaje.
+          </p>
+        ) : null}
+        {fuel.refueled_kg ? (
+          <Alert tone="danger">Se agregaron {kg(fuel.refueled_kg)} de combustible después de los calzos fuera; la carga del vuelo se hace antes del pushback.</Alert>
+        ) : null}
       </div>
     </Panel>
   );

@@ -7,7 +7,8 @@
 - **A340-600 (PIREP-2026-00004 y 00006):** la aeronave alternaba la combustión de los 4 motores en cada lectura; la fase se quedó en pushback y la cola de eventos dejó atrás la traza. Corregido en el conector 0.1.22 (motor en marcha por combustión o N2, filtro de apagado de 3 s, tope de eventos repetidos, envío que no deja esperando a la traza) y en el servidor (máximo 64 eventos de motor por sesión). Detalle en `docs/integrations/aircraft-adapters.md`.
 - **Folio de PIREP:** `pireps.folio` (PIREP-AAAA-NNNNN), consecutivo; los 7 existentes se numeraron por fecha. Se ve en la lista (con búsqueda), en el detalle (con botón para copiar) y en My Flights.
 - **Seleccionar todos / Ninguno** en las listas de tipos de aeronave (rutas, habilitaciones, tours y eventos) y de aerolíneas de un evento.
-- 372 pruebas pgTAP (014 nueva).
+- **Carga de combustible (PIREP-2026-00006):** la carga en tierra antes de los calzos fuera (19,318 → 79,118 kg en preflight) se contaba como recarga. Ahora se informa aparte (`preflight_loaded_kg`) sin afectar el puntaje; solo lo agregado después de los calzos fuera es `refueled_kg` y activa la regla grave nueva `fuel_added_after_pushback` (−20, umbral 100 kg) en todas las aerolíneas. Los PIREP existentes recalcularon su resumen; puntaje y faltas sin cambio. PIREP-2026-00005 sí muestra 51,769 kg después de los calzos fuera: la sesión quedó abierta y tomó una muestra del vuelo siguiente (00007).
+- 380 pruebas pgTAP (014 y 015 nuevas).
 
 ## Fase 7, mapa al estilo IVAO, Eventos y Tours (construida el 2026-10-31; detalle en docs/roadmap/fase-7-mapa-eventos-tours.md)
 

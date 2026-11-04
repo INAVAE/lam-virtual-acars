@@ -47,6 +47,7 @@ todas las reglas al crearse. Los cambios se aplican a los PIREP que se generen d
 | Sobrevelocidad | −10 |
 | Pérdida | −15 |
 | Aterrizaje bajo la reserva (combustible al aterrizar < reserva final del plan de SimBrief) | Desactivada; −10 al activarla |
+| Combustible agregado después del pushback (subidas > 100 kg después de los calzos fuera) | Grave (−20) |
 | ACARS iniciado con motores encendidos | −5 |
 | Pausa | Informativa (0) |
 | Motor y al aire / toque y despegue | Informativa (0) |
@@ -65,13 +66,15 @@ Cada regla cumplida queda en `pireps.findings` con su valor medido y el umbral q
   - niveles en calzos fuera, despegue, aterrizaje y calzos puestos;
   - consumo en rodaje de salida, en viaje, en rodaje de llegada y total;
   - consumo, tiempo y flujo (kg/h) por etapa: rodaje de salida, despegue y ascenso, crucero, descenso y aproximación, rodaje de llegada;
-  - cargas detectadas (subidas de más de 50 kg);
+  - cargas (subidas de más de 50 kg entre dos muestras), separadas por los calzos fuera, que el conector marca con el primer movimiento en tierra (GS > 1 kt, pushback o retroceso):
+    - `preflight_loaded_kg`: antes de los calzos fuera. Es la carga normal del vuelo (el simulador arranca con combustible y el piloto carga lo del plan); se informa y no se califica.
+    - `refueled_kg`: después de los calzos fuera. La carga se hace antes del pushback, así que activa la regla grave "Combustible agregado después del pushback" (umbral de 100 kg para tolerar el ruido del indicador) y el PIREP va a revisión;
   - plan de SimBrief en kg (bloque, viaje, reserva final y combustible al aterrizar aproximado).
 - **APU (conector 0.1.17):** notas `{kind: "apu", state: start|stop|running}` cuando la APU queda en marcha o se apaga, con 5 s de estabilidad y la hora del cambio. `running` indica que ya estaba encendida al iniciar ACARS.
   - Genérico: `APU PCT RPM` ≥ 95 %.
   - PMDG 737: selector en ON/START y EGT de APU > 300 °C.
   - PMDG 777: `APURunning` del SDK.
-  - El resumen agrega `apu` (minutos, arranques, primera y última hora) y `before_engines_kg`, el combustible gastado antes del primer arranque de motor.
+  - El resumen agrega `apu` (minutos, arranques, primera y última hora) y `before_engines_kg`, el combustible gastado antes del primer arranque de motor (solo bajadas; una carga no la altera).
 - **Vuelos anteriores:** sin combustible en la traza, la gráfica se interpola entre los eventos y se marca como aproximada.
 - **PIREP existentes:** recibieron su resumen al aplicar la migración.
 

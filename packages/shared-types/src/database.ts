@@ -476,6 +476,9 @@ export interface PirepFuel {
   taxi_in_kg?: number;
   used_kg?: number;
   samples?: number;
+  /** Combustible cargado en tierra antes de los calzos fuera (normal). */
+  preflight_loaded_kg?: number;
+  /** Combustible agregado después de los calzos fuera (anomalía). */
   refueled_kg?: number;
   /** Combustible gastado antes del primer arranque de motor (APU, normalmente). */
   before_engines_kg?: number;
