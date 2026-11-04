@@ -41,6 +41,11 @@ public sealed class FlightRecorder
     private bool? _apuState;
     private (bool State, DateTimeOffset Since)? _apuPending;
     private readonly Dictionary<string, AttitudeExcursion> _attitude = new();
+    private readonly EngineCountFilter _engines = new();
+    private readonly EventFloodGuard _flood = new();
+
+    /// <summary>Eventos repetidos que se descartaron, por tipo.</summary>
+    public IReadOnlyDictionary<string, int> DroppedEvents => _flood.Dropped;
 
     /// <summary>
     /// Umbrales de detección de actitud (los mínimos que una aerolínea puede usar
@@ -74,6 +79,8 @@ public sealed class FlightRecorder
 
     public void Process(SimSample s)
     {
+        // Motores en marcha estables: un apagado cuenta solo si dura (ver EngineCountFilter).
+        s = s with { EnginesRunning = _engines.Filter(s.Time, s.EnginesRunning) };
         var prev = _previous;
         DetectSimEvents(prev, s);
         TrackApu(s);
@@ -284,6 +291,19 @@ public sealed class FlightRecorder
     private void Emit(string type, FlightPhase phase, SimSample s, IReadOnlyDictionary<string, object?> data,
         DateTimeOffset? at = null, double? lat = null, double? lon = null, double? alt = null)
     {
+        switch (_flood.Check(type, s.Time))
+        {
+            case EventFloodGuard.Decision.Drop:
+                return;
+            case EventFloodGuard.Decision.DropWithNotice:
+                _sink.Event(new FlightEventRecord(Guid.NewGuid(), NextEventSeq++, FlightEventTypes.Note, phase, s.Time,
+                    s.Latitude, s.Longitude, s.AltitudeFt, new Dictionary<string, object?>
+                    {
+                        ["kind"] = "events_suppressed", ["event_type"] = type,
+                        ["limit_per_minute"] = EventFloodGuard.MaxPerWindow,
+                    }));
+                return;
+        }
         _sink.Event(new FlightEventRecord(Guid.NewGuid(), NextEventSeq++, type, phase, at ?? s.Time,
             lat ?? s.Latitude, lon ?? s.Longitude, alt ?? s.AltitudeFt, data));
     }

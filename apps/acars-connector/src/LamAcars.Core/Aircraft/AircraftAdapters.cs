@@ -50,6 +50,9 @@ public class GenericAdapter : IAircraftAdapter
 {
     private const double LbToKg = 0.45359237;
 
+    /// <summary>N2 (%) a partir del cual un motor de turbina está en marcha (el ralentí ronda 55–70 %).</summary>
+    public const double TurbineRunningN2 = 50;
+
     public virtual string Name => "Genérico (SimConnect)";
 
     public virtual bool Matches(AircraftIdentity aircraft) => true;
@@ -77,6 +80,10 @@ public class GenericAdapter : IAircraftAdapter
         new("GENERAL ENG COMBUSTION:2", "bool"),
         new("GENERAL ENG COMBUSTION:3", "bool"),
         new("GENERAL ENG COMBUSTION:4", "bool"),
+        new("TURB ENG N2:1", "percent"),
+        new("TURB ENG N2:2", "percent"),
+        new("TURB ENG N2:3", "percent"),
+        new("TURB ENG N2:4", "percent"),
         new("PUSHBACK STATE", "enum"),
         new("VELOCITY BODY Z", "feet per second"),
         new("BRAKE PARKING POSITION", "position"),
@@ -108,7 +115,8 @@ public class GenericAdapter : IAircraftAdapter
         var running = 0;
         for (var i = 1; i <= Math.Max(engineCount, 1) && i <= 4; i++)
         {
-            if (Flag($"GENERAL ENG COMBUSTION:{i}")) running++;
+            // Combustión o, en turbinas, N2 de marcha: algunas aeronaves alternan la combustión en cada lectura.
+            if (Flag($"GENERAL ENG COMBUSTION:{i}") || Get($"TURB ENG N2:{i}") is >= TurbineRunningN2) running++;
         }
 
         // SimConnect da el cabeceo positivo con la nariz abajo; el contrato usa nariz arriba positiva.

@@ -22,6 +22,8 @@ public sealed class SyncWorker
 {
     public const int MaxEventsPerCall = 50;
     public const int MaxPointsPerCall = 600;
+    /// <summary>Llamadas de eventos por ronda antes de pasar a la traza (los que falten salen en la siguiente).</summary>
+    public const int MaxEventCallsPerFlush = 4;
 
     private readonly Outbox _outbox;
     private readonly AcarsApiClient _api;
@@ -129,8 +131,8 @@ public sealed class SyncWorker
             sent++;
         }
 
-        // 2. Eventos, en orden.
-        while (true)
+        // 2. Eventos, en orden. Por ronda se envía un máximo, para que la traza nunca quede esperando.
+        for (var call = 0; call < MaxEventCallsPerFlush; call++)
         {
             var events = _outbox.Peek(sessionId, OutboxKind.Event, MaxEventsPerCall);
             if (events.Count == 0) break;
