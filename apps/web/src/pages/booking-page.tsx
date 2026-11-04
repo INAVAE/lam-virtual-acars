@@ -515,7 +515,7 @@ function RouteSearch({ airline, canBook, atLimit }: { airline: Airline; canBook:
               value={filters.status}
               onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value as RouteFilters['status'], page: 0 }))}
             >
-              <option value="bookable">Activas y pendientes</option>
+              <option value="bookable">Todas</option>
               <option value="active">Activas</option>
               <option value="pending">Pendientes</option>
             </Select>

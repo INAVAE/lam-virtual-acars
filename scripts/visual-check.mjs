@@ -1043,7 +1043,7 @@ await shoot('43-booking-free-fleet', 'booking', {
   airlineId: MXL.id,
   waitFor: 'MXL801',
   action: async (page) => {
-    await page.getByText('Pendiente').first().waitFor();
+    await page.getByText('Pendiente', { exact: true }).first().waitFor();
     await page.getByRole('button', { name: 'Reservar' }).first().click();
     await page.getByRole('dialog').getByText('XA-MXE').waitFor();
   },
