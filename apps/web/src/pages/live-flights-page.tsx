@@ -749,9 +749,9 @@ export function LiveFlightsPage() {
           {layers.ivao
             ? atc.isError
               ? 'Control IVAO: sin datos por ahora'
-              : !atc.data || atc.data.fetched_at === null
-                ? 'Control IVAO: consultando…'
-                : `Control IVAO: ${atc.data.atcs.length} ${atc.data.atcs.length === 1 ? 'posición' : 'posiciones'}${atc.data.stale ? ' (datos atrasados)' : ''}`
+              : !atc.data || atc.data.fetched_at === null || atc.data.stale
+                ? 'Control IVAO: actualizando (hasta un minuto)…'
+                : `Control IVAO: ${atc.data.atcs.length} ${atc.data.atcs.length === 1 ? 'posición' : 'posiciones'}`
             : null}
           {layers.radar && radar.isError ? ' · Radar no disponible' : null}
         </p>
