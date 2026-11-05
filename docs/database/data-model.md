@@ -170,6 +170,14 @@ Cada fase diseña en detalle sus tablas al empezar, para no fijar decisiones ant
 
 Detalle en `docs/architecture/pirep.md`.
 
+## Centro de ayuda
+
+| Tabla | Qué guarda |
+| --- | --- |
+| `support_tickets` | Reportes de incidencias, mejoras y dudas: folio `INC-AAAA-NNNNN`, autor firmado, aerolínea opcional, módulo, folio relacionado, título, detalle, contexto técnico, estado (`new`, `in_review`, `resolved`, `dismissed`) y respuesta |
+
+Detalle en ADR 0011.
+
 ## Aerolíneas registradas
 
 | Aerolínea | ICAO | Operación | RMK | Sitio | Estado |

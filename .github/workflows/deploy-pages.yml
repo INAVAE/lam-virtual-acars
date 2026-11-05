@@ -43,6 +43,9 @@ jobs:
           [ -n "$VITE_SUPABASE_URL" ] || { echo "::error::Falta VITE_SUPABASE_URL"; missing=1; }
           [ -n "$VITE_SUPABASE_PUBLISHABLE_KEY" ] || { echo "::error::Falta VITE_SUPABASE_PUBLISHABLE_KEY"; missing=1; }
           exit $missing
+      - name: Versión de la web
+        # Número de publicación y commit: se ve en la ayuda y viaja en cada reporte de incidencia.
+        run: echo "VITE_APP_VERSION=${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
       - name: Build
         run: pnpm build
         env:
@@ -53,6 +56,40 @@ jobs:
             echo "::error::El build contiene una clave secreta de Supabase"
             exit 1
           fi
+      - name: Manual de uso en PDF
+        # Mismo contenido que la ayuda de la web (apps/web/src/content/help-content.ts),
+        # con capturas de esta versión tomadas con datos simulados. Si algo falla, se
+        # conserva el manual publicado antes: el sitio se publica de todos modos.
+        continue-on-error: true
+        env:
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund playwright@1.55.0 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null
+          cp "$GITHUB_WORKSPACE/scripts/visual-check.mjs" "$GITHUB_WORKSPACE/scripts/build-manual.mjs" .
+          pnpm --dir "$GITHUB_WORKSPACE/apps/web" exec vite preview --host 127.0.0.1 --port 4173 --strictPort > "$RUNNER_TEMP/preview.log" 2>&1 &
+          for i in $(seq 1 30); do curl -sf "http://127.0.0.1:4173${VITE_BASE_PATH}" >/dev/null && break; sleep 1; done
+          SITE_URL="http://127.0.0.1:4173${VITE_BASE_PATH}" VISUAL_SET=manual VISUAL_OUT="$RUNNER_TEMP/manual-shots" node visual-check.mjs \
+            || echo "::warning title=Manual::Alguna captura del manual falló; el PDF sale con las que se tomaron"
+          node --experimental-strip-types build-manual.mjs --root "$GITHUB_WORKSPACE" --shots "$RUNNER_TEMP/manual-shots" \
+            --out "$GITHUB_WORKSPACE/apps/web/dist/manual/Manual-LAM-Virtual-ACARS.pdf" --version "$VITE_APP_VERSION"
+      - name: Conservar el manual anterior si no se generó
+        run: |
+          f=apps/web/dist/manual/Manual-LAM-Virtual-ACARS.pdf
+          if [ ! -s "$f" ]; then
+            mkdir -p "$(dirname "$f")"
+            curl -sfL -o "$f" "https://inavae.github.io/${{ github.event.repository.name }}/manual/Manual-LAM-Virtual-ACARS.pdf" \
+              && echo "::warning title=Manual::Se publicó el manual de la versión anterior" \
+              || { rm -f "$f"; echo "::warning title=Manual::No hay manual en PDF en esta publicación"; }
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: manual
+          path: apps/web/dist/manual/
+          if-no-files-found: ignore
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -1,12 +1,20 @@
 # Estado del proyecto
 
-Última actualización: 2026-10-31 (Fase 7)
+Última actualización: 2026-11-05 (centro de ayuda)
+
+## Centro de ayuda, manual en PDF e incidencias (2026-11-05)
+
+- Botón de ayuda (?) en la barra superior (y «Help» en el menú) con el contador de reportes sin revisar para el staff. Página `/help`: Guía paso a paso (19 capítulos, cada uno con su público), Preguntas frecuentes, Si algo falla, Reportar una incidencia, Reportes recibidos (staff) y Novedades, con búsqueda sin acentos.
+- **Manual en PDF** (`manual/Manual-LAM-Virtual-ACARS.pdf`, enlazado también en la página pública): lo genera `scripts/build-manual.mjs` en cada publicación con el mismo contenido (`apps/web/src/content/help-content.ts`) y capturas numeradas de la web con datos simulados (`m-*` de `scripts/visual-check.mjs`). Si falla, se publica el anterior.
+- **Incidencias:** `support_tickets` (folio INC-AAAA-NNNNN, firma, tipo, aerolínea opcional, módulo, folio relacionado, contexto técnico, estado y respuesta). Atiende el staff de la aerolínea o el superadministrador si es de la plataforma; sin borrado; 10 por hora. ADR 0011. 448 pruebas pgTAP (018 nueva, 20). Capturas 50–53 y m-01 a m-08.
+- La web muestra su versión (`VITE_APP_VERSION`, número de publicación y commit) en la ayuda y la adjunta a cada reporte.
+- **Regla:** todo cambio visible para el usuario actualiza `help-content.ts` (capítulo y una línea en `MANUAL_CHANGES`).
 
 ## Mapa en vivo al estilo Webeye (2026-11-05)
 
 - Interruptores de capas bajo el mapa (se recuerdan en el navegador): **Etiquetas** (logo y callsign fijos; solo callsign al alejar), **Ruta del plan** (puntos del navlog de SimBrief del vuelo elegido), **Radar** (RainViewer), **METAR** (categoría de vuelo en origen y destino) y **Control IVAO** (posiciones conectadas por tipo: DEL/GND/TWR en el aeropuerto, APP/DEP en círculo, CTR/FSS sombreando la FIR; panel con frecuencia, tiempo en línea y ATIS).
 - Fuentes y condiciones legales en ADR 0010: Whazzup público de IVAO sin datos personales, límites de FIR del VATSpy Data Project (CC BY-SA 4.0, sin cambios y con crédito), RainViewer para uso personal y educativo.
-- Servidor: `simbrief_ofps.navlog` y `get_live_flight_route`; `private.ivao_state`, `private.ivao_refresh()` (pg_cron + pg_net cada 30 s, solo si alguien mira el mapa) y `get_ivao_atc()`. 429 pruebas pgTAP (017 nueva). Captura 49.
+- Servidor: `simbrief_ofps.navlog` y `get_live_flight_route`; `private.ivao_state`, `private.ivao_refresh()` (pg_cron + pg_net cada 30 s, solo si alguien mira el mapa) y `get_ivao_atc()`. 428 pruebas pgTAP (017 nueva). Captura 49.
 - La ruta del plan aparece en los planes importados desde el 2026-11-05 (volver a importar el plan para los vuelos ya reservados).
 
 ## Clima: METAR y TAF (2026-11-05)

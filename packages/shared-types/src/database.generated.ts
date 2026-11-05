@@ -1345,6 +1345,87 @@ export type Database = {
           },
         ]
       }
+      support_tickets: {
+        Row: {
+          airline_id: string | null
+          author_name: string
+          author_pilot_number: number | null
+          context: Json
+          created_at: string
+          details: string
+          folio: string
+          handled_at: string | null
+          handled_by: string | null
+          handler_name: string | null
+          id: string
+          kind: string
+          module: string | null
+          reference: string | null
+          response: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          airline_id?: string | null
+          author_name?: string
+          author_pilot_number?: number | null
+          context?: Json
+          created_at?: string
+          details: string
+          folio?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          handler_name?: string | null
+          id?: string
+          kind?: string
+          module?: string | null
+          reference?: string | null
+          response?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          airline_id?: string | null
+          author_name?: string
+          author_pilot_number?: number | null
+          context?: Json
+          created_at?: string
+          details?: string
+          folio?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          handler_name?: string | null
+          id?: string
+          kind?: string
+          module?: string | null
+          reference?: string | null
+          response?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tour_enrollments: {
         Row: {
           airline_id: string

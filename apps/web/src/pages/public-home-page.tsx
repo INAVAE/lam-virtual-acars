@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { AirlineLogo } from '@/components/airline-logo';
 import { UtcClock } from '@/components/layout/utc-clock';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MANUAL_FILE } from '@/content/help-content';
 import { useAirlines } from '@/hooks/use-lam-data';
 import { useAuth } from '@/lib/auth';
 import { displayDomain, operationTypeLabel } from '@/lib/format';
@@ -118,7 +119,10 @@ export function PublicHomePage() {
       <footer className="border-t border-line">
         <p className="mx-auto max-w-6xl px-5 py-6 text-sm text-muted">
           LAM Virtual ACARS es un proyecto de simulación. Las aerolíneas basadas en marcas reales son operaciones virtuales
-          no oficiales y no tienen relación con esas compañías.
+          no oficiales y no tienen relación con esas compañías.{' '}
+          <a className="underline underline-offset-4 hover:text-ink" href={`${import.meta.env.BASE_URL}${MANUAL_FILE}`} target="_blank" rel="noopener">
+            Manual de uso (PDF)
+          </a>
         </p>
       </footer>
     </div>

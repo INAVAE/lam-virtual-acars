@@ -18,6 +18,7 @@ import { EventDetailPage } from '@/pages/event-detail-page';
 import { EventEditorPage } from '@/pages/event-editor-page';
 import { EventsPage } from '@/pages/events-page';
 import { FleetPage } from '@/pages/fleet-page';
+import { HelpPage } from '@/pages/help-page';
 import { LiveFlightsPage } from '@/pages/live-flights-page';
 import { MyFlightsPage } from '@/pages/my-flights-page';
 import { PirepDetailPage } from '@/pages/pirep-detail-page';
@@ -82,6 +83,7 @@ export function App() {
           <Route path="operations" element={<OperationsPage />} />
           <Route path="administration" element={<AdministrationPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="help" element={<HelpPage />} />
         </Route>
       </Route>
 

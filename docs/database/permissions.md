@@ -113,3 +113,11 @@ Con la flota controlada (`airline_settings.control_fleet_availability`, activado
 | `pilot_statistics` | Sus filas | Su aerolínea | Su aerolínea | Todo |
 
 Nadie inserta ni edita PIREPs desde la API: los genera `private.build_pirep` al cerrar la sesión.
+
+## Centro de ayuda (reporte de incidencias)
+
+| Tabla | Piloto | Jefe de operaciones | Administrador de aerolínea | Superadministrador |
+| --- | --- | --- | --- | --- |
+| `support_tickets` | Envía reportes propios (sin aerolínea o de una donde es miembro activo) y lee los suyos | Además lee y atiende (estado y respuesta) los de su aerolínea | Igual que el jefe de operaciones | Lee y atiende todos, incluidos los de la plataforma |
+
+La firma (`author_name`, `author_pilot_number`), el estado inicial y quién atendió (`handled_by`, `handler_name`, `handled_at`) los pone el disparador `support_tickets_guard`. Solo `status` y `response` tienen permiso de UPDATE; no hay DELETE. Máximo 10 reportes por hora por persona (`support_tickets_rate_limit`). Pruebas: `018_support_tickets.test.sql`.

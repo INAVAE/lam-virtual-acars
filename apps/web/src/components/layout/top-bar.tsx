@@ -1,14 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, LogOut, Menu, Moon, Sun, UserRound } from 'lucide-react';
+import { ChevronDown, CircleHelp, LogOut, Menu, Moon, Sun, UserRound } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { Select } from '@/components/ui/input';
 import { useProfile } from '@/hooks/use-lam-data';
+import { useCanHandleTickets, useTicketInboxCount } from '@/hooks/use-support';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
 import { formatPilotNumber } from '@/lib/format';
 import { getSupabase } from '@/lib/supabase';
+import { cn } from '@/lib/cn';
 import { useTheme } from '@/lib/theme';
 import { UtcClock } from './utc-clock';
 
@@ -61,6 +63,34 @@ function ThemeToggle() {
     >
       {theme === 'dark' ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}
     </button>
+  );
+}
+
+/** Ayuda: manual, preguntas frecuentes y reporte de incidencias. Para el staff, con los reportes sin revisar. */
+function HelpButton() {
+  const location = useLocation();
+  const canHandle = useCanHandleTickets();
+  const pending = useTicketInboxCount(canHandle).data ?? 0;
+  const active = location.pathname === '/help';
+  const label = pending > 0 ? `Ayuda: ${pending} reportes sin revisar` : 'Ayuda: manual, preguntas frecuentes y reporte de incidencias';
+  return (
+    <Link
+      to={pending > 0 ? '/help?tab=inbox' : '/help'}
+      state={active ? location.state : { from: `${location.pathname}${location.search}` }}
+      aria-label={label}
+      title={label}
+      className={cn(
+        'relative inline-flex size-9 items-center justify-center rounded-md hover:bg-surface-2 hover:text-ink',
+        active ? 'bg-surface-2 text-ink' : 'text-muted',
+      )}
+    >
+      <CircleHelp className="size-[18px]" aria-hidden />
+      {pending > 0 ? (
+        <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold leading-4 text-white">
+          {pending > 99 ? '99+' : pending}
+        </span>
+      ) : null}
+    </Link>
   );
 }
 
@@ -166,6 +196,7 @@ export function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
       <AirlineSwitcher />
       <div className="ml-auto flex items-center gap-1 sm:gap-3">
         <UtcClock className="hidden md:flex" />
+        <HelpButton />
         <ThemeToggle />
         <UserMenu />
       </div>

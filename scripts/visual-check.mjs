@@ -6,14 +6,20 @@
 // ./visual-screenshots y falla si una pantalla lanza excepciones.
 //
 // Uso: SITE_URL=https://inavae.github.io/lam-virtual-acars/ node scripts/visual-check.mjs
+//
+// Las capturas que empiezan con «m-» ilustran el manual en PDF (tema claro,
+// solo la ventana visible) y guardan junto a cada una un .marks.json con la
+// posición de los elementos numerados. Con VISUAL_SET=manual solo se toman
+// esas (las usa scripts/build-manual.mjs al publicar el sitio).
 
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 import { chromium } from 'playwright';
 
 const SITE = (process.env.SITE_URL ?? '').replace(/\/?$/, '/');
 const PROJECT_REF = 'fnsfgjtmwfiizofsjajm';
-const OUT = 'visual-screenshots';
+const OUT = process.env.VISUAL_OUT ?? 'visual-screenshots';
+const ONLY_MANUAL = process.env.VISUAL_SET === 'manual';
 mkdirSync(OUT, { recursive: true });
 
 // -----------------------------------------------------------------------------
@@ -844,6 +850,8 @@ function rowsFor(url) {
       return [{ airline_id: MXL.id, user_id: USER_ID, pireps_total: 3, pireps_accepted: 1, pireps_pending: 1, pireps_rejected: 1, block_minutes: 128, flight_minutes: 104, distance_nm: 642, fuel_used_kg: 5210, average_score: 100, average_landing_vs_fpm: -162, best_landing_vs_fpm: -162, last_flight_at: now }];
     case 'pirep_scoring_rules':
       return SCORING_RULES;
+    case 'support_tickets':
+      return ticketRows(url);
     default:
       return [];
   }
@@ -908,6 +916,42 @@ const ROUTE_TYPE_USAGE = [
   { route_id: id(400), aircraft_type_id: 1, icao_code: TYPES[0].icao_code, flights: 1, last_flight_at: now },
   { route_id: id(402), aircraft_type_id: 2, icao_code: TYPES[1].icao_code, flights: 2, last_flight_at: now },
 ];
+
+// Reportes del centro de ayuda.
+const TICKETS = [
+  {
+    id: id(2100), folio: 'INC-2026-00003', user_id: id(2), author_name: 'Luis Hernández', author_pilot_number: 1003, airline_id: id(101),
+    kind: 'error', module: 'Conector LAM ACARS', reference: 'PIREP-2026-00006', title: 'El A340 se queda en pushback',
+    details: 'Inicié ACARS con el A340-600 y la fase no pasó de pushback aunque ya iba rodando.', status: 'new', response: null,
+    handler_name: null, handled_at: null, created_at: minsAgo(35), context: { browser: 'Chrome · Windows', viewport: '1920×1080', version: '412-a1b2c3d', path: '/my-flights' },
+    airline: { name: 'Líneas Aéreas Mexicanas', icao_code: 'MXL' },
+  },
+  {
+    id: id(2101), folio: 'INC-2026-00002', user_id: id(5), author_name: 'Sofía Ramírez', author_pilot_number: 1005, airline_id: id(101),
+    kind: 'improvement', module: 'Live Flights', reference: null, title: 'Ver el nombre de los puntos al alejar el mapa',
+    details: 'Con el mapa alejado se pierden los nombres de los puntos de la ruta; estaría bien ver al menos los principales.', status: 'in_review',
+    response: 'Lo revisamos para la siguiente versión del mapa.', handler_name: 'Diego Torres', handled_at: minsAgo(400), created_at: minsAgo(900),
+    context: { browser: 'Safari · macOS', viewport: '1512×982', version: '410-9f8e7d6', path: '/live' }, airline: { name: 'Líneas Aéreas Mexicanas', icao_code: 'MXL' },
+  },
+  {
+    id: id(2102), folio: 'INC-2026-00001', user_id: USER_ID, author_name: 'Piloto de Prueba', author_pilot_number: 1001, airline_id: null,
+    kind: 'question', module: 'Conector LAM ACARS', reference: null, title: '¿Dónde está la bitácora del conector?',
+    details: 'Quiero mandar la bitácora de un vuelo y no la encuentro en la carpeta del conector.', status: 'resolved',
+    response: 'Está en %LOCALAPPDATA%\\LamAcars\\logs, un archivo por día.', handler_name: 'Ivan Nava', handled_at: minsAgo(3000), created_at: minsAgo(3100),
+    context: { browser: 'Edge · Windows', viewport: '1366×768', version: '398-0a1b2c3', path: '/settings' }, airline: null,
+  },
+];
+
+function ticketRows(url) {
+  let rows = TICKETS;
+  const status = eqParam(url, 'status');
+  if (status) rows = rows.filter((t) => t.status === status);
+  const user = eqParam(url, 'user_id');
+  if (user) rows = rows.filter((t) => t.user_id === user);
+  const notUser = url.searchParams.get('user_id')?.startsWith('neq.') ? url.searchParams.get('user_id').slice(4) : null;
+  if (notUser) rows = rows.filter((t) => t.user_id !== notUser);
+  return rows;
+}
 
 const CORS = {
   'access-control-allow-origin': '*',
@@ -985,6 +1029,12 @@ async function handleSupabase(route) {
     const single = (request.headers()['accept'] ?? '').includes('vnd.pgrst.object');
     return route.fulfill({ status: 200, headers, json: single ? (rows[0] ?? null) : rows });
   }
+  if (url.pathname === '/rest/v1/support_tickets' && request.method() === 'POST') {
+    return route.fulfill({ status: 201, headers: CORS, json: { folio: 'INC-2026-00004' } });
+  }
+  if (url.pathname === '/rest/v1/support_tickets' && request.method() === 'PATCH') {
+    return route.fulfill({ status: 200, headers: CORS, json: [{ id: eqParam(url, 'id') }] });
+  }
   if (url.pathname.startsWith('/rest/v1/')) {
     const headers = { ...CORS, 'content-range': '*/0' };
     return route.fulfill({ status: 200, headers, json: [] });
@@ -1047,8 +1097,10 @@ const TILE_PNG = placeholderTile();
 const results = [];
 const browser = await chromium.launch();
 
-async function shoot(name, path, { viewport = { width: 1440, height: 900 }, airlineId = null, theme = 'dark', action, waitFor } = {}) {
-  const context = await browser.newContext({ viewport, locale: 'es-MX', colorScheme: theme });
+async function shoot(name, path, { viewport = { width: 1440, height: 900 }, airlineId = null, theme = 'dark', action, waitFor, fullPage = true, marks = [] } = {}) {
+  if (ONLY_MANUAL && !name.startsWith('m-')) return;
+  // Las del manual se toman al doble de resolución para que se lean impresas.
+  const context = await browser.newContext({ viewport, locale: 'es-MX', colorScheme: theme, deviceScaleFactor: name.startsWith('m-') ? 2 : 1 });
   await context.addInitScript(
     ([key, session, selected, themeValue]) => {
       window.localStorage.setItem(key, JSON.stringify(session));
@@ -1073,7 +1125,20 @@ async function shoot(name, path, { viewport = { width: 1440, height: 900 }, airl
     if (waitFor) await page.getByText(waitFor, { exact: false }).first().waitFor({ timeout: 15000 });
     if (action) await action(page);
     await page.waitForTimeout(600);
-    await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
+    if (marks.length > 0) {
+      // Posición de cada elemento numerado del manual, en píxeles de la captura.
+      const boxes = [];
+      for (const mark of marks) {
+        const box = await mark(page)
+          .first()
+          .boundingBox()
+          .catch(() => null);
+        boxes.push(box ? { x: Math.round(box.x), y: Math.round(box.y), w: Math.round(box.width), h: Math.round(box.height) } : null);
+      }
+      if (boxes.some((b) => b === null)) problems.push(`marcas sin elemento: ${boxes.map((b, i) => (b ? null : i + 1)).filter(Boolean).join(', ')}`);
+      writeFileSync(`${OUT}/${name}.marks.json`, JSON.stringify({ width: viewport.width, height: viewport.height, fullPage, marks: boxes }));
+    }
+    await page.screenshot({ path: `${OUT}/${name}.png`, fullPage });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     if (overflow) problems.push('desplazamiento horizontal en la página');
     results.push({ name, ok: problems.length === 0, detail: problems.join(' | ') });
@@ -1353,6 +1418,108 @@ await shoot('35-operations-pireps', 'operations', {
     await page.getByRole('tab', { name: /PIREP por revisar/ }).click();
     await page.getByText('Con comentario').first().waitFor();
   },
+});
+await shoot('50-help', 'help', { waitFor: 'Guía paso a paso' });
+await shoot('51-help-report', 'help?tab=report', {
+  waitFor: 'Mis reportes',
+  action: async (page) => {
+    await page.getByText('INC-2026-00001').waitFor();
+    await page.getByLabel('En una línea, qué pasa').fill('No puedo importar el plan');
+    await page.getByLabel('Cuéntalo con detalle').fill('Pulso Importar de SimBrief y dice que no hay plan.');
+    await page.getByRole('button', { name: 'Enviar reporte' }).click();
+    await page.getByText('INC-2026-00004').waitFor();
+  },
+});
+await shoot('52-help-inbox', 'help?tab=inbox', { waitFor: 'Reportes recibidos', action: async (page) => page.getByText('El A340 se queda en pushback').waitFor() });
+await shoot('53-help-mobile', 'help?tab=faq', { viewport: { width: 390, height: 844 }, waitFor: 'Preguntas frecuentes' });
+
+// Capturas del manual: tema claro y solo la ventana visible.
+const M = { theme: 'light', fullPage: false, viewport: { width: 1280, height: 820 } };
+await shoot('m-01-dashboard', '', {
+  ...M,
+  airlineId: MXL.id,
+  waitFor: 'Mis aerolíneas',
+  marks: [
+    (p) => p.getByLabel('Aerolínea', { exact: true }),
+    (p) => p.getByRole('button', { name: /Hora UTC y local/ }),
+    (p) => p.getByRole('link', { name: /^Ayuda/ }),
+    (p) => p.getByRole('navigation', { name: 'Navegación principal' }),
+  ],
+});
+await shoot('m-02-settings', 'settings', {
+  ...M,
+  viewport: { width: 1280, height: 1500 },
+  waitFor: 'PC-SIMULADOR',
+  marks: [(p) => p.getByLabel('Usuario de SimBrief'), (p) => p.getByLabel('Zona horaria'), (p) => p.getByLabel('Código de vinculación')],
+});
+await shoot('m-03-booking-dialog', 'booking', {
+  ...M,
+  airlineId: MXL.id,
+  waitFor: 'MXL100',
+  action: async (page) => {
+    await page.getByRole('button', { name: 'Reservar' }).first().click();
+    await page.getByRole('dialog').getByText('XA-MXE').waitFor();
+    await page.getByRole('dialog').getByLabel('Callsign').fill('MXL4100');
+    await page.waitForTimeout(1000);
+  },
+  marks: [
+    (p) => p.getByRole('dialog').getByRole('region', { name: 'Clima actual' }),
+    (p) => p.getByRole('dialog').getByText('XA-MXE'),
+    (p) => p.getByRole('dialog').getByLabel('Callsign'),
+  ],
+});
+await shoot('m-04-my-flights', 'my-flights', {
+  ...M,
+  viewport: { width: 1280, height: 1000 },
+  waitFor: 'MXL21K',
+  marks: [
+    (p) => p.getByRole('region', { name: 'Clima de origen y destino' }),
+    (p) => p.getByRole('link', { name: 'Crear en SimBrief' }),
+    (p) => p.getByRole('button', { name: /Importar de SimBrief|Volver a importar/ }),
+    (p) => p.getByRole('region', { name: 'ACARS' }),
+  ],
+});
+await shoot('m-05-pirep-detail', `pireps/${PIREP_ID}`, {
+  ...M,
+  viewport: { width: 1280, height: 1400 },
+  waitFor: 'Rodaje rápido',
+  marks: [
+    (p) => p.getByRole('button', { name: /Copiar el folio/ }).locator('..'),
+    (p) => p.locator('header').filter({ hasText: 'Puntaje' }).locator('.tabular-nums'),
+    (p) => p.getByRole('region', { name: 'Puntaje' }),
+  ],
+});
+await shoot('m-06-live', `live?flights=${id(1500)}`, {
+  ...M,
+  waitFor: 'Vuelos en vivo',
+  action: async (page) => {
+    await page.getByRole('region', { name: /Detalle del vuelo MXL106/ }).waitFor();
+    await page.locator('.lam-fix', { hasText: 'MATEO' }).first().waitFor();
+    await page.locator('.lam-atc').first().waitFor();
+    await page.waitForTimeout(1500);
+  },
+  marks: [(p) => p.locator('.lam-tag'), (p) => p.locator('.lam-atc'), (p) => p.getByRole('group', { name: 'Capas del mapa' })],
+});
+await shoot('m-07-airline-policies', 'airlines/lineas-aereas-mexicanas', {
+  ...M,
+  airlineId: MXL.id,
+  waitFor: 'Políticas operacionales',
+  action: async (page) => {
+    await page.getByLabel('Controlar la disponibilidad de la flota').scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, 160));
+  },
+  marks: [(p) => p.getByLabel('Controlar la disponibilidad de la flota'), (p) => p.getByLabel('Aprobar PIREP automáticamente')],
+});
+await shoot('m-08-help-report', 'help?tab=report', {
+  ...M,
+  waitFor: 'Mis reportes',
+  action: async (page) => page.getByText('INC-2026-00001').waitFor(),
+  marks: [
+    (p) => p.getByRole('link', { name: /^Ayuda/ }),
+    (p) => p.getByRole('tablist', { name: 'Secciones de la ayuda' }),
+    (p) => p.getByRole('radiogroup'),
+    (p) => p.getByRole('link', { name: 'Descargar el manual en PDF' }),
+  ],
 });
 await shoot('28-airline-scoring', `airlines/${MXL.slug}`, { airlineId: MXL.id, waitFor: 'Puntuación de PIREP' });
 

@@ -3,6 +3,7 @@ import {
   Building2,
   CalendarClock,
   CalendarPlus,
+  CircleHelp,
   CloudSun,
   FileText,
   Flag,
@@ -66,6 +67,7 @@ export const navigation: NavGroup[] = [
       { label: 'Operations Center', icon: Monitor, to: '/operations', staffOnly: true },
       { label: 'Administration', icon: ShieldCheck, to: '/administration', adminOnly: true },
       { label: 'Settings', icon: Settings, to: '/settings' },
+      { label: 'Help', icon: CircleHelp, to: '/help' },
     ],
   },
 ];
