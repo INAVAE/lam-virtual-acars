@@ -101,7 +101,9 @@ function figure(shot, images) {
   const legendHtml = legend.length
     ? `<p class="legend"><b>En la imagen:</b> ${legend.map((t, i) => `<span><i>${i + 1}</i>${esc(t)}</span>`).join('')}</p>`
     : '';
-  return `<figure><div class="shot"><img src="${img}" alt="">${pins}</div><figcaption>${esc(shot.caption)}</figcaption>${legendHtml}</figure>`;
+  // La caja mide lo mismo que la imagen (alto máximo 5.6 in), así los porcentajes de las marcas caen en su lugar.
+  const sizing = meta?.width && meta?.height ? ` style="width:min(100%, ${((5.6 * meta.width) / meta.height).toFixed(2)}in)"` : '';
+  return `<figure><div class="shot"${sizing}><img src="${img}" alt="">${pins}</div><figcaption>${esc(shot.caption)}</figcaption>${legendHtml}</figure>`;
 }
 
 function chapter(c, n, images) {
@@ -174,7 +176,7 @@ h1, h2, h3 { font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-we
 .note { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 4px; padding: 8px 10px; font-size: 9.5pt; margin: 10px 0 0; }
 figure { margin: 8px 0 10px; break-inside: avoid; }
 .shot { position: relative; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; line-height: 0; max-width: 100%; }
-.shot img { width: 100%; display: block; max-height: 5.6in; object-fit: contain; object-position: top left; }
+.shot img { width: 100%; display: block; }
 .box { position: absolute; border: 2px solid var(--pin); border-radius: 3px; }
 .pin { position: absolute; transform: translate(-45%, -45%); width: 20px; height: 20px; border-radius: 50%; background: var(--pin); color: #fff; font: 600 10pt/20px 'Barlow', sans-serif; text-align: center; box-shadow: 0 0 0 2px #fff; }
 figcaption { font-size: 9pt; color: var(--muted); margin-top: 4px; }

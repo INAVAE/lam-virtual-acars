@@ -195,7 +195,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     shot: {
       file: 'm-05-pirep-detail',
       caption: 'Detalle de un PIREP.',
-      marks: ['Folio y estado', 'Puntaje', 'Faltas detectadas'],
+      marks: ['Folio del PIREP', 'Estado y puntaje', 'Análisis del vuelo: mapa y gráficas'],
     },
   },
   {

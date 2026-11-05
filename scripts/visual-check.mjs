@@ -1470,7 +1470,7 @@ await shoot('m-03-booking-dialog', 'booking', {
 });
 await shoot('m-04-my-flights', 'my-flights', {
   ...M,
-  viewport: { width: 1280, height: 1000 },
+  viewport: { width: 1280, height: 1360 },
   waitFor: 'MXL21K',
   marks: [
     (p) => p.getByRole('region', { name: 'Clima de origen y destino' }),
@@ -1481,12 +1481,12 @@ await shoot('m-04-my-flights', 'my-flights', {
 });
 await shoot('m-05-pirep-detail', `pireps/${PIREP_ID}`, {
   ...M,
-  viewport: { width: 1280, height: 1400 },
+  viewport: { width: 1280, height: 1100 },
   waitFor: 'Rodaje rápido',
   marks: [
     (p) => p.getByRole('button', { name: /Copiar el folio/ }).locator('..'),
-    (p) => p.locator('header').filter({ hasText: 'Puntaje' }).locator('.tabular-nums'),
-    (p) => p.getByRole('region', { name: 'Puntaje' }),
+    (p) => p.locator('main header').filter({ hasText: 'Puntaje' }).locator('.tabular-nums'),
+    (p) => p.getByText('Análisis del vuelo', { exact: true }),
   ],
 });
 await shoot('m-06-live', `live?flights=${id(1500)}`, {
