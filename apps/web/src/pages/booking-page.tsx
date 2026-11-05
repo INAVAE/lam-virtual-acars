@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { AirportPicker } from '@/components/airport-picker';
 import { ConfirmButton } from '@/components/confirm-button';
+import { WeatherStrip } from '@/components/weather';
 import { ScopeRequired } from '@/components/scope-required';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +28,7 @@ import {
   useRouteAircraftOptions,
 } from '@/hooks/use-bookings';
 import { useAircraftTypes } from '@/hooks/use-fleet';
+import { useWeather } from '@/hooks/use-weather';
 import type { Airline } from '@/hooks/use-lam-data';
 import { useMyRatings } from '@/hooks/use-ratings';
 import {
@@ -119,6 +121,8 @@ function BookingDialog({ airline, route, onClose }: { airline: Airline; route: R
   const options = useRouteAircraftOptions(route.id);
   const settings = useAirlineSettings(airline.id);
   const controlled = settings.data?.control_fleet_availability ?? true;
+  const routeIcaos = [route.origin?.icao_code, route.destination?.icao_code].filter((c): c is string => Boolean(c));
+  const weather = useWeather(routeIcaos);
   const book = useBookFlight();
   const [chosenId, setAircraftId] = useState<string | null>(null);
   const [callsign, setCallsign] = useState('');
@@ -185,6 +189,15 @@ function BookingDialog({ airline, route, onClose }: { airline: Airline; route: R
             <p>{operationTypeLabel(route.operation_type)}</p>
           </div>
         </div>
+
+        {routeIcaos.length > 0 ? (
+          <section aria-label="Clima actual" className="space-y-2">
+            <p className="text-sm font-medium">Clima actual</p>
+            {routeIcaos.map((icao) => (
+              <WeatherStrip key={icao} icao={icao} report={weather.data?.byIcao.get(icao)} loading={weather.isPending} />
+            ))}
+          </section>
+        ) : null}
 
         <fieldset>
           <legend className="mb-2 text-sm font-medium">Aeronave</legend>

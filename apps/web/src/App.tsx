@@ -32,6 +32,7 @@ import { StatisticsPage } from '@/pages/statistics-page';
 import { TourDetailPage } from '@/pages/tour-detail-page';
 import { TourEditorPage } from '@/pages/tour-editor-page';
 import { ToursPage } from '@/pages/tours-page';
+import { WeatherPage } from '@/pages/weather-page';
 
 export function App() {
   return (
@@ -60,6 +61,7 @@ export function App() {
           <Route path="live" element={<LiveFlightsPage />} />
           <Route path="booking" element={<BookingPage />} />
           <Route path="my-flights" element={<MyFlightsPage />} />
+          <Route path="weather" element={<WeatherPage />} />
           <Route path="pireps" element={<PirepsPage />} />
           <Route path="pireps/:id" element={<PirepDetailPage />} />
           <Route path="events" element={<EventsPage />} />

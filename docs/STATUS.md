@@ -2,6 +2,13 @@
 
 Última actualización: 2026-10-31 (Fase 7)
 
+## Clima: METAR y TAF (2026-11-05)
+
+- **Weather** (menú Operación): METAR y TAF de cualquier aeropuerto del mundo, hasta 10 a la vez. Búsqueda en el catálogo o por código ICAO, sugerencias de los vuelos reservados, lista guardada en el navegador, actualización cada 5 minutos.
+- Cada tarjeta muestra el METAR original, su hora y antigüedad (aviso si pasa de 90 minutos), la categoría de vuelo y la lectura en español (viento con flecha y ráfagas, visibilidad, QNH en hPa e inHg, temperatura y rocío, nubes, fenómenos), y el TAF con sus periodos.
+- **My Flights** muestra el METAR de origen y destino de cada vuelo por iniciar; la ventana de reserva de **Flight Booking**, el clima actual de la ruta.
+- Fuente: Aviation Weather Center de NOAA, vía la Edge Function `weather` con caché en `weather_reports` (ADR 0009). Capturas 47 y 48.
+
 ## Flota libre y rutas de pilotos (2026-11-04)
 
 Retroalimentación de los pilotos: las habilitaciones y la disponibilidad de la flota complicaban el uso. Todo queda como opción en Airlines → Políticas operacionales, para no perder lo construido:

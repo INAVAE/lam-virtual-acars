@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { AirlineLogo } from '@/components/airline-logo';
 import { ConfirmButton } from '@/components/confirm-button';
+import { WeatherStrip } from '@/components/weather';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonClasses } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { useCancelBooking, useImportOfp, useMyFlights, type FlightView, type MyF
 import { useEventTags, type EventRegistrationTag } from '@/hooks/use-events';
 import { useTourLegTags, type TourLegTag } from '@/hooks/use-tours';
 import { useProfile } from '@/hooks/use-lam-data';
+import { useWeather } from '@/hooks/use-weather';
 import { useAirlineScope } from '@/lib/airline-scope';
 import {
   bookingStatusLabels,
@@ -31,6 +33,7 @@ import { phaseLabel } from '@/lib/phases';
 import { DualTimeText } from '@/lib/time-context';
 import { pirepStatusLabels, pirepStatusTone } from '@/lib/pirep';
 import { formatDuration } from '@/lib/schedule';
+import type { WeatherReport } from '@/lib/weather';
 
 type Ofp = NonNullable<MyFlight['ofp']>;
 
@@ -165,7 +168,21 @@ function AcarsStatus({ flight }: { flight: MyFlight }) {
 // -----------------------------------------------------------------------------
 // Tarjeta de un vuelo reservado
 // -----------------------------------------------------------------------------
-function UpcomingFlight({ flight, hasSimbriefUser, tag, eventTag }: { flight: MyFlight; hasSimbriefUser: boolean; tag?: TourLegTag; eventTag?: EventRegistrationTag }) {
+function UpcomingFlight({
+  flight,
+  hasSimbriefUser,
+  tag,
+  eventTag,
+  weather,
+  weatherLoading,
+}: {
+  flight: MyFlight;
+  hasSimbriefUser: boolean;
+  tag?: TourLegTag;
+  eventTag?: EventRegistrationTag;
+  weather?: Map<string, WeatherReport>;
+  weatherLoading?: boolean;
+}) {
   const cancel = useCancelBooking();
   const importOfp = useImportOfp();
   const scheduled = flight.status === 'scheduled';
@@ -267,6 +284,19 @@ function UpcomingFlight({ flight, hasSimbriefUser, tag, eventTag }: { flight: My
               {flight.flight_plan_remarks ? `RMK/${flight.flight_plan_remarks}` : '—'}
             </Fact>
           </dl>
+          {origin || destination ? (
+            <section aria-label="Clima de origen y destino" className="space-y-2 border-t border-line pt-3">
+              <p className="flex items-center justify-between text-sm font-medium">
+                METAR
+                <Link to="/weather" className="text-xs font-normal text-cyan underline-offset-2 hover:underline">
+                  Ver TAF y más
+                </Link>
+              </p>
+              {[origin, destination].filter(Boolean).map((icao) => (
+                <WeatherStrip key={icao} icao={icao} report={weather?.get(icao)} loading={weatherLoading} />
+              ))}
+            </section>
+          ) : null}
         </div>
 
         <section aria-label="Plan de vuelo de SimBrief" className="space-y-3 lg:border-l lg:border-line lg:pl-5">
@@ -412,6 +442,12 @@ export function MyFlightsPage() {
   const tags = useTourLegTags(legIds).data ?? {};
   const registrationIds = (flights.data ?? []).flatMap((f) => (f.event_registration_id ? [f.event_registration_id] : []));
   const eventTags = useEventTags(registrationIds).data ?? {};
+  // Clima de origen y destino de los vuelos por iniciar (máximo 10 aeropuertos por consulta).
+  const weatherIcaos =
+    view === 'upcoming'
+      ? (flights.data ?? []).flatMap((f) => [f.origin?.icao_code, f.destination?.icao_code]).filter((c): c is string => Boolean(c))
+      : [];
+  const weather = useWeather(weatherIcaos);
 
   return (
     <div className="space-y-6">
@@ -440,8 +476,14 @@ export function MyFlightsPage() {
         flights.data && flights.data.length > 0 ? (
           <div className="space-y-4">
             {flights.data.map((f) => (
-              <UpcomingFlight key={f.id} flight={f} hasSimbriefUser={hasSimbriefUser} tag={f.tour_leg_id ? tags[f.tour_leg_id] : undefined}
+              <UpcomingFlight
+                key={f.id}
+                flight={f}
+                hasSimbriefUser={hasSimbriefUser}
+                tag={f.tour_leg_id ? tags[f.tour_leg_id] : undefined}
                 eventTag={f.event_registration_id ? eventTags[f.event_registration_id] : undefined}
+                weather={weather.data?.byIcao}
+                weatherLoading={weather.isPending && weatherIcaos.length > 0}
               />
             ))}
           </div>

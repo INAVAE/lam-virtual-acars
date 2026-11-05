@@ -816,6 +816,55 @@ function rowsFor(url) {
   }
 }
 
+// Clima (Edge Function weather): METAR y TAF de ejemplo por aeropuerto.
+const minutesAgo = (m) => new Date(Date.now() - m * 60_000).toISOString();
+const hoursFromNow = (h) => new Date(Date.now() + h * 3_600_000).toISOString();
+const WX_SAMPLES = {
+  MMMX: { name: 'Mexico City Intl', raw: 'METAR MMMX 050144Z 32008KT 6SM -RA BKN020 OVC080 16/09 A3039 RMK HZY', wind: [320, 8, null], vis: 6, wx: '-RA', clouds: [['BKN', 2000], ['OVC', 8000]], t: [16, 9], qnh: 1029, cat: 'MVFR' },
+  MMUN: { name: 'Cancun Intl', raw: 'METAR MMUN 050140Z 09012G22KT 10SM FEW020 SCT250 27/22 A2992', wind: [90, 12, 22], vis: '10+', wx: null, clouds: [['FEW', 2000], ['SCT', 25000]], t: [27, 22], qnh: 1013, cat: 'VFR' },
+  MMGL: { name: 'Guadalajara Intl', raw: 'METAR MMGL 050142Z VRB03KT 1/2SM FG VV002 12/12 A3036', wind: ['VRB', 3, null], vis: 0.5, wx: 'FG', clouds: [], vv: 200, t: [12, 12], qnh: 1028, cat: 'LIFR' },
+  KJFK: { name: 'New York/JF Kennedy Intl', raw: 'METAR KJFK 050151Z 04015KT 3SM +TSRA BR BKN008 OVC025CB 14/13 A2978', wind: [40, 15, null], vis: 3, wx: '+TSRA BR', clouds: [['BKN', 800], ['OVC', 2500, 'CB']], t: [14, 13], qnh: 1008, cat: 'IFR' },
+};
+function weatherReport(icao) {
+  const w = WX_SAMPLES[icao] ?? { name: `${icao} Airport`, raw: `METAR ${icao} 050150Z 27006KT 9999 SCT030 22/12 Q1016`, wind: [270, 6, null], vis: '6+', wx: null, clouds: [['SCT', 3000]], t: [22, 12], qnh: 1016, cat: 'VFR' };
+  return {
+    icao,
+    name: w.name,
+    latitude: null,
+    longitude: null,
+    elevation_m: null,
+    metar: {
+      raw: w.raw,
+      type: 'METAR',
+      observed_at: minutesAgo(16),
+      temp_c: w.t[0],
+      dewpoint_c: w.t[1],
+      wind_dir: w.wind[0],
+      wind_kt: w.wind[1],
+      gust_kt: w.wind[2],
+      visibility_sm: w.vis,
+      altimeter_hpa: w.qnh,
+      weather: w.wx,
+      vertical_visibility_ft: w.vv ?? null,
+      clouds: w.clouds.map(([cover, base, type]) => ({ cover, base, ...(type ? { type } : {}) })),
+      flight_category: w.cat,
+    },
+    metar_fetched_at: minutesAgo(2),
+    taf: {
+      raw: `TAF ${icao} 042300Z 0500/0606 32008KT P6SM BKN020 TEMPO 0508/0512 3SM -TSRA BKN015CB BECMG 0514/0516 VRB03KT P6SM SCT030`,
+      issued_at: minutesAgo(160),
+      valid_from: minutesAgo(120),
+      valid_to: hoursFromNow(28),
+      periods: [
+        { from: minutesAgo(120), to: hoursFromNow(6), change: null, probability: null, wind_dir: 320, wind_kt: 8, gust_kt: null, visibility_sm: '6+', weather: null, vertical_visibility_ft: null, clouds: [{ cover: 'BKN', base: 2000 }] },
+        { from: hoursFromNow(6), to: hoursFromNow(10), change: 'TEMPO', probability: null, wind_dir: null, wind_kt: null, gust_kt: null, visibility_sm: 3, weather: '-TSRA', vertical_visibility_ft: null, clouds: [{ cover: 'BKN', base: 1500, type: 'CB' }] },
+        { from: hoursFromNow(12), to: hoursFromNow(14), change: 'BECMG', probability: null, wind_dir: 'VRB', wind_kt: 3, gust_kt: null, visibility_sm: '6+', weather: null, vertical_visibility_ft: null, clouds: [{ cover: 'SCT', base: 3000 }] },
+      ],
+    },
+    taf_fetched_at: minutesAgo(2),
+  };
+}
+
 // Algunas capturas muestran la aerolínea con la flota libre y sin habilitaciones.
 let SETTINGS_OVERRIDE = {};
 const FREE_FLEET = { control_fleet_availability: false, require_type_rating: false };
@@ -843,6 +892,10 @@ async function handleSupabase(route) {
     return route.fulfill({ status: 200, headers: CORS, json: { id: USER_ID, aud: 'authenticated', role: 'authenticated', email: PROFILE.email } });
   }
   if (url.pathname.startsWith('/auth/v1/')) return route.fulfill({ status: 200, headers: CORS, json: {} });
+  if (url.pathname === '/functions/v1/weather') {
+    const icaos = (request.postDataJSON() ?? {}).icaos ?? [];
+    return route.fulfill({ status: 200, headers: CORS, json: { source: 'NOAA Aviation Weather Center', upstream_error: null, reports: icaos.map(weatherReport) } });
+  }
 
   if (url.pathname === '/rest/v1/rpc/get_dashboard_summary') {
     return route.fulfill({
@@ -1067,6 +1120,19 @@ await shoot('45-fleet-free', 'fleet', { airlineId: MXL.id, waitFor: 'no controla
 await shoot('46-routes-pending', 'routes', { airlineId: MXL.id, waitFor: 'Registró Ana Martínez' });
 SETTINGS_OVERRIDE = {};
 await shoot('17-my-flights', 'my-flights', { waitFor: 'MXL21K' });
+await shoot('47-weather', 'weather', {
+  waitFor: 'Buscar en el catálogo',
+  action: async (page) => {
+    await page.getByLabel('Código ICAO').fill('kjfk');
+    await page.getByRole('button', { name: 'Agregar' }).click();
+    await page.getByLabel('Código ICAO').fill('MMGL');
+    await page.getByRole('button', { name: 'Agregar' }).click();
+    await page.getByText('Tormenta con lluvia fuerte').first().waitFor();
+    await page.getByRole('button', { name: 'Ver periodos' }).first().click();
+    await page.getByText('Temporal').first().waitFor();
+  },
+});
+await shoot('48-weather-mobile', 'weather', { viewport: { width: 390, height: 844 }, waitFor: 'Fragmentadas a 2,000 ft' });
 await shoot('18-my-flights-history', 'my-flights', {
   waitFor: 'MXL21K',
   action: async (page) => {
