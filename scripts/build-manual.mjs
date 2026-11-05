@@ -144,7 +144,7 @@ h1, h2, h3 { font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-we
 .mono { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-size: 9pt; }
 .muted { color: var(--muted); }
 /* Portada */
-.cover { height: 9.4in; display: flex; flex-direction: column; justify-content: space-between; break-after: page; }
+.cover { height: 8.9in; display: flex; flex-direction: column; justify-content: space-between; break-after: page; }
 .cover .brand { display: flex; align-items: center; gap: 14px; }
 .cover .brand img { width: 64px; height: 64px; border-radius: 12px; }
 .cover .brand span { font: 600 13pt 'Barlow Semi Condensed', sans-serif; letter-spacing: .08em; color: var(--accent); text-transform: uppercase; }

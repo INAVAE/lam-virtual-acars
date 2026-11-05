@@ -527,7 +527,7 @@ export function HelpPage() {
         }
       />
 
-      <div className="-mx-1 overflow-x-auto px-1">
+      <div className="-mx-1 overflow-x-auto overflow-y-hidden px-1 pb-px">
         <Tabs label="Secciones de la ayuda" value={tab} onChange={setTab} items={items} />
       </div>
 

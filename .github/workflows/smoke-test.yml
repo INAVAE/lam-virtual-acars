@@ -54,13 +54,19 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/shots"
           for f in smoke-screenshots/*.png; do [ -e "$f" ] && cp "$f" "$RUNNER_TEMP/shots/"; done
-          for f in visual-screenshots/*.png; do [ -e "$f" ] && cp "$f" "$RUNNER_TEMP/shots/v-$(basename "$f")"; done
+          for f in visual-screenshots/*.png visual-screenshots/*.marks.json; do [ -e "$f" ] && cp "$f" "$RUNNER_TEMP/shots/v-$(basename "$f")"; done
+          # Páginas del manual en PDF publicado, para revisarlo sin descargarlo.
+          command -v pdftoppm >/dev/null || sudo apt-get install -y -qq poppler-utils >/dev/null 2>&1 || true
+          if curl -sfL -o "$RUNNER_TEMP/manual.pdf" "${SITE_URL}manual/Manual-LAM-Virtual-ACARS.pdf" && command -v pdftoppm >/dev/null; then
+            pdftoppm -r 60 -png "$RUNNER_TEMP/manual.pdf" "$RUNNER_TEMP/shots/manual-p"
+          fi
           ls "$RUNNER_TEMP"/shots/*.png >/dev/null 2>&1 || exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout --orphan ci/smoke-screenshots
           git rm -rfq .
           cp "$RUNNER_TEMP"/shots/*.png .
+          cp "$RUNNER_TEMP"/shots/*.json . 2>/dev/null || true
           echo "Capturas de la prueba del commit ${GITHUB_SHA} (${GITHUB_RUN_ID})." > README.md
           git add -A
           git commit -qm "Capturas de la prueba del sitio ${GITHUB_RUN_ID}"
