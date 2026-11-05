@@ -1304,7 +1304,8 @@ await shoot('49-live-layers', `live?flights=${id(1500)}`, {
     await page.getByRole('button', { name: 'Radar' }).click();
     await page.getByRole('button', { name: 'METAR' }).click();
     await page.locator('.lam-fix', { hasText: 'MATEO' }).first().waitFor();
-    await page.locator('.lam-atc', { hasText: 'MMMX' }).first().click();
+    // En MMMX hay un avión rodando encima de la estación: el clic se envía directo a la insignia.
+    await page.locator('.lam-atc', { hasText: 'MMMX' }).first().dispatchEvent('click');
     await page.getByText('Control activo en IVAO').waitFor();
     await page.waitForTimeout(1500);
   },
