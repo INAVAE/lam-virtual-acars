@@ -51,10 +51,10 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 function TafPeriodRow({ period }: { period: TafPeriod }) {
   const wx = describeWeather(period.weather);
   return (
-    <li className="grid gap-x-3 gap-y-0.5 border-t border-line py-2 text-sm first:border-t-0 sm:grid-cols-[9rem_minmax(0,1fr)]">
+    <li className="grid gap-x-3 gap-y-0.5 border-t border-line py-2 text-sm first:border-t-0 sm:grid-cols-[12rem_minmax(0,1fr)]">
       <div>
         <p className="font-medium">{tafChangeLabel(period)}</p>
-        <p className="font-mono text-xs text-muted">
+        <p className="whitespace-nowrap font-mono text-xs text-muted">
           {formatZulu(period.from)} – {formatZulu(period.to)}
         </p>
       </div>
