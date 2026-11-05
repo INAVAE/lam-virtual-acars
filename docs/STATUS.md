@@ -2,6 +2,13 @@
 
 Última actualización: 2026-10-31 (Fase 7)
 
+## Mapa en vivo al estilo Webeye (2026-11-05)
+
+- Interruptores de capas bajo el mapa (se recuerdan en el navegador): **Etiquetas** (logo y callsign fijos; solo callsign al alejar), **Ruta del plan** (puntos del navlog de SimBrief del vuelo elegido), **Radar** (RainViewer), **METAR** (categoría de vuelo en origen y destino) y **Control IVAO** (posiciones conectadas por tipo: DEL/GND/TWR en el aeropuerto, APP/DEP en círculo, CTR/FSS sombreando la FIR; panel con frecuencia, tiempo en línea y ATIS).
+- Fuentes y condiciones legales en ADR 0010: Whazzup público de IVAO sin datos personales, límites de FIR del VATSpy Data Project (CC BY-SA 4.0, sin cambios y con crédito), RainViewer para uso personal y educativo.
+- Servidor: `simbrief_ofps.navlog` y `get_live_flight_route`; `private.ivao_state`, `private.ivao_refresh()` (pg_cron + pg_net cada 30 s, solo si alguien mira el mapa) y `get_ivao_atc()`. 429 pruebas pgTAP (017 nueva). Captura 49.
+- La ruta del plan aparece en los planes importados desde el 2026-11-05 (volver a importar el plan para los vuelos ya reservados).
+
 ## Clima: METAR y TAF (2026-11-05)
 
 - **Weather** (menú Operación): METAR y TAF de cualquier aeropuerto del mundo, hasta 10 a la vez. Búsqueda en el catálogo o por código ICAO, sugerencias de los vuelos reservados, lista guardada en el navegador, actualización cada 5 minutos.

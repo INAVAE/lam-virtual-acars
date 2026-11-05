@@ -1,5 +1,5 @@
 import type { LiveFlight } from '@lam/shared-types';
-import { LocateFixed, Maximize, Radar, Search, TriangleAlert, X } from 'lucide-react';
+import { CloudRain, CloudSun, LocateFixed, Maximize, Radar, RadioTower, Route, Search, Tag, TriangleAlert, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router';
 import { AirlineLogo } from '@/components/airline-logo';
@@ -13,7 +13,9 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLiveFlights, useLiveTraces } from '@/hooks/use-live-flights';
+import { useFirData, useFlightRoutes, useIvaoAtc, useRadarFrame } from '@/hooks/use-map-layers';
 import { useNow } from '@/hooks/use-now';
+import { useWeather } from '@/hooks/use-weather';
 import { aircraftSvg, MAP_CATEGORY_LABELS, mapCategory } from '@/lib/aircraft-icons';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { cn } from '@/lib/cn';
@@ -45,6 +47,18 @@ import {
   worstAlert,
   type LiveTrace,
 } from '@/lib/live';
+import {
+  atcFacility,
+  atisText,
+  facilityColors,
+  facilityLabels,
+  firFor,
+  formatFrequency,
+  groupAtcs,
+  onlineFor,
+  type AtcStation,
+  type RouteFix,
+} from '@/lib/map-layers';
 import { phaseLabel } from '@/lib/phases';
 import { formatMinutes } from '@/lib/pirep';
 import { useTheme } from '@/lib/theme';
@@ -52,6 +66,119 @@ import { useTimePrefs } from '@/lib/time-context';
 
 const ALERT_RANK = { danger: 3, warn: 2, info: 1 } as const;
 const STORAGE_KEY = 'lam.liveSelection';
+const LAYERS_KEY = 'lam.liveLayers';
+
+interface MapLayers {
+  labels: boolean;
+  routes: boolean;
+  radar: boolean;
+  metar: boolean;
+  ivao: boolean;
+}
+
+const DEFAULT_LAYERS: MapLayers = { labels: true, routes: true, radar: false, metar: false, ivao: true };
+
+function readStoredLayers(): MapLayers {
+  try {
+    const v = JSON.parse(window.localStorage.getItem(LAYERS_KEY) ?? 'null') as Partial<MapLayers> | null;
+    if (v && typeof v === 'object') {
+      return {
+        labels: typeof v.labels === 'boolean' ? v.labels : DEFAULT_LAYERS.labels,
+        routes: typeof v.routes === 'boolean' ? v.routes : DEFAULT_LAYERS.routes,
+        radar: typeof v.radar === 'boolean' ? v.radar : DEFAULT_LAYERS.radar,
+        metar: typeof v.metar === 'boolean' ? v.metar : DEFAULT_LAYERS.metar,
+        ivao: typeof v.ivao === 'boolean' ? v.ivao : DEFAULT_LAYERS.ivao,
+      };
+    }
+  } catch {
+    // Valor dañado o sin almacenamiento: capas por omisión.
+  }
+  return DEFAULT_LAYERS;
+}
+
+const LAYER_ITEMS: { key: keyof MapLayers; label: string; icon: typeof Tag; hint: string }[] = [
+  { key: 'labels', label: 'Etiquetas', icon: Tag, hint: 'Logo de la aerolínea y callsign de cada avión' },
+  { key: 'routes', label: 'Ruta del plan', icon: Route, hint: 'Puntos del plan de SimBrief de los vuelos elegidos' },
+  { key: 'radar', label: 'Radar', icon: CloudRain, hint: 'Precipitación de RainViewer (últimos 10 minutos)' },
+  { key: 'metar', label: 'METAR', icon: CloudSun, hint: 'Categoría de vuelo en origen y destino' },
+  { key: 'ivao', label: 'Control IVAO', icon: RadioTower, hint: 'Controladores conectados a IVAO y su zona' },
+];
+
+function LayerToggles({ layers, onChange }: { layers: MapLayers; onChange: (next: MapLayers) => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Capas del mapa">
+      {LAYER_ITEMS.map(({ key, label, icon: Icon, hint }) => (
+        <button
+          key={key}
+          type="button"
+          title={hint}
+          aria-pressed={layers[key]}
+          onClick={() => onChange({ ...layers, [key]: !layers[key] })}
+          className={cn(
+            'inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-sm transition-colors',
+            layers[key] ? 'border-accent bg-accent/15 text-ink' : 'border-line bg-surface text-muted hover:text-ink',
+          )}
+        >
+          <Icon className="size-4" aria-hidden />
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Controladores de una estación de IVAO: posición, frecuencia, tiempo en línea y ATIS. Sin datos personales. */
+function AtcPanel({ station, firName, now, onClose }: { station: AtcStation; firName: string | null; now: number; onClose: () => void }) {
+  return (
+    <section aria-label={`Control de IVAO en ${station.code}`} className="rounded-lg border border-line bg-surface p-4">
+      <header className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-muted">Control activo en IVAO</p>
+          <p className="font-display text-xl font-semibold">
+            {station.code}
+            {firName ? <span className="ml-2 text-base font-normal text-muted">{firName}</span> : null}
+          </p>
+        </div>
+        <button type="button" onClick={onClose} className="rounded p-1 text-muted hover:text-ink" aria-label="Cerrar">
+          <X className="size-4" aria-hidden />
+        </button>
+      </header>
+      <ul className="mt-3 grid gap-3 md:grid-cols-2">
+        {station.atcs.map((a) => {
+          const facility = atcFacility(a);
+          const atis = atisText(a.atis);
+          return (
+            <li key={a.callsign} className="rounded-md border border-line bg-bg p-3">
+              <p className="flex flex-wrap items-center gap-2">
+                <span className="rounded px-1.5 py-0.5 font-mono text-xs font-semibold text-white" style={{ background: facilityColors[facility] }}>
+                  {facility === 'OTHER' ? 'ATC' : facility}
+                </span>
+                <span className="font-mono font-semibold">{a.callsign}</span>
+                <span className="text-sm text-muted">{facilityLabels[facility]}</span>
+              </p>
+              <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                <div>
+                  <dt className="text-xs text-muted">Frecuencia</dt>
+                  <dd className="font-mono">{formatFrequency(a.frequency)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted">En línea</dt>
+                  <dd className="font-mono">{onlineFor(a.online_since, now)}</dd>
+                </div>
+              </dl>
+              {atis.length > 0 ? (
+                <div className="mt-2">
+                  <p className="text-xs text-muted">ATIS{a.atis_revision ? ` (información ${a.atis_revision})` : ''}</p>
+                  <p className="mt-0.5 font-mono text-xs leading-relaxed break-words">{atis.join(' ')}</p>
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
 
 function readStoredSelection(): string[] {
   try {
@@ -359,6 +486,16 @@ export function LiveFlightsPage() {
   const [follow, setFollow] = useState(() => params.get('flight') !== null);
   const [fitNonce, setFitNonce] = useState(0);
   const [query, setQuery] = useState('');
+  const [layers, setLayers] = useState<MapLayers>(readStoredLayers);
+  const [stationKey, setStationKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LAYERS_KEY, JSON.stringify(layers));
+    } catch {
+      // Sin almacenamiento: las capas duran lo que la pestaña.
+    }
+  }, [layers]);
 
   const flights = useMemo(() => sortFlights(live.data ?? []), [live.data]);
   // Las trazas se piden solo para los elegidos que siguen en curso.
@@ -379,6 +516,38 @@ export function LiveFlightsPage() {
     // traceKey resume las trazas recibidas.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [traceKey]);
+
+  // Ruta del plan de SimBrief de los elegidos.
+  const routeQueries = useFlightRoutes(activeSelection, layers.routes);
+  const routeKey = activeSelection.map((id, i) => `${id}:${routeQueries[i]?.dataUpdatedAt ?? 0}`).join('|');
+  const routes = useMemo(() => {
+    const out: Record<string, RouteFix[] | undefined> = {};
+    activeSelection.forEach((id, i) => {
+      out[id] = routeQueries[i]?.data?.fixes;
+    });
+    return out;
+    // routeKey resume las rutas recibidas.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeKey]);
+
+  // METAR de origen y destino (los elegidos primero; la función acepta 10 aeropuertos).
+  const metarIcaos = useMemo(() => {
+    const ordered = [...flights].sort((a, b) => Number(selectedIds.includes(b.flight_id)) - Number(selectedIds.includes(a.flight_id)));
+    return [...new Set(ordered.flatMap((f) => [f.origin.icao, f.destination.icao]))].slice(0, 10);
+  }, [flights, selectedIds]);
+  const weather = useWeather(layers.metar ? metarIcaos : []);
+
+  // Control activo de IVAO.
+  const atc = useIvaoAtc(layers.ivao);
+  const stations = useMemo(() => groupAtcs(atc.data?.atcs ?? []), [atc.data]);
+  const fir = useFirData(layers.ivao && stations.some((st) => st.kind === 'center'));
+  const ivaoLayer = useMemo(
+    () => (layers.ivao ? { stations, fir: fir.data ?? null } : null),
+    [layers.ivao, stations, fir.data],
+  );
+  const station = stationKey ? (stations.find((st) => `${st.kind}:${st.code}` === stationKey) ?? null) : null;
+
+  const radar = useRadarFrame(layers.radar);
 
   const focused = flights.find((f) => f.flight_id === focusedId) ?? null;
   const focusedTrace = focusedId ? traces[focusedId] : undefined;
@@ -480,6 +649,13 @@ export function LiveFlightsPage() {
               theme={theme}
               height="clamp(380px, 64vh, 680px)"
               timeText={timeText}
+              labels={layers.labels}
+              routes={routes}
+              showRoutes={layers.routes}
+              radar={layers.radar ? (radar.data ?? null) : null}
+              metars={layers.metar ? (weather.data?.byIcao ?? null) : null}
+              ivao={ivaoLayer}
+              onStationSelect={setStationKey}
             />
           )}
           <div className="pointer-events-none absolute left-14 right-3 top-3 z-[1] flex flex-wrap items-start gap-2">
@@ -567,6 +743,29 @@ export function LiveFlightsPage() {
         </aside>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <LayerToggles layers={layers} onChange={setLayers} />
+        <p className="text-xs text-muted" role="status">
+          {layers.ivao
+            ? atc.isError
+              ? 'Control IVAO: sin datos por ahora'
+              : !atc.data || atc.data.fetched_at === null
+                ? 'Control IVAO: consultando…'
+                : `Control IVAO: ${atc.data.atcs.length} ${atc.data.atcs.length === 1 ? 'posición' : 'posiciones'}${atc.data.stale ? ' (datos atrasados)' : ''}`
+            : null}
+          {layers.radar && radar.isError ? ' · Radar no disponible' : null}
+        </p>
+      </div>
+
+      {station ? (
+        <AtcPanel
+          station={station}
+          firName={station.kind === 'center' ? (firFor(station.code, fir.data?.index)?.name ?? null) : null}
+          now={now}
+          onClose={() => setStationKey(null)}
+        />
+      ) : null}
+
       {focused ? (
         <>
           <FlightDetail flight={focused} now={now} follow={follow} onFollow={() => setFollow((v) => !v)} />
@@ -577,6 +776,22 @@ export function LiveFlightsPage() {
       ) : flights.length > 0 ? (
         <p className="text-sm text-muted">Elige uno o varios aviones en el mapa o en la lista para ver su trayectoria, la ruta que les falta y sus datos.</p>
       ) : null}
+
+      <p className="text-xs text-muted">
+        Solo para simulación. Control: IVAO, Whazzup público (se muestran la posición, la frecuencia y el ATIS, sin datos personales de los controladores). Límites de FIR:{' '}
+        <a href="https://github.com/vatsimnetwork/vatspy-data-project" className="underline" target="_blank" rel="noopener noreferrer">
+          VATSpy Data Project
+        </a>
+        , licencia{' '}
+        <a href="https://creativecommons.org/licenses/by-sa/4.0/" className="underline" target="_blank" rel="noopener noreferrer">
+          CC BY-SA 4.0
+        </a>
+        . Radar:{' '}
+        <a href="https://www.rainviewer.com/" className="underline" target="_blank" rel="noopener noreferrer">
+          RainViewer
+        </a>
+        , uso personal y educativo. METAR y TAF: NOAA Aviation Weather Center.
+      </p>
     </div>
   );
 }

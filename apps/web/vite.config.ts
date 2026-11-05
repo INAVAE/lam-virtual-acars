@@ -34,8 +34,9 @@ function contentSecurityPolicy(supabaseUrl: string, tileUrl: string): Plugin {
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
     // Teselas del mapa del PIREP (OpenStreetMap por omisión).
-    `img-src 'self' data: blob: ${supabaseOrigin} ${tileOrigin(tileUrl)}`.trim(),
-    `connect-src 'self' ${supabaseOrigin} ${realtimeOrigin}`.trim(),
+    // Radar de precipitación: lista de cuadros (api) y teselas (tilecache) de RainViewer.
+    `img-src 'self' data: blob: ${supabaseOrigin} ${tileOrigin(tileUrl)} https://tilecache.rainviewer.com`.trim(),
+    `connect-src 'self' ${supabaseOrigin} ${realtimeOrigin} https://api.rainviewer.com`.trim(),
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",

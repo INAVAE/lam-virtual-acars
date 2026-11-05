@@ -1,7 +1,9 @@
 import type { LiveFlight } from '@lam/shared-types';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { logoUrl } from '@/components/airline-logo';
+import type { FirData } from '@/hooks/use-map-layers';
 import { aircraftSvg, MAP_CATEGORY_SIZE, mapCategory } from '@/lib/aircraft-icons';
 import {
   eventMarkers,
@@ -15,8 +17,22 @@ import {
 } from '@/lib/flight-analysis';
 import { formatNumber } from '@/lib/format';
 import { ageSeconds, ARRIVED_PHASES, extrapolate, greatCirclePoints, STALE_SECONDS, type LiveTrace } from '@/lib/live';
+import {
+  facilityColors,
+  firFor,
+  formatFrequency,
+  isLabeledFix,
+  labelMode,
+  RADAR_MAX_NATIVE_ZOOM,
+  radarTileUrl,
+  type AtcStation,
+  type LabelMode,
+  type RadarFrame,
+  type RouteFix,
+} from '@/lib/map-layers';
 import { mapTileConfig } from '@/lib/map-tiles';
 import { phaseLabel } from '@/lib/phases';
+import { flightCategory, type FlightCategory, type WeatherReport } from '@/lib/weather';
 
 interface LiveMapProps {
   flights: readonly LiveFlight[];
@@ -38,7 +54,27 @@ interface LiveMapProps {
   height: string;
   /** Hora para los recuadros (UTC y local). */
   timeText: (value: string) => string;
+  /** Etiqueta fija con el logo de la aerolínea y el callsign de cada avión. */
+  labels?: boolean;
+  /** Puntos del plan de SimBrief de los vuelos elegidos. */
+  routes?: Readonly<Record<string, readonly RouteFix[] | undefined>>;
+  showRoutes?: boolean;
+  /** Último cuadro de radar de RainViewer (null: capa apagada). */
+  radar?: RadarFrame | null;
+  /** METAR de los aeropuertos de los vuelos (null: capa apagada). */
+  metars?: ReadonlyMap<string, WeatherReport> | null;
+  /** Control activo de IVAO agrupado por estación (null: capa apagada). */
+  ivao?: { stations: readonly AtcStation[]; fir: FirData | null } | null;
+  /** Clic en una estación de control: `${kind}:${code}`. */
+  onStationSelect?: (key: string) => void;
 }
+
+const CATEGORY_COLORS: Record<FlightCategory, string> = { VFR: '#22c55e', MVFR: '#3b82f6', IFR: '#ef4444', LIFR: '#d946ef' };
+const ROUTE_COLOR = '#38bdf8';
+const RADAR_ATTRIBUTION = 'Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer</a>';
+const IVAO_ATTRIBUTION =
+  'Control: <a href="https://www.ivao.aero/" target="_blank" rel="noopener noreferrer">IVAO</a> (Whazzup público) · FIR: <a href="https://github.com/vatsimnetwork/vatspy-data-project" target="_blank" rel="noopener noreferrer">VATSpy Data Project</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>';
+const SHORT_FACILITY: Record<string, string> = { DEL: 'DEL', GND: 'GND', TWR: 'TWR', APP: 'APP', DEP: 'DEP', CTR: 'CTR', FSS: 'FSS', OTHER: 'ATC' };
 
 const TILES = mapTileConfig();
 const REMAINING_COLOR = '#ef4444';
@@ -52,7 +88,17 @@ export function planeColor(f: LiveFlight): string {
   return f.event?.color ?? f.tour?.color ?? phaseColor(f.phase);
 }
 
-function planeIcon(f: LiveFlight, selected: boolean, stale: boolean): L.DivIcon {
+/** Etiqueta del avión: logo de la aerolínea y callsign (solo callsign con el mapa alejado). */
+function tagHtml(f: LiveFlight, mode: LabelMode): string {
+  const logo = mode === 'full' ? logoUrl(f.airline.logo_path) : null;
+  return (
+    `<div class="lam-tag${mode === 'compact' ? ' is-compact' : ''}">` +
+    (logo ? `<img src="${escapeHtml(logo)}" alt="" loading="lazy" decoding="async">` : '') +
+    `<span>${escapeHtml(f.callsign)}</span></div>`
+  );
+}
+
+function planeIcon(f: LiveFlight, selected: boolean, stale: boolean, label: LabelMode | null): L.DivIcon {
   const color = planeColor(f);
   const category = mapCategory(f.map_category);
   const size = MAP_CATEGORY_SIZE[category];
@@ -62,7 +108,7 @@ function planeIcon(f: LiveFlight, selected: boolean, stale: boolean): L.DivIcon 
     className: '',
     html:
       `<div class="lam-live${selected ? ' is-selected' : ''}${stale ? ' is-stale' : ''}${f.is_mine ? ' is-mine' : ''}${special}" style="--c:${color};width:${size}px;height:${size}px">` +
-      `<div class="lam-plane" style="transform:rotate(${heading}deg)">${aircraftSvg(category, color)}</div></div>`,
+      `<div class="lam-plane" style="transform:rotate(${heading}deg)">${aircraftSvg(category, color)}</div>${label ? tagHtml(f, label) : ''}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
@@ -98,7 +144,27 @@ function pointHtml(f: LiveFlight, p: AnalysisPoint, timeText: (v: string) => str
  * trayectoria volada por fases, con eventos y datos de cada punto, y en rojo
  * punteado la ruta directa que les falta hasta el destino.
  */
-export function LiveMap({ flights, selectedIds, focusedId, onToggle, traces, now, follow, onUserMove, fitNonce, theme, height, timeText }: LiveMapProps) {
+export function LiveMap({
+  flights,
+  selectedIds,
+  focusedId,
+  onToggle,
+  traces,
+  now,
+  follow,
+  onUserMove,
+  fitNonce,
+  theme,
+  height,
+  timeText,
+  labels = false,
+  routes = {},
+  showRoutes = false,
+  radar = null,
+  metars = null,
+  ivao = null,
+  onStationSelect,
+}: LiveMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const tilesRef = useRef<L.TileLayer | null>(null);
@@ -108,8 +174,15 @@ export function LiveMap({ flights, selectedIds, focusedId, onToggle, traces, now
   const traceLayers = useRef(new Map<string, { group: L.LayerGroup; key: string }>());
   const remainingLines = useRef(new Map<string, { line: L.Polyline; link: L.Polyline }>());
   const fittedRef = useRef(false);
-  const handlers = useRef({ onToggle, onUserMove, timeText });
-  handlers.current = { onToggle, onUserMove, timeText };
+  const routesRef = useRef<L.LayerGroup | null>(null);
+  const routeLayers = useRef(new Map<string, { group: L.LayerGroup; key: string }>());
+  const radarRef = useRef<L.TileLayer | null>(null);
+  const metarRef = useRef<L.LayerGroup | null>(null);
+  const ivaoRef = useRef<L.LayerGroup | null>(null);
+  const [zoom, setZoom] = useState(5);
+  const handlers = useRef({ onToggle, onUserMove, timeText, onStationSelect });
+  handlers.current = { onToggle, onUserMove, timeText, onStationSelect };
+  const label: LabelMode | null = labels ? labelMode(zoom) : null;
 
   // Mapa (una sola vez)
   useEffect(() => {
@@ -117,22 +190,32 @@ export function LiveMap({ flights, selectedIds, focusedId, onToggle, traces, now
     const map = L.map(containerRef.current, { zoomControl: true, worldCopyJump: true, minZoom: 2, maxZoom: 16, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 90 });
     map.setView([22.5, -101.5], 5);
     mapRef.current = map;
+    // Capas de abajo hacia arriba: radar, control de IVAO, ruta del plan, trayectoria, aviones.
+    map.createPane('lam-radar').style.zIndex = '250';
+    map.createPane('lam-atc').style.zIndex = '350';
+    ivaoRef.current = L.layerGroup().addTo(map);
+    routesRef.current = L.layerGroup().addTo(map);
     tracesRef.current = L.layerGroup().addTo(map);
     remainingRef.current = L.layerGroup().addTo(map);
+    metarRef.current = L.layerGroup().addTo(map);
     map.on('dragstart', () => handlers.current.onUserMove());
+    map.on('zoomend', () => setZoom(map.getZoom()));
     const observer = new ResizeObserver(() => map.invalidateSize());
     observer.observe(containerRef.current);
     const planes = planesRef.current;
     const layers = traceLayers.current;
     const lines = remainingLines.current;
+    const routeGroups = routeLayers.current;
     return () => {
       observer.disconnect();
       map.remove();
       planes.clear();
       layers.clear();
       lines.clear();
+      routeGroups.clear();
       mapRef.current = null;
       tilesRef.current = null;
+      radarRef.current = null;
       fittedRef.current = false;
     };
   }, []);
@@ -163,19 +246,19 @@ export function LiveMap({ flights, selectedIds, focusedId, onToggle, traces, now
       const stale = ageSeconds(f.last_contact_at, now) >= STALE_SECONDS;
       const at = extrapolate(f.position, now);
       const selected = selectedIds.includes(f.flight_id);
-      const iconKey = `${planeColor(f)}|${f.map_category}|${Math.round(f.position.heading_deg ?? 0)}|${selected}|${stale}`;
+      const iconKey = `${planeColor(f)}|${f.map_category}|${Math.round(f.position.heading_deg ?? 0)}|${selected}|${stale}|${label ?? ''}|${f.callsign}`;
       const z = f.flight_id === focusedId ? 1200 : selected ? 1000 : f.is_mine ? 500 : 0;
       const existing = planes.get(f.flight_id);
       if (existing) {
         existing.marker.setLatLng([at.latitude, at.longitude]);
         if (existing.iconKey !== iconKey) {
-          existing.marker.setIcon(planeIcon(f, selected, stale));
+          existing.marker.setIcon(planeIcon(f, selected, stale, label));
           existing.iconKey = iconKey;
         }
         existing.marker.setZIndexOffset(z);
         existing.marker.setTooltipContent(tooltipHtml(f));
       } else {
-        const marker = L.marker([at.latitude, at.longitude], { icon: planeIcon(f, selected, stale), keyboard: false, zIndexOffset: z, title: f.callsign })
+        const marker = L.marker([at.latitude, at.longitude], { icon: planeIcon(f, selected, stale, label), keyboard: false, zIndexOffset: z, title: f.callsign })
           .bindTooltip(tooltipHtml(f), { className: 'lam-tip', direction: 'right', offset: [14, 0] })
           .on('click', (e) => {
             L.DomEvent.stopPropagation(e);
@@ -191,7 +274,7 @@ export function LiveMap({ flights, selectedIds, focusedId, onToggle, traces, now
         planes.delete(id);
       }
     }
-  }, [flights, selectedIds, focusedId, now]);
+  }, [flights, selectedIds, focusedId, now, label]);
 
   // Encuadre inicial y a pedido: todos los aviones
   useEffect(() => {
@@ -288,7 +371,8 @@ export function LiveMap({ flights, selectedIds, focusedId, onToggle, traces, now
     const byId = new Map(flights.map((f) => [f.flight_id, f]));
     for (const [id, entry] of lines) {
       const f = byId.get(id);
-      if (!selectedIds.includes(id) || !f || !f.position || ARRIVED_PHASES.has(f.phase)) {
+      const planned = showRoutes && (routes[id]?.length ?? 0) > 1;
+      if (!selectedIds.includes(id) || !f || !f.position || ARRIVED_PHASES.has(f.phase) || planned) {
         parent.removeLayer(entry.line);
         parent.removeLayer(entry.link);
         lines.delete(id);
@@ -297,6 +381,8 @@ export function LiveMap({ flights, selectedIds, focusedId, onToggle, traces, now
     for (const id of selectedIds) {
       const f = byId.get(id);
       if (!f?.position || ARRIVED_PHASES.has(f.phase)) continue;
+      // Con el plan de SimBrief a la vista, la ruta directa sobra.
+      if (showRoutes && (routes[id]?.length ?? 0) > 1) continue;
       const at = extrapolate(f.position, now);
       const route = greatCirclePoints(at.latitude, at.longitude, f.destination.latitude, f.destination.longitude, 64);
       const pts = traces[id]?.points ?? [];
@@ -319,7 +405,174 @@ export function LiveMap({ flights, selectedIds, focusedId, onToggle, traces, now
         lines.set(id, { line, link: linkLine });
       }
     }
-  }, [flights, selectedIds, traces, now]);
+  }, [flights, selectedIds, traces, now, routes, showRoutes]);
+
+  // Ruta del plan de SimBrief de los vuelos elegidos: línea punteada con el nombre de cada punto.
+  useEffect(() => {
+    const parent = routesRef.current;
+    if (!parent) return;
+    const groups = routeLayers.current;
+    const byId = new Map(flights.map((f) => [f.flight_id, f]));
+    for (const [id, entry] of groups) {
+      if (!showRoutes || !selectedIds.includes(id) || !byId.has(id) || (routes[id]?.length ?? 0) < 2) {
+        parent.removeLayer(entry.group);
+        groups.delete(id);
+      }
+    }
+    if (!showRoutes) return;
+    for (const id of selectedIds) {
+      const f = byId.get(id);
+      const fixes = routes[id];
+      if (!f || !fixes || fixes.length < 2) continue;
+      const key = `${fixes.length}|${fixes[0]!.ident}|${fixes[fixes.length - 1]!.ident}|${theme}`;
+      const existing = groups.get(id);
+      if (existing?.key === key) continue;
+      if (existing) parent.removeLayer(existing.group);
+      const group = L.layerGroup();
+      const latlngs: L.LatLngExpression[] = [
+        [f.origin.latitude, f.origin.longitude],
+        ...fixes.map((x) => [x.lat, x.lon] as L.LatLngTuple),
+        [f.destination.latitude, f.destination.longitude],
+      ];
+      L.polyline(latlngs, { color: theme === 'dark' ? '#000' : '#fff', weight: 4, opacity: 0.35, interactive: false }).addTo(group);
+      L.polyline(latlngs, { color: ROUTE_COLOR, weight: 2, opacity: 0.95, dashArray: '7 6', interactive: false }).addTo(group);
+      for (const x of fixes) {
+        if (!isLabeledFix(x) || x.ident === f.origin.icao || x.ident === f.destination.icao) continue;
+        L.marker([x.lat, x.lon], {
+          icon: L.divIcon({ className: '', html: `<div class="lam-fix"><span></span>${escapeHtml(x.ident)}</div>`, iconSize: [0, 0] }),
+          keyboard: false,
+        })
+          .bindTooltip(`<strong>${escapeHtml(x.ident)}</strong>${x.via && x.via !== 'DCT' ? ` · vía ${escapeHtml(x.via)}` : ''}<br>Plan de ${escapeHtml(f.callsign)}`, {
+            className: 'lam-tip',
+            direction: 'top',
+            offset: [0, -6],
+          })
+          .addTo(group);
+      }
+      group.addTo(parent);
+      groups.set(id, { group, key });
+    }
+  }, [flights, selectedIds, routes, showRoutes, theme]);
+
+  // Radar de precipitación (RainViewer, uso personal y educativo; crédito en el mapa).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    radarRef.current?.remove();
+    radarRef.current = null;
+    if (!radar) return;
+    radarRef.current = L.tileLayer(radarTileUrl(radar), {
+      pane: 'lam-radar',
+      opacity: 0.65,
+      maxNativeZoom: RADAR_MAX_NATIVE_ZOOM,
+      maxZoom: 16,
+      attribution: RADAR_ATTRIBUTION,
+    }).addTo(map);
+  }, [radar]);
+
+  // METAR de los aeropuertos de los vuelos: punto con el color de la categoría de vuelo.
+  useEffect(() => {
+    const group = metarRef.current;
+    if (!group) return;
+    group.clearLayers();
+    if (!metars) return;
+    const airports = new Map<string, LiveFlight['origin']>();
+    for (const f of flights) {
+      airports.set(f.origin.icao, f.origin);
+      airports.set(f.destination.icao, f.destination);
+    }
+    for (const [icao, a] of airports) {
+      const metar = metars.get(icao)?.metar;
+      if (!metar) continue;
+      const category = flightCategory(metar);
+      const color = category ? CATEGORY_COLORS[category] : '#94a3b8';
+      L.circleMarker([a.latitude, a.longitude], { radius: 6, color: theme === 'dark' ? '#0b1220' : '#fff', weight: 2, fillColor: color, fillOpacity: 1 })
+        .bindTooltip(
+          `<strong>${escapeHtml(icao)}</strong> · ${escapeHtml(category ?? 'sin categoría')}<br><span class="lam-tip-mono">${escapeHtml(metar.raw ?? '')}</span>`,
+          { className: 'lam-tip lam-tip-wide', direction: 'top', offset: [0, -6] },
+        )
+        .addTo(group);
+    }
+  }, [metars, flights, theme]);
+
+  // Control activo de IVAO: aeropuertos (DEL, GND, TWR, APP, DEP) y FIR (CTR, FSS).
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = ivaoRef.current;
+    if (!map || !group) return;
+    group.clearLayers();
+    if (!ivao) return;
+    map.attributionControl.addAttribution(IVAO_ATTRIBUTION);
+    const select = (key: string) => (e: L.LeafletEvent) => {
+      L.DomEvent.stopPropagation(e as L.LeafletMouseEvent);
+      handlers.current.onStationSelect?.(key);
+    };
+    for (const s of ivao.stations) {
+      const key = `${s.kind}:${s.code}`;
+      const tip = s.atcs.map((a) => `<strong>${escapeHtml(a.callsign)}</strong> ${escapeHtml(formatFrequency(a.frequency))}`).join('<br>');
+      const badges = s.facilities
+        .map((x) => `<i style="--f:${facilityColors[x]}">${SHORT_FACILITY[x] ?? 'ATC'}</i>`)
+        .join('');
+      if (s.kind === 'center') {
+        const fir = firFor(s.code, ivao.fir?.index);
+        const features = fir ? (ivao.fir?.boundaries.get(fir.boundary) ?? []) : [];
+        let labelAt: L.LatLngExpression | null = s.latitude !== null && s.longitude !== null ? [s.latitude, s.longitude] : null;
+        if (features.length > 0) {
+          L.geoJSON({ type: 'FeatureCollection', features } as unknown as Parameters<typeof L.geoJSON>[0], {
+            pane: 'lam-atc',
+            style: { color: facilityColors.CTR, weight: 1.5, opacity: 0.9, fillColor: facilityColors.CTR, fillOpacity: 0.07 },
+          })
+            .bindTooltip(`${escapeHtml(fir!.name)}<br>${tip}`, { className: 'lam-tip', sticky: true })
+            .on('click', select(key))
+            .addTo(group);
+          const p = features[0]!.properties;
+          const lat = Number(p?.label_lat);
+          const lon = Number(p?.label_lon);
+          if (Number.isFinite(lat) && Number.isFinite(lon)) labelAt = [lat, lon];
+        } else if (labelAt) {
+          L.circle(labelAt, { pane: 'lam-atc', radius: 250_000, color: facilityColors.CTR, weight: 1.5, dashArray: '6 6', fillOpacity: 0.05 })
+            .bindTooltip(tip, { className: 'lam-tip', sticky: true })
+            .on('click', select(key))
+            .addTo(group);
+        }
+        if (labelAt) {
+          L.marker(labelAt, {
+            icon: L.divIcon({ className: '', html: `<div class="lam-atc is-center"><b>${escapeHtml(s.code)}</b>${badges}</div>`, iconSize: [0, 0] }),
+            keyboard: false,
+          })
+            .bindTooltip(tip, { className: 'lam-tip', direction: 'top', offset: [0, -10] })
+            .on('click', select(key))
+            .addTo(group);
+        }
+        continue;
+      }
+      if (s.latitude === null || s.longitude === null) continue;
+      const at: L.LatLngTuple = [s.latitude, s.longitude];
+      const approach = s.facilities.find((x) => x === 'APP' || x === 'DEP');
+      if (approach) {
+        L.circle(at, { pane: 'lam-atc', radius: 55_000, color: facilityColors[approach], weight: 1.5, fillColor: facilityColors[approach], fillOpacity: 0.08 })
+          .bindTooltip(tip, { className: 'lam-tip', sticky: true })
+          .on('click', select(key))
+          .addTo(group);
+      }
+      const local = s.facilities.find((x) => x === 'TWR') ?? s.facilities.find((x) => x === 'GND' || x === 'DEL');
+      if (local) {
+        L.circle(at, { pane: 'lam-atc', radius: 9_000, color: facilityColors[local], weight: 2, fillColor: facilityColors[local], fillOpacity: 0.2 })
+          .on('click', select(key))
+          .addTo(group);
+      }
+      L.marker(at, {
+        icon: L.divIcon({ className: '', html: `<div class="lam-atc"><b>${escapeHtml(s.code)}</b>${badges}</div>`, iconSize: [0, 0] }),
+        keyboard: false,
+      })
+        .bindTooltip(tip, { className: 'lam-tip', direction: 'top', offset: [0, -10] })
+        .on('click', select(key))
+        .addTo(group);
+    }
+    return () => {
+      map.attributionControl.removeAttribution(IVAO_ATTRIBUTION);
+    };
+  }, [ivao]);
 
   // Seguir al avión enfocado
   useEffect(() => {

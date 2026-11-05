@@ -92,6 +92,29 @@ function simbriefError(body: string): string {
   return 'SimBrief no devolvió un plan de vuelo';
 }
 
+/** Puntos del plan (navlog) con coordenadas, para dibujar la ruta en el mapa en vivo. */
+function navlog(ofp: Obj): Obj[] | null {
+  const raw = obj(ofp.navlog).fix;
+  const fixes = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  const out: Obj[] = [];
+  for (const item of fixes.slice(0, 400)) {
+    const f = obj(item);
+    const ident = upper(f.ident, 12);
+    const lat = num(f.pos_lat, -90, 90);
+    const lon = num(f.pos_long, -180, 180);
+    if (!ident || lat === null || lon === null) continue;
+    out.push({
+      ident,
+      type: text(f.type, 12),
+      lat: Math.round(lat * 1e5) / 1e5,
+      lon: Math.round(lon * 1e5) / 1e5,
+      via: upper(f.via_airway, 12),
+      sid_star: String(f.is_sid_star ?? '') === '1',
+    });
+  }
+  return out.length > 0 ? out : null;
+}
+
 /** Convierte el OFP de SimBrief en una fila de simbrief_ofps. */
 function toRow(flightId: string, ofp: Obj) {
   const params = obj(ofp.params);
@@ -145,6 +168,7 @@ function toRow(flightId: string, ofp: Obj) {
     pax_count: int(weights.pax_count, 0, 2000),
     cargo: round1(weights.cargo),
     pdf_url: pdfUrl?.startsWith('https://') ? pdfUrl : null,
+    navlog: navlog(ofp),
   };
 }
 

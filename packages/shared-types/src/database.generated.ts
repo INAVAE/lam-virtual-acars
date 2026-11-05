@@ -2191,6 +2191,7 @@ export type Database = {
           generated_at: string | null
           ldw: number | null
           mismatches: Json
+          navlog: Json | null
           origin_icao: string
           pax_count: number | null
           pdf_url: string | null
@@ -2224,6 +2225,7 @@ export type Database = {
           generated_at?: string | null
           ldw?: number | null
           mismatches?: Json
+          navlog?: Json | null
           origin_icao: string
           pax_count?: number | null
           pdf_url?: string | null
@@ -2257,6 +2259,7 @@ export type Database = {
           generated_at?: string | null
           ldw?: number | null
           mismatches?: Json
+          navlog?: Json | null
           origin_icao?: string
           pax_count?: number | null
           pdf_url?: string | null
@@ -2349,6 +2352,8 @@ export type Database = {
         Returns: Json
       }
       get_live_flight_track: { Args: { p_flight_id: string }; Returns: Json }
+      get_ivao_atc: { Args: never; Returns: Json }
+      get_live_flight_route: { Args: { p_flight_id: string }; Returns: Json }
       get_live_flight_trace: {
         Args: { p_after_event_seq?: number; p_after_seq?: number; p_flight_id: string }
         Returns: Json

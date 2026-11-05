@@ -253,3 +253,89 @@
 .lam-tiles-light {
   filter: saturate(60%) brightness(102%);
 }
+/* Etiqueta fija del avión: logo de la aerolínea y callsign. */
+.lam-tag {
+  position: absolute;
+  left: calc(100% + 3px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px 1px 2px;
+  border-radius: 5px;
+  border: 1px solid var(--c);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  color: var(--text);
+  font: 600 11px/1.35 "IBM Plex Mono", ui-monospace, monospace;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}
+.lam-tag img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  border-radius: 3px;
+  background: #fff;
+}
+.lam-tag.is-compact {
+  padding: 0 5px;
+  font-size: 10px;
+}
+.lam-live.is-stale .lam-tag {
+  opacity: 0.8;
+}
+/* Puntos del plan de SimBrief. */
+.lam-fix {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transform: translate(-4px, -50%);
+  white-space: nowrap;
+  font: 600 10px/1 "IBM Plex Mono", ui-monospace, monospace;
+  color: #38bdf8;
+  text-shadow: 0 0 3px var(--bg), 0 0 3px var(--bg), 0 0 3px var(--bg);
+}
+.lam-fix span {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #38bdf8;
+  border: 1.5px solid var(--bg);
+}
+/* Estación de control de IVAO: código y una insignia por posición. */
+.lam-atc {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  cursor: pointer;
+  font: 600 11px/1 "IBM Plex Mono", ui-monospace, monospace;
+}
+.lam-atc b {
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.lam-atc i {
+  font-style: normal;
+  padding: 2px 3px;
+  border-radius: 4px;
+  background: var(--f);
+  color: #fff;
+  font-size: 9px;
+}
+.lam-atc.is-center b {
+  border-color: #a855f7;
+}
+.leaflet-tooltip.lam-tip-wide {
+  max-width: 340px;
+  white-space: normal;
+}
+.lam-tip-mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+}

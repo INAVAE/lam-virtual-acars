@@ -553,6 +553,39 @@ const liveTrace = (f) => {
 };
 const LIVE_TRACES = Object.fromEntries(LIVE.map((f) => [f.flight_id, liveTrace(f)]));
 
+// Puntos del plan de SimBrief (get_live_flight_route) de MXL106 MMMX→MMGL.
+const LIVE_ROUTES = {
+  [id(1500)]: {
+    route: 'TLC UT11 MATEO UJ18 ULUSO GDL',
+    fixes: [
+      { ident: 'TLC', type: 'vor', lat: 19.35, lon: -99.57, via: 'SID', sid_star: true },
+      { ident: 'TOC', type: 'ltlg', lat: 19.5, lon: -99.85, via: 'UT11', sid_star: false },
+      { ident: 'MATEO', type: 'wpt', lat: 19.72, lon: -100.45, via: 'UT11', sid_star: false },
+      { ident: 'ULUSO', type: 'wpt', lat: 20.12, lon: -101.9, via: 'UJ18', sid_star: false },
+      { ident: 'GDL', type: 'vor', lat: 20.53, lon: -103.3, via: 'STAR', sid_star: true },
+    ],
+  },
+};
+
+// Controladores de IVAO (get_ivao_atc): solo datos públicos de la posición.
+const IVAO_ATC = {
+  fetched_at: minsAgo(0.3),
+  ivao_updated_at: minsAgo(0.4),
+  stale: false,
+  error: null,
+  atcs: [
+    { callsign: 'MMFR_CTR', position: 'CTR', frequency: 128.3, latitude: 19.4, longitude: -99.1, online_since: minsAgo(95) },
+    { callsign: 'MMGL_APP', position: 'APP', frequency: 120.8, latitude: 20.52, longitude: -103.31, online_since: minsAgo(40), atis: ['ts-1.ivao.aero/MMGL_APP', 'Guadalajara information DELTA MMGL 050200Z 24005KT 8SM SKC 20/09 A3011 ARR RWY 28 DEP RWY 28'], atis_revision: 'D' },
+    { callsign: 'MMMX_APP', position: 'APP', frequency: 119.7, latitude: 19.44, longitude: -99.07, online_since: minsAgo(72) },
+    { callsign: 'MMMX_GND', position: 'GND', frequency: 121.85, latitude: 19.44, longitude: -99.07, online_since: minsAgo(30) },
+    { callsign: 'MMMX_TWR', position: 'TWR', frequency: 118.1, latitude: 19.44, longitude: -99.07, online_since: minsAgo(65), atis: ['ts-1.ivao.aero/MMMX_TWR', 'Mexico information ALFA MMMX 050146Z 04010KT 12SM SKC 19/06 A3028 ARR RWY 05R DEP RWY 05L'], atis_revision: 'A' },
+  ],
+};
+
+// Radar (RainViewer): lista de cuadros y una tesela transparente.
+const RADAR_MAPS = { version: '2.0', generated: 0, host: 'https://tilecache.rainviewer.com', radar: { past: [{ time: 1, path: '/v2/radar/1' }] } };
+const CLEAR_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGBgAAAABQABpfZFQAAAAABJRU5ErkJggg==', 'base64');
+
 // -----------------------------------------------------------------------------
 // Fase 7.5: Tours
 // -----------------------------------------------------------------------------
@@ -918,6 +951,11 @@ async function handleSupabase(route) {
     get_route_type_usage: ROUTE_TYPE_USAGE,
   };
   const rpcName = url.pathname.startsWith('/rest/v1/rpc/') ? url.pathname.slice('/rest/v1/rpc/'.length) : null;
+  if (rpcName === 'get_live_flight_route') {
+    const body = request.postDataJSON() ?? {};
+    return route.fulfill({ status: 200, headers: CORS, json: LIVE_ROUTES[body.p_flight_id] ?? { fixes: [], route: null } });
+  }
+  if (rpcName === 'get_ivao_atc') return route.fulfill({ status: 200, headers: CORS, json: IVAO_ATC });
   if (rpcName === 'get_live_flight_trace') {
     const body = request.postDataJSON() ?? {};
     const points = (LIVE_TRACES[body.p_flight_id] ?? []).filter((p) => p[0] > (body.p_after_seq ?? -1));
@@ -1028,6 +1066,8 @@ async function shoot(name, path, { viewport = { width: 1440, height: 900 }, airl
   });
   await page.route(/\.supabase\.co\//, handleSupabase);
   await page.route(/tile\.openstreetmap\.org\//, (route) => route.fulfill({ status: 200, contentType: 'image/png', body: TILE_PNG }));
+  await page.route(/api\.rainviewer\.com\//, (route) => route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' }, json: RADAR_MAPS }));
+  await page.route(/tilecache\.rainviewer\.com\//, (route) => route.fulfill({ status: 200, contentType: 'image/png', body: CLEAR_PNG }));
   try {
     await page.goto(`${SITE}${path}`, { waitUntil: 'networkidle' });
     if (waitFor) await page.getByText(waitFor, { exact: false }).first().waitFor({ timeout: 15000 });
@@ -1255,6 +1295,18 @@ await shoot('31-live-flights', `live?flights=${id(1501)},${id(1500)}`, {
   action: async (page) => {
     await page.getByRole('region', { name: /Detalle del vuelo MXL106/ }).waitFor();
     await page.waitForTimeout(2500);
+  },
+});
+await shoot('49-live-layers', `live?flights=${id(1500)}`, {
+  waitFor: 'Vuelos en vivo',
+  action: async (page) => {
+    await page.getByRole('region', { name: /Detalle del vuelo MXL106/ }).waitFor();
+    await page.getByRole('button', { name: 'Radar' }).click();
+    await page.getByRole('button', { name: 'METAR' }).click();
+    await page.locator('.lam-fix', { hasText: 'MATEO' }).first().waitFor();
+    await page.locator('.lam-atc', { hasText: 'MMMX' }).first().click();
+    await page.getByText('Control activo en IVAO').waitFor();
+    await page.waitForTimeout(1500);
   },
 });
 await shoot('31b-live-flight-profile', `live?flights=${id(1500)}`, {
