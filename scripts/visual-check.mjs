@@ -1188,7 +1188,7 @@ await shoot('15-booking-dialog', 'booking', {
   airlineId: MXL.id,
   waitFor: 'MXL100',
   action: async (page) => {
-    await page.getByRole('button', { name: 'Reservar' }).first().click();
+    await page.getByRole('button', { name: 'Reservar', exact: true }).first().click();
     await page.getByRole('dialog').getByText('XA-MXE').waitFor();
     await page.getByRole('dialog').getByLabel('Callsign').fill('mxl 4100');
   },
@@ -1207,7 +1207,7 @@ await shoot('43-booking-free-fleet', 'booking', {
   waitFor: 'MXL801',
   action: async (page) => {
     await page.getByText('Pendiente', { exact: true }).first().waitFor();
-    await page.getByRole('button', { name: 'Reservar' }).first().click();
+    await page.getByRole('button', { name: 'Reservar', exact: true }).first().click();
     await page.getByRole('dialog').getByText('XA-MXE').waitFor();
   },
 });
@@ -1470,7 +1470,7 @@ await shoot('m-03-booking-dialog', 'booking', {
   airlineId: MXL.id,
   waitFor: 'MXL100',
   action: async (page) => {
-    await page.getByRole('button', { name: 'Reservar' }).first().click();
+    await page.getByRole('button', { name: 'Reservar', exact: true }).first().click();
     await page.getByRole('dialog').getByText('XA-MXE').waitFor();
     await page.getByRole('dialog').getByLabel('Callsign').fill('MXL4100');
     await page.waitForTimeout(1000);
