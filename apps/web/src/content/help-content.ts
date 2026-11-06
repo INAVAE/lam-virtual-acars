@@ -123,6 +123,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Pulsa «Reservar» en la ruta', 'Se abre la ventana de reserva con el clima actual de origen y destino y las aeronaves de la flota.'],
       ['Elige la aeronave', 'Las que no puedes usar aparecen con el motivo: tipo no permitido en la ruta, sin habilitación, ocupada o en otro aeropuerto. Qué reglas aplican depende de las políticas de la aerolínea.'],
       ['Escribe tu callsign', 'El que vas a usar en la red y en SimBrief. Lo eliges tú en cada vuelo.'],
+      ['Vuelo directo', 'Si la ruta no existe, «Reservar un nuevo vuelo directo» (junto a «Registrar ruta») reserva origen, destino, número de vuelo, aeronave y callsign sin buscar una ruta. Al reservar, la misma ventana te deja crear el plan en SimBrief e importarlo. Marca «Registrar la ruta de este vuelo» si quieres que quede en las rutas de la aerolínea (pendiente hasta su primer vuelo aceptado); sin marcar, el vuelo se hace solo esa vez.'],
       ['Confirma', 'La reserva aparece en My Flights. Vence si no inicias el vuelo en el plazo que fija la aerolínea (24 horas por omisión), y la aerolínea limita cuántas reservas activas puedes tener.'],
     ],
     note: 'Las reglas las valida el servidor, no la pantalla: si una reserva se rechaza, el mensaje dice exactamente qué regla no se cumplió.',
@@ -205,9 +206,10 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     audience: 'all',
     steps: [
       ['Los aviones', 'Cada vuelo en curso aparece con la figura de su categoría, el logo de la aerolínea y el callsign. Al alejar el mapa queda solo el callsign.'],
+      ['La lista de vuelos', 'Cada tarjeta muestra lo recorrido y lo que falta en NM, el tiempo en curso, el tiempo estimado al destino y el total estimado del vuelo.'],
       ['Elegir un vuelo', 'Al pulsarlo se dibuja su trayectoria por fases y la ruta que le falta, y su etiqueta se resalta con el color de la fase. Puedes elegir hasta 10 y la selección queda en el enlace de la página.'],
       ['Capas', 'Bajo el mapa se encienden y apagan: Etiquetas, Ruta del plan, Radar de precipitación, METAR de origen y destino y Control IVAO. La elección se recuerda en ese navegador.'],
-      ['Ruta del plan', 'Los puntos del plan de SimBrief con su nombre, en línea punteada. Aparece si el plan se importó en My Flights.'],
+      ['Ruta del plan', 'Los puntos del plan de SimBrief con su nombre, en línea punteada, y la ruta completa en texto en el detalle del vuelo. Aparece si el plan se importó en My Flights.'],
       ['Control IVAO', 'Las posiciones de control conectadas: autorizaciones, superficie y torre en el aeropuerto, aproximación y salidas en círculo, centro de control sombreando su región. Al pulsar una estación ves su frecuencia, el tiempo en línea y el ATIS.'],
     ],
     note: 'Los datos de IVAO se actualizan cada 30 a 60 segundos y solo muestran información pública de la posición, nunca datos personales del controlador. Las regiones son aproximadas.',
@@ -288,6 +290,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Controlar la disponibilidad de la flota', 'Apagada (flota libre), cualquier piloto reserva cualquier matrícula aunque otro la tenga; se ignoran mantenimiento, fuera de servicio y ubicación.'],
       ['La aeronave debe estar en el origen', 'Encendida, solo se reserva la aeronave que está en el aeropuerto de salida.'],
       ['Los pilotos registran rutas', 'Encendida, los pilotos dan de alta rutas pendientes desde Flight Booking.'],
+      ['Los pilotos reservan vuelos directos', 'Encendida, Flight Booking muestra «Reservar un nuevo vuelo directo» para volar sin una ruta registrada. El administrador siempre puede.'],
       ['Reservas y vencimiento', 'Cuántas reservas activas tiene cada piloto y en cuántas horas vence una reserva sin iniciar.'],
       ['Aprobación automática', 'Con «Aprobar PIREP automáticamente», un PIREP con el puntaje mínimo o más y sin faltas graves se acepta solo.'],
       ['Puntuación de PIREP', 'En la misma ficha se ajusta cuánto resta cada regla y su umbral.'],
@@ -346,6 +349,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
 
 export const HELP_FAQ: [question: string, answer: string][] = [
   ['¿Por qué no puedo reservar ninguna aeronave?', 'La ventana de reserva dice el motivo junto a cada una: tipo no permitido en la ruta, sin habilitación, ocupada o en otro aeropuerto. Si la aerolínea exige habilitación, pídela a tu jefe de operaciones.'],
+  ['La ruta que quiero volar no existe.', 'Usa «Reservar un nuevo vuelo directo» en Flight Booking: eliges origen, destino y número de vuelo. Si marcas «Registrar la ruta de este vuelo», queda guardada para otros pilotos.'],
   ['¿Puedo usar el callsign que yo quiera?', 'Sí. El callsign lo eliges en cada reserva; usa el mismo en SimBrief y en la red.'],
   ['Mi reserva desapareció.', 'Venció: si no inicias el vuelo en el plazo de la aerolínea (24 horas por omisión), se libera sola. Aparece en el historial de My Flights como vencida.'],
   ['El plan de SimBrief «no coincide con la reserva».', 'Algún dato del plan (origen, destino, tipo, matrícula o número de vuelo) es distinto al de la reserva. Usa «Crear en SimBrief» para generarlo con los datos correctos e impórtalo otra vez.'],
@@ -423,6 +427,8 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-05', 'Flight Booking: «Reservar un nuevo vuelo directo», sin ruta registrada, con opción de registrar la ruta y plan de SimBrief en la misma ventana.'],
+  ['2026-11-05', 'Live Flights: ruta del plan de SimBrief en el detalle del vuelo; distancia recorrida y por volar y tiempos en cada tarjeta.'],
   ['2026-11-05', 'Live Flights: el avión elegido ya no lleva un círculo alrededor; se resalta su etiqueta.'],
   ['2026-11-05', 'APU no informada: si la aeronave deja la APU fija en «encendida» todo el vuelo, el PIREP no cuenta esas horas y, con el conector nuevo, el vuelo se cierra sin exigir apagarla.'],
   ['2026-11-05', 'Centro de ayuda: este manual dentro de la web y en PDF, preguntas frecuentes, «Si algo falla» y reporte de incidencias con folio INC.'],

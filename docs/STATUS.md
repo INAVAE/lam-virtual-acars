@@ -2,6 +2,12 @@
 
 Última actualización: 2026-11-05 (centro de ayuda)
 
+## Vuelo directo y datos del vuelo en Live Flights (2026-11-05)
+
+- **Flight Booking → «Reservar un nuevo vuelo directo»** (junto a «Registrar ruta»): origen, destino, número de vuelo, operación, aeronave (`direct_aircraft_options`) y callsign, sin ruta registrada. `book_direct_flight` deja el vuelo sin `route_id` o, con «Registrar la ruta de este vuelo», llama a `register_route` y `book_flight` en la misma transacción (ruta pendiente; si la reserva falla no queda ruta). Tras reservar, la misma ventana muestra «Crear en SimBrief» e «Importar de SimBrief» con el resumen del OFP. My Flights marca «Vuelo directo».
+- Política nueva `airline_settings.allow_direct_flights` (activada por omisión; el administrador siempre puede). Migración `direct_flights`, prueba 020 (16); 468 pruebas pgTAP. Captura 54.
+- **Live Flights:** el detalle del vuelo muestra la ruta del plan de SimBrief en texto (`get_live_flight_route.route`); cada tarjeta de la lista muestra NM recorridas, por volar y totales, y tiempo en curso, al destino y total estimado.
+
 ## APU no informada por la aeronave (2026-11-05)
 
 - QTR783 (A380-800 EA Basic) y el A300 PW de Hugo dejan la APU fija en «encendida» todo el vuelo. El PIREP ahora la marca «Sin dato» (`apu.unreliable`, migración `apu_unreliable`, prueba 019) y el conector 0.1.24 solo exige apagarla si la vio apagada alguna vez. PIREP 00005 y 00007 corregidos. Detalle en `docs/integrations/aircraft-adapters.md`. 452 pruebas pgTAP.

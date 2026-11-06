@@ -17,6 +17,59 @@ export function useRouteAircraftOptions(routeId: string | null) {
   });
 }
 
+/** Aeronaves de la aerolínea para un vuelo directo, con el motivo por el que no se pueden reservar. */
+export function useDirectAircraftOptions(airlineId: string | null, originId: number | null) {
+  return useQuery({
+    queryKey: ['route-aircraft-options', 'direct', airlineId, originId],
+    enabled: Boolean(airlineId),
+    staleTime: 0,
+    queryFn: async (): Promise<RouteAircraftOption[]> => {
+      const { data, error } = await getSupabase().rpc('direct_aircraft_options', {
+        p_airline_id: airlineId!,
+        ...(originId !== null ? { p_origin_airport_id: originId } : {}),
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export interface DirectFlightInput {
+  airlineId: string;
+  flightNumber: string;
+  originId: number;
+  destinationId: number;
+  aircraftId: string;
+  callsign: string;
+  registerRoute: boolean;
+  operationType: string;
+}
+
+/** Vuelo directo: sin ruta registrada o registrándola (pendiente) en la misma operación. */
+export function useBookDirectFlight() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: DirectFlightInput) => {
+      const { data, error } = await getSupabase().rpc('book_direct_flight', {
+        p_airline_id: v.airlineId,
+        p_flight_number: v.flightNumber,
+        p_origin_airport_id: v.originId,
+        p_destination_airport_id: v.destinationId,
+        p_aircraft_id: v.aircraftId,
+        p_callsign: v.callsign,
+        p_register_route: v.registerRoute,
+        p_operation_type: v.operationType,
+      });
+      if (error) throw error;
+      return data as unknown as BookFlightResult & { route_registered?: boolean; route_id?: string };
+    },
+    onSettled: () => {
+      invalidateOperations(queryClient);
+      void queryClient.invalidateQueries({ queryKey: ['routes'] });
+    },
+  });
+}
+
 function invalidateOperations(queryClient: ReturnType<typeof useQueryClient>) {
   for (const key of ['my-flights', 'route-aircraft-options', 'fleet', 'dashboard-summary', 'airline-bookings']) {
     void queryClient.invalidateQueries({ queryKey: [key] });
@@ -51,7 +104,7 @@ export function useCancelBooking() {
 }
 
 const FLIGHT_SELECT =
-  'id, tour_leg_id, event_registration_id, booking_id, airline_id, user_id, aircraft_id, aircraft_registration, airline_icao, flight_number, callsign, planned_distance_nm, planned_minutes, scheduled_departure_at, operation_type, network, flight_plan_remarks, status, created_at, started_at, completed_at, cancelled_at, airline:airlines!flights_airline_id_fkey(name, slug, logo_path, brand_primary_color), type:aircraft_types!flights_aircraft_type_id_fkey(icao_code, manufacturer, model), origin:airports!flights_origin_airport_id_fkey(icao_code, name, city), destination:airports!flights_destination_airport_id_fkey(icao_code, name, city), booking:flight_bookings!flights_booking_id_fkey(id, status, expires_at, closed_at), ofp:simbrief_ofps!simbrief_ofps_flight_id_fkey(*), session:flight_sessions!flight_sessions_flight_id_fkey(id, status, phase, started_at, last_contact_at, sim_aircraft_title, end_reason), live:flight_positions_live!flight_positions_live_flight_id_fkey(altitude_ft, gs_kt, ias_kt, vs_fpm, on_ground, sampled_at), pirep:pireps!pireps_flight_id_fkey(id, folio, status, score)' as const;
+  'id, route_id, tour_leg_id, event_registration_id, booking_id, airline_id, user_id, aircraft_id, aircraft_registration, airline_icao, flight_number, callsign, planned_distance_nm, planned_minutes, scheduled_departure_at, operation_type, network, flight_plan_remarks, status, created_at, started_at, completed_at, cancelled_at, airline:airlines!flights_airline_id_fkey(name, slug, logo_path, brand_primary_color), type:aircraft_types!flights_aircraft_type_id_fkey(icao_code, manufacturer, model), origin:airports!flights_origin_airport_id_fkey(icao_code, name, city), destination:airports!flights_destination_airport_id_fkey(icao_code, name, city), booking:flight_bookings!flights_booking_id_fkey(id, status, expires_at, closed_at), ofp:simbrief_ofps!simbrief_ofps_flight_id_fkey(*), session:flight_sessions!flight_sessions_flight_id_fkey(id, status, phase, started_at, last_contact_at, sim_aircraft_title, end_reason), live:flight_positions_live!flight_positions_live_flight_id_fkey(altitude_ft, gs_kt, ias_kt, vs_fpm, on_ground, sampled_at), pirep:pireps!pireps_flight_id_fkey(id, folio, status, score)' as const;
 
 export type FlightView = 'upcoming' | 'history';
 

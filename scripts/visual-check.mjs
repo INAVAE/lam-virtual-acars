@@ -821,7 +821,7 @@ function rowsFor(url) {
         { id: id(951), name: 'LAPTOP-VIEJA', token_prefix: 'lamd_a9Bc', app_version: '0.1.0', created_at: now, last_used_at: null, revoked_at: now },
       ];
     case 'airline_settings':
-      return [{ airline_id: eqParam(url, 'airline_id'), max_active_bookings: 3, booking_expiry_hours: 24, require_aircraft_at_origin: false, require_type_rating: true, control_fleet_availability: true, pilots_register_routes: true, auto_approve_pireps: false, pirep_min_score: 80, public_tracking: true, delay_tolerance_minutes: 30, updated_at: now, updated_by: null, ...SETTINGS_OVERRIDE }];
+      return [{ airline_id: eqParam(url, 'airline_id'), max_active_bookings: 3, booking_expiry_hours: 24, require_aircraft_at_origin: false, require_type_rating: true, control_fleet_availability: true, pilots_register_routes: true, allow_direct_flights: true, auto_approve_pireps: false, pirep_min_score: 80, public_tracking: true, delay_tolerance_minutes: 30, updated_at: now, updated_by: null, ...SETTINGS_OVERRIDE }];
     case 'airports': {
       const one = eqParam(url, 'id');
       return one ? AIRPORTS.filter((a) => String(a.id) === one) : AIRPORTS;
@@ -1015,7 +1015,7 @@ async function handleSupabase(route) {
     return route.fulfill({ status: 200, headers: CORS, json: { active: true, session_id: id(1550), points, events } });
   }
   if (rpcName && rpcName in RPC) return route.fulfill({ status: 200, headers: CORS, json: RPC[rpcName] });
-  if (url.pathname === '/rest/v1/rpc/route_aircraft_options') {
+  if (url.pathname === '/rest/v1/rpc/route_aircraft_options' || url.pathname === '/rest/v1/rpc/direct_aircraft_options') {
     // Con la flota libre y sin habilitaciones, la base solo bloquea por tipo u operación.
     const free = SETTINGS_OVERRIDE.control_fleet_availability === false;
     const options = free
@@ -1219,6 +1219,19 @@ await shoot('44-register-route', 'booking', {
     await page.getByRole('dialog').getByLabel('Número de vuelo').fill('2201');
     await page.getByRole('dialog').getByRole('button', { name: 'Registrar ruta' }).click();
     await page.getByRole('dialog').getByText('Elige el origen').waitFor();
+  },
+});
+await shoot('54-direct-flight', 'booking', {
+  airlineId: MXL.id,
+  waitFor: 'MXL100',
+  action: async (page) => {
+    await page.getByRole('button', { name: 'Reservar un nuevo vuelo directo' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Número de vuelo').fill('2201');
+    await dialog.getByLabel('Callsign').fill('MXL2201');
+    await dialog.getByText('Registrar la ruta de este vuelo').waitFor();
+    await dialog.getByRole('button', { name: 'Reservar vuelo directo' }).click();
+    await dialog.getByText('Elige el origen').waitFor();
   },
 });
 await shoot('45-fleet-free', 'fleet', { airlineId: MXL.id, waitFor: 'no controla la disponibilidad' });

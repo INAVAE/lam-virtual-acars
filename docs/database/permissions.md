@@ -121,3 +121,7 @@ Nadie inserta ni edita PIREPs desde la API: los genera `private.build_pirep` al 
 | `support_tickets` | Envía reportes propios (sin aerolínea o de una donde es miembro activo) y lee los suyos | Además lee y atiende (estado y respuesta) los de su aerolínea | Igual que el jefe de operaciones | Lee y atiende todos, incluidos los de la plataforma |
 
 La firma (`author_name`, `author_pilot_number`), el estado inicial y quién atendió (`handled_by`, `handler_name`, `handled_at`) los pone el disparador `support_tickets_guard`. Solo `status` y `response` tienen permiso de UPDATE; no hay DELETE. Máximo 10 reportes por hora por persona (`support_tickets_rate_limit`). Pruebas: `018_support_tickets.test.sql`.
+
+## Vuelo directo
+
+`book_direct_flight` (miembros activos; si `allow_direct_flights` está apagada, solo quien administra la aerolínea) y `direct_aircraft_options` (miembros). Con `p_register_route` aplica las reglas de `register_route` (incluida `pilots_register_routes`). Pruebas: `020_direct_flights.test.sql`.

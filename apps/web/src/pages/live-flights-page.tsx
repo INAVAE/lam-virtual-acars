@@ -260,6 +260,33 @@ function ProgramTag({ flight, now }: { flight: LiveFlight; now: number }) {
   return null;
 }
 
+/**
+ * Distancia recorrida y por volar, y tiempo en curso, por volar y total estimado
+ * (en curso + por volar; sin estimación, el del plan). Mismos datos que el detalle.
+ */
+function FlightProgressFacts({ flight, now }: { flight: LiveFlight; now: number }) {
+  const remaining = flight.remaining_nm;
+  const flown = remaining !== null ? Math.max(0, flight.route_nm - remaining) : null;
+  const elapsed = Math.max(0, Math.round((now - Date.parse(flight.started_at)) / 60_000));
+  const ete = eteMinutes(flight);
+  const total = ete !== null ? elapsed + ete : flight.planned_minutes;
+  return (
+    <span className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5 font-mono text-xs">
+      <span className="text-muted">Recorrido</span>
+      <span className="text-muted">Por volar</span>
+      <span className="text-muted">Total</span>
+      <span>{flown !== null ? `${formatNumber(flown)} NM` : '—'}</span>
+      <span>{remaining !== null ? `${formatNumber(remaining)} NM` : '—'}</span>
+      <span>{`${formatNumber(flight.route_nm)} NM`}</span>
+      <span>{formatMinutes(elapsed)}</span>
+      <span>{ete !== null ? formatMinutes(ete) : '—'}</span>
+      <span title={ete !== null ? 'En curso más el tiempo estimado al destino' : 'Tiempo del plan'}>
+        {formatMinutes(total)}
+      </span>
+    </span>
+  );
+}
+
 function FlightCard({ flight, selected, now, onSelect }: { flight: LiveFlight; selected: boolean; now: number; onSelect: () => void }) {
   const p = flight.position;
   const stale = ageSeconds(flight.last_contact_at, now) >= STALE_SECONDS;
@@ -307,6 +334,7 @@ function FlightCard({ flight, selected, now, onSelect }: { flight: LiveFlight; s
           </span>
           <span>{flight.destination.icao}</span>
         </span>
+        <FlightProgressFacts flight={flight} now={now} />
         <span className="mt-1.5 flex items-center justify-between gap-2 text-xs text-muted">
           <PhasePill phase={flight.phase} />
           <span className="font-mono">
@@ -324,6 +352,23 @@ function Datum({ label, children }: { label: string; children: ReactNode }) {
     <div>
       <dt className="text-[10px] uppercase tracking-wide text-muted">{label}</dt>
       <dd className="font-mono text-sm">{children}</dd>
+    </div>
+  );
+}
+
+/** Ruta del plan de SimBrief importado en My Flights (texto de la ruta, como en el OFP). */
+function FlightPlanRoute({ flightId }: { flightId: string }) {
+  const query = useFlightRoutes([flightId], true)[0];
+  const route = query?.data?.route?.trim();
+  if (query?.isPending) return null;
+  return (
+    <div className="mt-4 border-t border-line pt-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted">Ruta del plan (SimBrief)</p>
+      {route ? (
+        <p className="mt-1 break-words font-mono text-sm leading-relaxed">{route}</p>
+      ) : (
+        <p className="mt-1 text-sm text-muted">Sin plan de SimBrief importado.</p>
+      )}
     </div>
   );
 }
@@ -411,6 +456,7 @@ function FlightDetail({ flight, now, follow, onFollow }: { flight: LiveFlight; n
           <span className={contact >= STALE_SECONDS ? 'text-warn-ink' : undefined}>{formatAge(contact)}</span>
         </Datum>
       </dl>
+      <FlightPlanRoute flightId={flight.flight_id} />
       {flight.sim_aircraft_title ? <p className="mt-3 text-xs text-muted">Simulador: {flight.sim_aircraft_title}</p> : null}
 
       {flight.alerts && flight.alerts.length > 0 ? (

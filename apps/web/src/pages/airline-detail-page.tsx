@@ -306,6 +306,7 @@ const settingsSchema = z.object({
   require_type_rating: z.boolean(),
   control_fleet_availability: z.boolean(),
   pilots_register_routes: z.boolean(),
+  allow_direct_flights: z.boolean(),
   auto_approve_pireps: z.boolean(),
   pirep_min_score: z.coerce.number().int().min(0, 'Mínimo 0').max(100, 'Máximo 100'),
   public_tracking: z.boolean(),
@@ -321,6 +322,7 @@ function toSettingsForm(s: AirlineSettings): SettingsForm {
     require_type_rating: s.require_type_rating,
     control_fleet_availability: s.control_fleet_availability,
     pilots_register_routes: s.pilots_register_routes,
+    allow_direct_flights: s.allow_direct_flights,
     auto_approve_pireps: s.auto_approve_pireps,
     pirep_min_score: s.pirep_min_score,
     public_tracking: s.public_tracking,
@@ -397,6 +399,12 @@ function SettingsPanel({ airlineId, canManage }: { airlineId: string; canManage:
             label="Los pilotos registran rutas"
             hint="Cualquier piloto registra la ruta que quiere volar. Queda pendiente y se activa sola con el primer PIREP aceptado que llegue a su destino. Las rutas del staff nacen activas."
             {...register('pilots_register_routes')}
+          />
+          <Checkbox
+            id="st-direct"
+            label="Los pilotos reservan vuelos directos"
+            hint="«Reservar un nuevo vuelo directo» en Flight Booking: origen, destino y número de vuelo sin una ruta registrada. El piloto decide si además registra la ruta (requiere la opción anterior)."
+            {...register('allow_direct_flights')}
           />
           <Checkbox
             id="st-auto"

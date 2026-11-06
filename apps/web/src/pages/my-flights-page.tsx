@@ -54,7 +54,7 @@ function fuel(value: number | null, units: string | null): string {
 // -----------------------------------------------------------------------------
 // Plan de SimBrief
 // -----------------------------------------------------------------------------
-function OfpSummary({ ofp }: { ofp: Ofp }) {
+export function OfpSummary({ ofp }: { ofp: Ofp }) {
   const mismatches = parseMismatches(ofp.mismatches);
   const high = mismatches.filter((m) => m.severity === 'high');
   const low = mismatches.filter((m) => m.severity === 'low');
@@ -227,6 +227,7 @@ function UpcomingFlight({
               {flight.flight_number}
             </span>{' '}
             · {operationTypeLabel(flight.operation_type)}
+            {!flight.route_id && !flight.tour_leg_id && !flight.event_registration_id ? ' · Vuelo directo' : ''}
           </p>
           {tag?.tour ? (
             <Link

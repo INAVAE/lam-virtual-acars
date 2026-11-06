@@ -341,6 +341,7 @@ export type Database = {
           booking_expiry_hours: number
           delay_tolerance_minutes: number
           max_active_bookings: number
+          allow_direct_flights: boolean
           pilots_register_routes: boolean
           public_tracking: boolean
           require_aircraft_at_origin: boolean
@@ -356,6 +357,7 @@ export type Database = {
           booking_expiry_hours?: number
           delay_tolerance_minutes?: number
           max_active_bookings?: number
+          allow_direct_flights?: boolean
           pilots_register_routes?: boolean
           public_tracking?: boolean
           require_aircraft_at_origin?: boolean
@@ -371,6 +373,7 @@ export type Database = {
           booking_expiry_hours?: number
           delay_tolerance_minutes?: number
           max_active_bookings?: number
+          allow_direct_flights?: boolean
           pilots_register_routes?: boolean
           public_tracking?: boolean
           require_aircraft_at_origin?: boolean
@@ -2484,6 +2487,19 @@ export type Database = {
         Returns: undefined
       }
       withdraw_event_registration: { Args: { p_registration_id: string }; Returns: undefined }
+      book_direct_flight: {
+        Args: {
+          p_aircraft_id: string
+          p_airline_id: string
+          p_callsign: string
+          p_destination_airport_id: number
+          p_flight_number: string
+          p_operation_type?: string
+          p_origin_airport_id: number
+          p_register_route?: boolean
+        }
+        Returns: Json
+      }
       book_event_flight: {
         Args: {
           p_aircraft_id: string
@@ -2537,6 +2553,20 @@ export type Database = {
         Returns: Database["public"]["Tables"]["pireps"]["Row"]
       }
       revoke_acars_device: { Args: { p_device_id: string }; Returns: undefined }
+      direct_aircraft_options: {
+        Args: { p_airline_id: string; p_origin_airport_id?: number }
+        Returns: {
+          aircraft_id: string
+          aircraft_type_id: number
+          block_reason: string | null
+          fleet_number: string | null
+          location_icao: string | null
+          registration: string
+          status: Database["public"]["Enums"]["aircraft_status"]
+          type_icao: string
+          type_model: string
+        }[]
+      }
       route_aircraft_options: {
         Args: { p_route_id: string }
         Returns: {
