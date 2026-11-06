@@ -39,6 +39,7 @@ import {
   alertText,
   eteMinutes,
   flightProgress,
+  withRouteProgress,
   formatAge,
   MAX_SELECTED,
   parseSelection,
@@ -418,7 +419,9 @@ function FlightDetail({ flight, now, follow, onFollow }: { flight: LiveFlight; n
         <div>
           <Progress value={flightProgress(flight)} color={phaseColor(flight.phase)} />
           <p className="mt-1 text-center text-xs text-muted">
-            {flight.remaining_nm !== null ? `${formatNumber(flight.remaining_nm)} NM por volar de ${formatNumber(flight.route_nm)} NM` : `${formatNumber(flight.route_nm)} NM en directo`}
+            {flight.remaining_nm !== null
+              ? `${formatNumber(flight.remaining_nm)} NM por volar de ${formatNumber(flight.route_nm)} NM${'route_based' in flight && flight.route_based ? ' por la ruta del plan' : ' en línea recta'}`
+              : `${formatNumber(flight.route_nm)} NM en directo`}
           </p>
         </div>
         <div className="text-right">
@@ -547,7 +550,17 @@ export function LiveFlightsPage() {
     }
   }, [layers]);
 
-  const flights = useMemo(() => sortFlights(live.data ?? []), [live.data]);
+  const baseFlights = useMemo(() => sortFlights(live.data ?? []), [live.data]);
+  // Ruta del plan de cada vuelo en curso: la distancia y el tiempo restantes se miden
+  // por la ruta (SID, aerovías, STAR y aproximación), no en línea recta al destino.
+  const allRouteQueries = useFlightRoutes(baseFlights.map((f) => f.flight_id), true);
+  const allRoutesKey = baseFlights.map((f, i) => `${f.flight_id}:${allRouteQueries[i]?.dataUpdatedAt ?? 0}`).join('|');
+  const flights = useMemo(
+    () => baseFlights.map((f, i) => withRouteProgress(f, allRouteQueries[i]?.data?.fixes)),
+    // allRoutesKey resume las rutas recibidas.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [baseFlights, allRoutesKey],
+  );
   // Las trazas se piden solo para los elegidos que siguen en curso.
   const activeSelection = useMemo(() => {
     if (!live.data) return selectedIds;

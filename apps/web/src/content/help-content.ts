@@ -206,7 +206,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     audience: 'all',
     steps: [
       ['Los aviones', 'Cada vuelo en curso aparece con la figura de su categoría, el logo de la aerolínea y el callsign. Al alejar el mapa queda solo el callsign.'],
-      ['La lista de vuelos', 'Cada tarjeta lleva el logo de la aerolínea y muestra lo recorrido y lo que falta en NM, el tiempo en curso, el tiempo estimado al destino y el total estimado del vuelo.'],
+      ['La lista de vuelos', 'Cada tarjeta lleva el logo de la aerolínea y muestra lo recorrido y lo que falta en NM, el tiempo en curso, el tiempo estimado al destino y el total estimado del vuelo. La distancia se mide por la ruta del plan de SimBrief (si el vuelo lo importó) y el tiempo considera que el avión desacelera en el descenso y la aproximación; sin plan, se mide en línea recta al destino.'],
       ['Elegir un vuelo', 'Al pulsarlo se dibuja su trayectoria por fases y la ruta que le falta, y su etiqueta se resalta con el color de la fase. Puedes elegir hasta 10 y la selección queda en el enlace de la página.'],
       ['Capas', 'Bajo el mapa se encienden y apagan: Etiquetas, Ruta del plan, Radar de precipitación, METAR de origen y destino y Control IVAO. La elección se recuerda en ese navegador.'],
       ['Ruta del plan', 'Los puntos del plan de SimBrief con su nombre, en línea punteada, y la ruta completa en texto en el detalle del vuelo. Aparece si el plan se importó en My Flights.'],
@@ -427,6 +427,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-06', 'Live Flights: distancia restante por la ruta del plan de SimBrief y tiempo al destino que considera el descenso y la aproximación.'],
   ['2026-11-05', 'Flight Booking: «Reservar un nuevo vuelo directo», sin ruta registrada, con opción de registrar la ruta y plan de SimBrief en la misma ventana.'],
   ['2026-11-05', 'Live Flights: ruta del plan de SimBrief en el detalle del vuelo; distancia recorrida y por volar y tiempos en cada tarjeta.'],
   ['2026-11-05', 'Live Flights: el avión elegido ya no lleva un círculo alrededor; se resalta su etiqueta.'],

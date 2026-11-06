@@ -1,6 +1,6 @@
 import type { LivePosition } from '@lam/shared-types';
 import { describe, expect, it } from 'vitest';
-import { ageSeconds, alertText, eteMinutes, extrapolate, flightProgress, formatAge, greatCirclePoints, mergeTrace, parseSelection, toggleSelection, worstAlert, type CompactTracePoint } from './live';
+import { ageSeconds, alertText, eteMinutes, extrapolate, flightProgress, formatAge, greatCirclePoints, mergeTrace, parseSelection, routeProgress, toggleSelection, worstAlert, type CompactTracePoint } from './live';
 
 const T = Date.parse('2026-11-01T12:00:00Z');
 const pos = (extra: Partial<LivePosition> = {}): LivePosition => ({
@@ -31,7 +31,10 @@ describe('mapa en vivo', () => {
     expect(flightProgress({ route_nm: 200, remaining_nm: 260, phase: 'climb' })).toBe(0);
     expect(flightProgress({ route_nm: 200, remaining_nm: 3, phase: 'taxi_in' })).toBe(1);
     expect(flightProgress({ route_nm: 200, remaining_nm: null, phase: 'preflight' })).toBe(0);
-    expect(eteMinutes({ remaining_nm: 120, position: pos() })).toBe(20);
+    // 20 NM a 360 kt, 70 NM a 280 kt y las últimas 30 NM a 180 kt.
+    expect(eteMinutes({ remaining_nm: 120, position: pos() })).toBe(28);
+    expect(eteMinutes({ remaining_nm: 600, position: pos() })).toBe(108);
+    expect(eteMinutes({ remaining_nm: 10, position: pos({ gs_kt: 150 }) })).toBe(4);
     expect(eteMinutes({ remaining_nm: 120, position: pos({ on_ground: true }) })).toBeNull();
   });
 
@@ -93,5 +96,30 @@ describe('traza y selección en el mapa en vivo', () => {
     const id2 = '00000000-0000-4000-8000-000000001501';
     expect(parseSelection(`${id1},${id2},${id1},basura`)).toEqual([id1, id2]);
     expect(parseSelection(null)).toEqual([]);
+  });
+
+  it('mide lo que falta por la ruta del plan, no en línea recta', () => {
+    // Ruta que pasa al norte del destino y regresa para la aproximación (como SVMI).
+    const fixes = [
+      { lat: 11.0, lon: -66.0 },
+      { lat: 11.0, lon: -67.0 },
+      { lat: 10.8, lon: -67.3 },
+      { lat: 10.6, lon: -67.0 },
+    ];
+    // Avión sobre el primer tramo, a 0.5° del inicio, volando al oeste (270°).
+    const r = routeProgress(fixes, 11.0, -66.5, 270)!;
+    expect(Math.round(r.offRouteNm)).toBe(0);
+    const total = r.totalNm;
+    expect(total).toBeGreaterThan(80);
+    // Falta medio primer tramo (~29 NM) más los otros dos.
+    expect(Math.round(total - r.remainingNm)).toBe(29);
+    // La línea recta al destino sería mucho menor que lo que falta por la ruta.
+    expect(r.remainingNm).toBeGreaterThan(70);
+    // Al avanzar sobre la ruta, lo que falta siempre baja.
+    const later = routeProgress(fixes, 10.8, -67.25, 225)!;
+    expect(later.remainingNm).toBeLessThan(r.remainingNm);
+    // Sin ruta o lejos de ella: no hay dato y se usa la línea recta.
+    expect(routeProgress([], 11, -66, 270)).toBeNull();
+    expect(routeProgress(fixes, 20, -66, 270)).toBeNull();
   });
 });

@@ -25,11 +25,135 @@ export function flightProgress(f: Pick<LiveFlight, 'route_nm' | 'remaining_nm' |
   return Math.min(1, Math.max(0, 1 - f.remaining_nm / f.route_nm));
 }
 
-/** Minutos estimados al destino con la velocidad sobre el suelo actual (solo en el aire). */
+/**
+ * Minutos estimados al destino (solo en el aire). Con la velocidad sobre el suelo
+ * actual hasta 100 NM del destino; después el avión desacelera para el descenso
+ * y la aproximación, así que esos tramos se calculan como máximo a 280 kt
+ * (100–30 NM) y 180 kt (últimas 30 NM). Sin eso, a pocas millas el tiempo salía
+ * corto porque usaba la velocidad de crucero hasta la pista.
+ */
 export function eteMinutes(f: Pick<LiveFlight, 'remaining_nm' | 'position'>): number | null {
   const p = f.position;
   if (!p || p.on_ground || f.remaining_nm === null || !p.gs_kt || p.gs_kt < 60) return null;
-  return Math.round((f.remaining_nm / p.gs_kt) * 60);
+  const gs = p.gs_kt;
+  const d = Math.max(0, f.remaining_nm);
+  const final = Math.min(d, 30);
+  const middle = Math.min(Math.max(d - 30, 0), 70);
+  const cruise = Math.max(d - 100, 0);
+  const hours = cruise / gs + middle / Math.min(gs, 280) + final / Math.min(gs, 180);
+  return Math.round(hours * 60);
+}
+
+// -----------------------------------------------------------------------------
+// Distancia por la ruta del plan de SimBrief
+// -----------------------------------------------------------------------------
+const EARTH_NM = 3440.065;
+const RAD = Math.PI / 180;
+
+function angularDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const p1 = lat1 * RAD;
+  const p2 = lat2 * RAD;
+  const dp = p2 - p1;
+  const dl = (lon2 - lon1) * RAD;
+  return 2 * Math.asin(Math.min(1, Math.sqrt(Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2)));
+}
+
+function bearing(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const p1 = lat1 * RAD;
+  const p2 = lat2 * RAD;
+  const dl = (lon2 - lon1) * RAD;
+  return Math.atan2(Math.sin(dl) * Math.cos(p2), Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl));
+}
+
+export interface RoutePoint {
+  lat: number;
+  lon: number;
+}
+
+export interface RouteProgress {
+  /** NM que faltan siguiendo la ruta del plan. */
+  remainingNm: number;
+  /** Largo total de la ruta del plan. */
+  totalNm: number;
+  /** Distancia del avión a la ruta. */
+  offRouteNm: number;
+}
+
+/**
+ * Lo que falta volar siguiendo la ruta del plan (SID, aerovías, STAR y
+ * aproximación), no en línea recta: el avión se proyecta sobre el tramo más
+ * cercano y se suman los tramos que siguen. Así no se acorta el número cuando la
+ * ruta pasa junto al destino y luego se aleja para la aproximación.
+ *
+ * Si dos tramos quedan a la misma distancia (la ruta de ida y la de vuelta de una
+ * aproximación), gana el que va en el sentido del rumbo del avión. Sin ruta o con
+ * el avión a más de 100 NM de ella (desvío), devuelve null y se usa la línea recta.
+ */
+export function routeProgress(
+  fixes: readonly RoutePoint[] | null | undefined,
+  lat: number,
+  lon: number,
+  headingDeg: number | null,
+): RouteProgress | null {
+  if (!fixes || fixes.length < 2) return null;
+  const cumulative: number[] = [0];
+  for (let i = 1; i < fixes.length; i++) {
+    const a = fixes[i - 1]!;
+    const b = fixes[i]!;
+    cumulative.push(cumulative[i - 1]! + angularDistance(a.lat, a.lon, b.lat, b.lon) * EARTH_NM);
+  }
+  const total = cumulative[cumulative.length - 1]!;
+  const heading = headingDeg === null ? null : headingDeg * RAD;
+
+  let best: { score: number; along: number; distance: number } | null = null;
+  for (let i = 0; i < fixes.length - 1; i++) {
+    const a = fixes[i]!;
+    const b = fixes[i + 1]!;
+    const segment = cumulative[i + 1]! - cumulative[i]!;
+    const d13 = angularDistance(a.lat, a.lon, lat, lon);
+    const t13 = bearing(a.lat, a.lon, lat, lon);
+    const t12 = bearing(a.lat, a.lon, b.lat, b.lon);
+    let along: number;
+    let distance: number;
+    if (segment < 0.01) {
+      along = 0;
+      distance = d13 * EARTH_NM;
+    } else {
+      const xt = Math.asin(Math.max(-1, Math.min(1, Math.sin(d13) * Math.sin(t13 - t12))));
+      const at = Math.cos(t13 - t12) < 0 ? 0 : Math.acos(Math.max(-1, Math.min(1, Math.cos(d13) / Math.max(Math.cos(xt), 1e-9)))) * EARTH_NM;
+      if (at <= 0) {
+        along = 0;
+        distance = d13 * EARTH_NM;
+      } else if (at >= segment) {
+        along = segment;
+        distance = angularDistance(b.lat, b.lon, lat, lon) * EARTH_NM;
+      } else {
+        along = at;
+        distance = Math.abs(xt) * EARTH_NM;
+      }
+    }
+    // Tramo en sentido contrario al rumbo: solo gana si está claramente más cerca.
+    let score = distance;
+    if (heading !== null && segment >= 0.5) {
+      const diff = Math.abs(Math.atan2(Math.sin(heading - t12), Math.cos(heading - t12)));
+      if (diff > Math.PI / 2) score += 15;
+    }
+    if (!best || score < best.score - 1e-6) best = { score, along: cumulative[i]! + along, distance };
+  }
+  if (!best || best.distance > 100) return null;
+  return { remainingNm: Math.max(0, total - best.along), totalNm: total, offRouteNm: best.distance };
+}
+
+/**
+ * El vuelo con distancia restante y total por la ruta del plan, si la hay; así el
+ * avance, el tiempo al destino y la llegada estimada salen de la ruta real.
+ */
+export function withRouteProgress(f: LiveFlight, fixes: readonly RoutePoint[] | null | undefined): LiveFlight & { route_based?: boolean } {
+  const p = f.position;
+  if (!p || p.on_ground) return f;
+  const progress = routeProgress(fixes, p.latitude, p.longitude, p.heading_deg);
+  if (!progress) return f;
+  return { ...f, remaining_nm: Math.round(progress.remainingNm), route_nm: Math.round(progress.totalNm), route_based: true };
 }
 
 /** Lectura de 2 minutos o más: el conector dejó de enviar. */
