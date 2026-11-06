@@ -28,8 +28,8 @@ export function flightProgress(f: Pick<LiveFlight, 'route_nm' | 'remaining_nm' |
 /**
  * Minutos estimados al destino (solo en el aire). Con la velocidad sobre el suelo
  * actual hasta 100 NM del destino; después el avión desacelera para el descenso
- * y la aproximación, así que esos tramos se calculan como máximo a 280 kt
- * (100–30 NM) y 180 kt (últimas 30 NM). Sin eso, a pocas millas el tiempo salía
+ * y la aproximación, así que esos tramos se calculan como máximo a 300 kt
+ * (100–30 NM) y 220 kt (últimas 30 NM; ajustado con el QTR783 a SVMI). Sin eso, a pocas millas el tiempo salía
  * corto porque usaba la velocidad de crucero hasta la pista.
  */
 export function eteMinutes(f: Pick<LiveFlight, 'remaining_nm' | 'position'>): number | null {
@@ -40,7 +40,7 @@ export function eteMinutes(f: Pick<LiveFlight, 'remaining_nm' | 'position'>): nu
   const final = Math.min(d, 30);
   const middle = Math.min(Math.max(d - 30, 0), 70);
   const cruise = Math.max(d - 100, 0);
-  const hours = cruise / gs + middle / Math.min(gs, 280) + final / Math.min(gs, 180);
+  const hours = cruise / gs + middle / Math.min(gs, 300) + final / Math.min(gs, 220);
   return Math.round(hours * 60);
 }
 

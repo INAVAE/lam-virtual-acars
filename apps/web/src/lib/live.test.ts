@@ -31,9 +31,9 @@ describe('mapa en vivo', () => {
     expect(flightProgress({ route_nm: 200, remaining_nm: 260, phase: 'climb' })).toBe(0);
     expect(flightProgress({ route_nm: 200, remaining_nm: 3, phase: 'taxi_in' })).toBe(1);
     expect(flightProgress({ route_nm: 200, remaining_nm: null, phase: 'preflight' })).toBe(0);
-    // 20 NM a 360 kt, 70 NM a 280 kt y las últimas 30 NM a 180 kt.
-    expect(eteMinutes({ remaining_nm: 120, position: pos() })).toBe(28);
-    expect(eteMinutes({ remaining_nm: 600, position: pos() })).toBe(108);
+    // 20 NM a 360 kt, 70 NM a 300 kt y las últimas 30 NM a 220 kt.
+    expect(eteMinutes({ remaining_nm: 120, position: pos() })).toBe(26);
+    expect(eteMinutes({ remaining_nm: 600, position: pos() })).toBe(106);
     expect(eteMinutes({ remaining_nm: 10, position: pos({ gs_kt: 150 }) })).toBe(4);
     expect(eteMinutes({ remaining_nm: 120, position: pos({ on_ground: true }) })).toBeNull();
   });
