@@ -97,6 +97,6 @@ No hace falta un adaptador propio de iniBuilds para esto: el genérico ya cubre 
 
 Algunos complementos tienen su propia APU y no mueven la variable estándar `APU PCT RPM`: el conector la ve en «encendida» desde que se conecta y nunca la ve apagarse. Visto con «A380-800 EA Basic» (QTR783) y con el «A300 Freighter (PW)» (PIREP-2026-00005 y 00007).
 
-- **Conector (versión siguiente a la 0.1.22):** la APU apagada solo se exige para cerrar el vuelo si en ese vuelo ya se vio apagada al menos una vez (`PhaseMachine.ApuReported`); el aviso «Apaga la APU para cerrar el vuelo» sigue la misma regla.
+- **Conector 0.1.24:** la APU apagada solo se exige para cerrar el vuelo si en ese vuelo ya se vio apagada al menos una vez (`PhaseMachine.ApuReported`); el aviso «Apaga la APU para cerrar el vuelo» sigue la misma regla.
 - **Servidor (`20261106070000_apu_unreliable`):** si la APU estaba en marcha al conectar, no hubo ningún encendido ni apagado y el vuelo despegó, `metrics.fuel.apu` queda como `{unreliable: true}` y la web muestra «Sin dato» en lugar de contar todo el vuelo. Se corrigieron los PIREP 00005 y 00007.
 - Para leer la APU de un complemento así hace falta su variable propia (L:var o SDK), como con PMDG. Pedir la bitácora del conector y el nombre exacto del avión.

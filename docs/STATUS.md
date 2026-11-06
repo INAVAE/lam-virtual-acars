@@ -4,7 +4,7 @@
 
 ## APU no informada por la aeronave (2026-11-05)
 
-- QTR783 (A380-800 EA Basic) y el A300 PW de Hugo dejan la APU fija en «encendida» todo el vuelo. El PIREP ahora la marca «Sin dato» (`apu.unreliable`, migración `apu_unreliable`, prueba 019) y el conector solo exige apagarla si la vio apagada alguna vez. PIREP 00005 y 00007 corregidos. Detalle en `docs/integrations/aircraft-adapters.md`. 452 pruebas pgTAP.
+- QTR783 (A380-800 EA Basic) y el A300 PW de Hugo dejan la APU fija en «encendida» todo el vuelo. El PIREP ahora la marca «Sin dato» (`apu.unreliable`, migración `apu_unreliable`, prueba 019) y el conector 0.1.24 solo exige apagarla si la vio apagada alguna vez. PIREP 00005 y 00007 corregidos. Detalle en `docs/integrations/aircraft-adapters.md`. 452 pruebas pgTAP.
 
 ## Centro de ayuda, manual en PDF e incidencias (2026-11-05)
 
