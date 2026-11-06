@@ -206,7 +206,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     audience: 'all',
     steps: [
       ['Los aviones', 'Cada vuelo en curso aparece con la figura de su categoría, el logo de la aerolínea y el callsign. Al alejar el mapa queda solo el callsign.'],
-      ['La lista de vuelos', 'Cada tarjeta muestra lo recorrido y lo que falta en NM, el tiempo en curso, el tiempo estimado al destino y el total estimado del vuelo.'],
+      ['La lista de vuelos', 'Cada tarjeta lleva el logo de la aerolínea y muestra lo recorrido y lo que falta en NM, el tiempo en curso, el tiempo estimado al destino y el total estimado del vuelo.'],
       ['Elegir un vuelo', 'Al pulsarlo se dibuja su trayectoria por fases y la ruta que le falta, y su etiqueta se resalta con el color de la fase. Puedes elegir hasta 10 y la selección queda en el enlace de la página.'],
       ['Capas', 'Bajo el mapa se encienden y apagan: Etiquetas, Ruta del plan, Radar de precipitación, METAR de origen y destino y Control IVAO. La elección se recuerda en ese navegador.'],
       ['Ruta del plan', 'Los puntos del plan de SimBrief con su nombre, en línea punteada, y la ruta completa en texto en el detalle del vuelo. Aparece si el plan se importó en My Flights.'],

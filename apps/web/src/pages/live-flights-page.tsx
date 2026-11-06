@@ -321,6 +321,10 @@ function FlightCard({ flight, selected, now, onSelect }: { flight: LiveFlight; s
               {flight.pilot.name} · {flight.aircraft_type}
             </span>
           </span>
+          <AirlineLogo
+            size="md"
+            airline={{ name: flight.airline.name, icao_code: flight.airline.icao, logo_path: flight.airline.logo_path, brand_primary_color: flight.airline.color }}
+          />
         </span>
         {flight.event || flight.tour ? (
           <span className="mt-1.5 block">
