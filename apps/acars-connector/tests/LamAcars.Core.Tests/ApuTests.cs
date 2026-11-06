@@ -47,6 +47,18 @@ public class ApuTests
         Assert.Empty(Run((0, null), (10, null)));
     }
 
+    [Fact]
+    public void La_bitacora_anota_las_variables_de_la_APU()
+    {
+        var generic = new GenericAdapter();
+        var names = generic.Variables.Select(v => v.Name).ToHashSet();
+        Assert.Contains("APU SWITCH", generic.Diagnostics);
+        // Toda variable que se anota debe estar en la definición de datos.
+        Assert.All(generic.Diagnostics, d => Assert.Contains(d, names));
+        var fenix = new FenixAdapter();
+        Assert.All(fenix.Diagnostics, d => Assert.Contains(d, fenix.Variables.Select(v => v.Name)));
+    }
+
     [Theory]
     [InlineData(0.30, false)]
     [InlineData(0.96, true)]

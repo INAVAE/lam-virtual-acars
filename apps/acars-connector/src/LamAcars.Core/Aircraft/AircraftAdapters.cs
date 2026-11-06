@@ -59,7 +59,14 @@ public class GenericAdapter : IAircraftAdapter
 
     public virtual IReadOnlyCollection<string> Unavailable { get; } = Array.Empty<string>();
 
-    public virtual IReadOnlyList<string> Diagnostics { get; } = Array.Empty<string>();
+    /// <summary>
+    /// Variables estándar de la APU que se anotan en la bitácora al cambiar. Sirven para
+    /// diagnosticar complementos con APU propia (por ejemplo, un A380 que deja
+    /// «APU PCT RPM» fija en 100 %): con la bitácora se ve cuál sí sigue al interruptor.
+    /// </summary>
+    public static readonly string[] ApuDiagnostics = { "APU PCT RPM", "APU SWITCH", "APU GENERATOR SWITCH:1", "APU GENERATOR ACTIVE:1" };
+
+    public virtual IReadOnlyList<string> Diagnostics { get; } = ApuDiagnostics;
 
     public virtual string? IdentifyIcao(IReadOnlyDictionary<string, double> values) => null;
 
@@ -101,6 +108,9 @@ public class GenericAdapter : IAircraftAdapter
         new("OVERSPEED WARNING", "bool"),
         new("STALL WARNING", "bool"),
         new("APU PCT RPM", "percent over 100"),
+        new("APU SWITCH", "bool"),
+        new("APU GENERATOR SWITCH:1", "bool"),
+        new("APU GENERATOR ACTIVE:1", "bool"),
         new("AMBIENT WIND DIRECTION", "degrees"),
         new("AMBIENT WIND VELOCITY", "knots"),
     };
@@ -190,7 +200,7 @@ public sealed class FenixAdapter : GenericAdapter
 
     public override IReadOnlyList<SimVar> Variables { get; } = new GenericAdapter().Variables.Concat(Extra).ToArray();
 
-    public override IReadOnlyList<string> Diagnostics { get; } = new[] { ParkingBrakeLever, Chocks, "BRAKE PARKING POSITION", "APU PCT RPM" };
+    public override IReadOnlyList<string> Diagnostics { get; } = new[] { ParkingBrakeLever, Chocks, "BRAKE PARKING POSITION" }.Concat(ApuDiagnostics).ToArray();
 
     public override SimSample Map(IReadOnlyDictionary<string, double> values, DateTimeOffset time, bool paused)
     {
