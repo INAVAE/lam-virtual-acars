@@ -203,19 +203,11 @@
   text-shadow: 0 0 2px #000, 0 0 2px #000;
   white-space: nowrap;
 }
-/* Aviones del mapa en vivo: anillo en el elegido, atenuados sin señal. */
+/* Aviones del mapa en vivo: sin anillo (el avión basta); el elegido resalta su etiqueta. Atenuados sin señal. */
 .lam-live {
   position: relative;
   width: 28px;
   height: 28px;
-}
-.lam-live.is-selected::before {
-  content: "";
-  position: absolute;
-  inset: -6px;
-  border-radius: 9999px;
-  border: 2px solid var(--c);
-  background: color-mix(in srgb, var(--c) 18%, transparent);
 }
 .lam-live.is-mine::after {
   content: "";
@@ -277,6 +269,10 @@
   object-fit: contain;
   border-radius: 3px;
   background: #fff;
+}
+.lam-live.is-selected .lam-tag {
+  border-width: 2px;
+  background: color-mix(in srgb, var(--c) 28%, var(--surface));
 }
 .lam-tag.is-compact {
   padding: 0 5px;

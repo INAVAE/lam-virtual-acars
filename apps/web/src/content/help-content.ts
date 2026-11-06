@@ -205,7 +205,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     audience: 'all',
     steps: [
       ['Los aviones', 'Cada vuelo en curso aparece con la figura de su categoría, el logo de la aerolínea y el callsign. Al alejar el mapa queda solo el callsign.'],
-      ['Elegir un vuelo', 'Al pulsarlo se dibuja su trayectoria por fases y la ruta que le falta. Puedes elegir hasta 10 y la selección queda en el enlace de la página.'],
+      ['Elegir un vuelo', 'Al pulsarlo se dibuja su trayectoria por fases y la ruta que le falta, y su etiqueta se resalta con el color de la fase. Puedes elegir hasta 10 y la selección queda en el enlace de la página.'],
       ['Capas', 'Bajo el mapa se encienden y apagan: Etiquetas, Ruta del plan, Radar de precipitación, METAR de origen y destino y Control IVAO. La elección se recuerda en ese navegador.'],
       ['Ruta del plan', 'Los puntos del plan de SimBrief con su nombre, en línea punteada. Aparece si el plan se importó en My Flights.'],
       ['Control IVAO', 'Las posiciones de control conectadas: autorizaciones, superficie y torre en el aeropuerto, aproximación y salidas en círculo, centro de control sombreando su región. Al pulsar una estación ves su frecuencia, el tiempo en línea y el ATIS.'],
@@ -423,6 +423,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-05', 'Live Flights: el avión elegido ya no lleva un círculo alrededor; se resalta su etiqueta.'],
   ['2026-11-05', 'APU no informada: si la aeronave deja la APU fija en «encendida» todo el vuelo, el PIREP no cuenta esas horas y, con el conector nuevo, el vuelo se cierra sin exigir apagarla.'],
   ['2026-11-05', 'Centro de ayuda: este manual dentro de la web y en PDF, preguntas frecuentes, «Si algo falla» y reporte de incidencias con folio INC.'],
   ['2026-11-05', 'Live Flights al estilo Webeye: logo y callsign fijos, ruta del plan de SimBrief, radar, METAR y control activo de IVAO.'],
