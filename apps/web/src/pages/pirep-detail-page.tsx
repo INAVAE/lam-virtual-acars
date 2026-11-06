@@ -436,7 +436,12 @@ function FuelPanel({ fuel }: { fuel: PirepFuel }) {
               {kg(fuel.before_engines_kg)}
             </Fact>
           ) : null}
-          {fuel.apu ? (
+          {fuel.apu?.unreliable ? (
+            <Fact label="APU">
+              Sin dato
+              <span className="block text-xs text-muted">La aeronave no informó cuándo se encendió o apagó la APU</span>
+            </Fact>
+          ) : fuel.apu ? (
             <Fact label="APU en marcha" mono>
               {formatMinutes(Math.round(fuel.apu.minutes))}
               <span className="block font-sans text-xs text-muted">

@@ -484,7 +484,8 @@ export interface PirepFuel {
   refueled_kg?: number;
   /** Combustible gastado antes del primer arranque de motor (APU, normalmente). */
   before_engines_kg?: number;
-  apu?: { minutes: number; starts: number; first_on_at?: string; last_off_at?: string; running_at_start: boolean; running_at_end: boolean };
+  /** Con `unreliable` la aeronave no informó su APU (encendida fija desde la conexión) y no hay minutos. */
+  apu?: { minutes: number; starts: number; first_on_at?: string; last_off_at?: string; running_at_start: boolean; running_at_end: boolean; unreliable?: boolean };
   stages?: Partial<Record<'taxi_out' | 'climb' | 'cruise' | 'descent' | 'taxi_in', PirepFuelStage>>;
   plan?: { block_kg?: number; trip_kg?: number; reserve_kg?: number; landing_kg?: number; units?: string };
 }

@@ -71,6 +71,9 @@ public sealed class FlightRecorder
     }
 
     public FlightPhase Phase => _machine.Phase;
+
+    /// <summary>La aeronave informó la APU apagada al menos una vez (ver <see cref="PhaseMachine.ApuReported"/>).</summary>
+    public bool ApuReported => _machine.ApuReported;
     public int NextEventSeq { get; private set; }
     public int NextPointSeq { get; private set; }
     public SimSample? LastSample => _previous;

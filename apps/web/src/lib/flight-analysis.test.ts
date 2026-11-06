@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   altitudeBand,
   apuIntervals,
+  apuUnreliable,
   attitudeNote,
   cumulativeDistance,
   eventMarkers,
@@ -168,6 +169,24 @@ describe('flight-analysis', () => {
     expect(m[0]!.detail).toBe('6000 kg a bordo');
     expect(eventMarkers([{ ...apu('d', 0, 'running') }])[0]!.label).toBe('APU ya en marcha al iniciar ACARS');
     expect(eventMarkers([{ ...apu('e', 0, 'start'), data: { kind: 'adapter' } }])).toEqual([]);
+  });
+
+  it('APU no informada: fija desde la conexión en un vuelo que despegó', () => {
+    const note = (state: string, min: number) => ({
+      id: `${state}${min}`,
+      seq: 0,
+      type: 'note',
+      phase: 'preflight',
+      occurred_at: new Date(t0 + min * 60_000).toISOString(),
+      altitude_ft: null,
+      data: { kind: 'apu', state },
+    });
+    const takeoff = { id: 'to', seq: 1, type: 'takeoff', phase: 'initial_climb', occurred_at: new Date(t0 + 30 * 60_000).toISOString(), altitude_ft: 7400, data: {} };
+    expect(apuUnreliable([note('running', 0), takeoff])).toBe(true);
+    expect(apuIntervals([note('running', 0), takeoff], t0 + 600 * 60_000)).toEqual([]);
+    expect(apuUnreliable([note('running', 0), note('stop', 20), takeoff])).toBe(false);
+    expect(apuUnreliable([note('running', 0)])).toBe(false);
+    expect(apuIntervals([note('running', 0)], t0 + 10 * 60_000)).toEqual([{ start: t0, end: t0 + 10 * 60_000 }]);
   });
 });
 

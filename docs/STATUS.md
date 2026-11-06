@@ -2,6 +2,10 @@
 
 Última actualización: 2026-11-05 (centro de ayuda)
 
+## APU no informada por la aeronave (2026-11-05)
+
+- QTR783 (A380-800 EA Basic) y el A300 PW de Hugo dejan la APU fija en «encendida» todo el vuelo. El PIREP ahora la marca «Sin dato» (`apu.unreliable`, migración `apu_unreliable`, prueba 019) y el conector solo exige apagarla si la vio apagada alguna vez. PIREP 00005 y 00007 corregidos. Detalle en `docs/integrations/aircraft-adapters.md`. 452 pruebas pgTAP.
+
 ## Centro de ayuda, manual en PDF e incidencias (2026-11-05)
 
 - Botón de ayuda (?) en la barra superior (y «Help» en el menú) con el contador de reportes sin revisar para el staff. Página `/help`: Guía paso a paso (19 capítulos, cada uno con su público), Preguntas frecuentes, Si algo falla, Reportar una incidencia, Reportes recibidos (staff) y Novedades, con búsqueda sin acentos.

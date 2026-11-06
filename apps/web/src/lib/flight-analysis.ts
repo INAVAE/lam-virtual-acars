@@ -464,13 +464,32 @@ export function fuelFlowAt(values: readonly (number | null)[], times: readonly n
   return burn < 0 ? null : Math.round(burn);
 }
 
-/** Intervalos (ms) con la APU en marcha según las notas del conector. */
-export function apuIntervals(events: readonly AnalysisEvent[], endTime: number): { start: number; end: number }[] {
-  const out: { start: number; end: number }[] = [];
-  let since: number | null = null;
-  const notes = events
+function apuNotes(events: readonly AnalysisEvent[]): AnalysisEvent[] {
+  return events
     .filter((e) => e.type === 'note' && (e.data as Record<string, unknown> | null)?.kind === 'apu')
     .sort((a, b) => Date.parse(a.occurred_at) - Date.parse(b.occurred_at));
+}
+
+/**
+ * La aeronave no informa su APU: encendida desde que se conectó el conector y sin un
+ * solo encendido o apagado en un vuelo que despegó. Algunos complementos usan su
+ * propio sistema de APU y la variable estándar del simulador se queda fija. Es la
+ * misma regla que private.pirep_fuel_metrics (apu.unreliable).
+ */
+export function apuUnreliable(events: readonly AnalysisEvent[]): boolean {
+  const notes = apuNotes(events);
+  const states = notes.map((e) => (e.data as Record<string, unknown>).state);
+  return (
+    states.includes('running') && !states.some((s) => s === 'start' || s === 'stop') && events.some((e) => e.type === 'takeoff')
+  );
+}
+
+/** Intervalos (ms) con la APU en marcha según las notas del conector (ninguno si la aeronave no la informa). */
+export function apuIntervals(events: readonly AnalysisEvent[], endTime: number): { start: number; end: number }[] {
+  const out: { start: number; end: number }[] = [];
+  if (apuUnreliable(events)) return out;
+  let since: number | null = null;
+  const notes = apuNotes(events);
   for (const e of notes) {
     const state = (e.data as Record<string, unknown>).state;
     const t = Date.parse(e.occurred_at);

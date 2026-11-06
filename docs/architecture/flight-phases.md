@@ -38,7 +38,7 @@ LAM ACARS detecta las fases en el conector, con las lecturas del simulador (unas
 | Aterrizaje | Ascenso | Toque y despegue: en el aire con VS > 300 fpm | 10 s |
 | Rodaje de llegada | Motores apagados | Todos los motores apagados y GS < 2 kt | 5 s |
 | Motores apagados | Rodaje de llegada | Motores encendidos de nuevo | 10 s |
-| Motores apagados | Vuelo completado | Detenido con freno de estacionamiento (5 s) o detenido sin freno (60 s) | Según el caso |
+| Motores apagados | Vuelo completado | Detenido con freno de estacionamiento (5 s) o detenido sin freno (60 s), con la APU apagada si la aeronave la informa: se exige solo si en el vuelo ya se vio apagada al menos una vez (algunos complementos dejan la variable del simulador fija en «encendida») | Según el caso |
 
 Al llegar a **Vuelo completado**, el conector cierra la sesión sola (`session/end` con `completed`). El piloto también puede terminar o abandonar el vuelo desde el conector.
 

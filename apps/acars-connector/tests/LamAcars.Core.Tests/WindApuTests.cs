@@ -61,11 +61,26 @@ public class WindApuTests
     public void El_vuelo_no_se_cierra_con_la_APU_encendida()
     {
         var machine = new PhaseMachine(FlightPhase.EnginesShutdown);
+        // La aeronave ya informó la APU apagada antes (en el vuelo): ahora sí se exige.
+        machine.Update(Samples.Ground(-10, engines: 1, brake: true) with { ApuRunning = false });
         for (var t = 0; t <= 120; t += 1) Assert.Empty(machine.Update(Parked(t, true)));
         Assert.Equal(FlightPhase.EnginesShutdown, machine.Phase);
 
         var closed = new List<PhaseTransition>();
         for (var t = 121; t <= 130; t += 1) closed.AddRange(machine.Update(Parked(t, false)));
+        var tr = Assert.Single(closed);
+        Assert.Equal(FlightPhase.FlightCompleted, tr.To);
+        Assert.Equal("parking_brake", tr.Reason);
+    }
+
+    [Fact]
+    public void APU_fija_en_encendida_todo_el_vuelo_no_impide_cerrar()
+    {
+        // Complementos con APU propia: la variable del simulador nunca baja del 95 %.
+        var machine = new PhaseMachine(FlightPhase.EnginesShutdown);
+        var closed = new List<PhaseTransition>();
+        for (var t = 0; t <= 10; t += 1) closed.AddRange(machine.Update(Parked(t, true)));
+        Assert.False(machine.ApuReported);
         var tr = Assert.Single(closed);
         Assert.Equal(FlightPhase.FlightCompleted, tr.To);
         Assert.Equal("parking_brake", tr.Reason);

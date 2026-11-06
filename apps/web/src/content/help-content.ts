@@ -173,7 +173,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Inicia ACARS', 'En el conector elige el vuelo de la lista y pulsa «Iniciar ACARS». Desde ahí detecta solo las 15 fases: embarque, pushback, rodaje, despegue, ascenso, crucero, descenso, aproximación, aterrizaje, rodaje de llegada y llegada.'],
       ['Carga el combustible antes del pushback', 'La carga en tierra antes de quitar los calzos es normal y solo se informa. Agregar combustible después del pushback es una falta grave.'],
       ['Vuela normalmente', 'El conector envía la posición cada pocos segundos y guarda una lectura por segundo. Si se cae internet, guarda todo y lo envía al recuperar la conexión; si cierras el conector, al abrirlo el vuelo se reanuda.'],
-      ['Cierra el vuelo', 'Al llegar a la puerta apaga motores y APU (si el avión la tiene) y pon el freno de estacionamiento: el vuelo se cierra solo y el PIREP se genera en segundos.'],
+      ['Cierra el vuelo', 'Al llegar a la puerta apaga motores y APU (si el avión la tiene) y pon el freno de estacionamiento: el vuelo se cierra solo y el PIREP se genera en segundos. Si tu avión no informa la APU al simulador (el conector la ve encendida todo el vuelo), no se exige para cerrar y el PIREP la muestra como «Sin dato».'],
       ['Terminar o abandonar', '«Terminar vuelo» cierra a mano un vuelo que ya llegó. «Abandonar vuelo» lo descarta sin PIREP.'],
     ],
     note: 'Si algo raro pasa en un vuelo, la bitácora del conector está en %LOCALAPPDATA%\\LamAcars\\logs. Adjunta su nombre y el folio del PIREP al reportar la incidencia.',
@@ -374,6 +374,7 @@ export const HELP_TROUBLESHOOTING: [symptom: string, cause: string, fix: string]
   ['Windows bloquea LamAcars.exe', 'El ejecutable no está firmado.', '«Más información» → «Ejecutar de todas formas». Descárgalo solo de la página oficial de versiones.'],
   ['El conector no ve el simulador', 'MSFS no está abierto o falta SimConnect.dll junto a LamAcars.exe.', 'Abre el simulador primero y verifica que SimConnect.dll esté en la carpeta del conector.'],
   ['El avión no aparece en Live Flights', 'El conector no ha iniciado el vuelo o no hay conexión.', 'Revisa que el conector diga la fase actual y que «Pendientes de enviar» baje.'],
+  ['El conector ve la APU encendida aunque la apagaste', 'Tu avión usa su propia APU y no se lo informa al simulador.', 'Con la versión más reciente del conector no impide cerrar el vuelo; si no, usa «Terminar vuelo». El PIREP la muestra como «Sin dato». Repórtalo con el nombre del avión.'],
   ['Las fases del vuelo salen raras', 'Algunos aviones publican sus datos de forma distinta.', 'Reporta una incidencia con el folio del PIREP, el avión y la bitácora de %LOCALAPPDATA%\\LamAcars\\logs.'],
   ['La página se ve vieja o rara', 'El navegador guardó una versión anterior.', 'Recarga forzando la actualización: Ctrl+Shift+R, o Cmd+Shift+R en Mac.'],
   ['Guardo algo y no se queda', 'La sesión caducó con la pestaña abierta.', 'Recarga y vuelve a entrar; lo guardado antes no se pierde.'],
@@ -422,6 +423,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-05', 'APU no informada: si la aeronave deja la APU fija en «encendida» todo el vuelo, el PIREP no cuenta esas horas y, con el conector nuevo, el vuelo se cierra sin exigir apagarla.'],
   ['2026-11-05', 'Centro de ayuda: este manual dentro de la web y en PDF, preguntas frecuentes, «Si algo falla» y reporte de incidencias con folio INC.'],
   ['2026-11-05', 'Live Flights al estilo Webeye: logo y callsign fijos, ruta del plan de SimBrief, radar, METAR y control activo de IVAO.'],
   ['2026-11-05', 'Weather: METAR y TAF de cualquier aeropuerto; clima en My Flights y en la ventana de reserva.'],

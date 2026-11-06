@@ -24,6 +24,7 @@ public sealed class PhaseMachine
     private readonly Dictionary<string, DateTimeOffset> _since = new();
     private readonly HashSet<FlightPhase> _visited = new();
     private readonly double? _plannedCruiseFt;
+    private bool _apuSeenOff;
 
     public PhaseMachine(FlightPhase initial = FlightPhase.AircraftConnected, double? plannedCruiseFt = null)
     {
@@ -34,6 +35,15 @@ public sealed class PhaseMachine
 
     public FlightPhase Phase { get; private set; }
 
+    /// <summary>
+    /// Verdadero cuando la aeronave ya informó la APU apagada al menos una vez en este
+    /// vuelo. Solo entonces se exige apagarla para cerrar: algunos complementos usan su
+    /// propia APU y la variable del simulador se queda en «encendida» todo el vuelo
+    /// (visto con «A380-800 EA Basic»); con ellos el vuelo se cierra como si la
+    /// aeronave no informara APU.
+    /// </summary>
+    public bool ApuReported => _apuSeenOff;
+
     /// <summary>Procesa una lectura y devuelve las transiciones que provoca (normalmente ninguna o una).</summary>
     public IReadOnlyList<PhaseTransition> Update(SimSample s)
     {
@@ -43,6 +53,8 @@ public sealed class PhaseMachine
             _since.Clear();
             return Array.Empty<PhaseTransition>();
         }
+
+        if (s.ApuRunning == false) _apuSeenOff = true;
 
         var transitions = new List<PhaseTransition>(1);
         for (var i = 0; i < 3; i++)
@@ -162,10 +174,12 @@ public sealed class PhaseMachine
 
             case FlightPhase.EnginesShutdown:
                 if (Held("restart", s.EnginesRunning > 0, t, 10)) return (FlightPhase.TaxiIn, "engines_restarted");
-                // La APU también debe estar apagada; si la aeronave no informa APU (null), no se exige.
-                if (Held("parked", s.EnginesRunning == 0 && s.GsKt < 1 && s.ParkingBrake && s.ApuRunning != true, t, 5))
+                // La APU también debe estar apagada si la aeronave la informa: dato nulo, o
+                // «encendida» sin haberse visto nunca apagada en el vuelo, no se exige.
+                var apuOff = s.ApuRunning != true || !_apuSeenOff;
+                if (Held("parked", s.EnginesRunning == 0 && s.GsKt < 1 && s.ParkingBrake && apuOff, t, 5))
                     return (FlightPhase.FlightCompleted, "parking_brake");
-                if (Held("stopped", s.EnginesRunning == 0 && s.GsKt < 1 && s.ApuRunning != true, t, 60))
+                if (Held("stopped", s.EnginesRunning == 0 && s.GsKt < 1 && apuOff, t, 60))
                     return (FlightPhase.FlightCompleted, "stopped");
                 break;
 
