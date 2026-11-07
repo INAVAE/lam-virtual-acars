@@ -99,26 +99,46 @@ await check('La bienvenida muestra las 5 aerolíneas con su logotipo', async () 
 });
 
 // 2. Ruta profunda cargada directamente (fallback 404.html de Pages).
+let anonKey = '';
 await check('La ruta profunda /registro carga directamente', async () => {
   const { context, page, problems } = await openPage(desktop);
+  page.on('request', (req) => {
+    const key = req.headers()['apikey'];
+    if (key && req.url().includes('.supabase.co')) anonKey = key;
+  });
   await page.goto(`${SITE}registro`, { waitUntil: 'networkidle' });
-  await page.getByRole('heading', { name: 'Crear cuenta de piloto' }).waitFor({ timeout: 15000 });
+  await page.getByRole('heading', { name: 'Solicitar cuenta de piloto' }).waitFor({ timeout: 15000 });
   await page.screenshot({ path: `${OUT}/02-registro-escritorio.png`, fullPage: true });
   if (problems.length) throw new Error(problems.join(' | '));
   await context.close();
 });
 
-// 3. Validación del formulario de registro sin enviar nada al servidor.
-await check('El registro valida contraseñas distintas', async () => {
-  const { context, page } = await openPage(desktop);
+// 3. Validación del formulario de solicitud sin enviar nada al servidor.
+await check('La solicitud de cuenta valida los datos', async () => {
+  const { context, page, supabase } = await openPage(desktop);
   await page.goto(`${SITE}registro`, { waitUntil: 'networkidle' });
-  await page.getByLabel('Nombre para mostrar').fill('Prueba');
-  await page.getByLabel('Correo').fill('nadie@example.com');
-  await page.getByLabel('Contraseña', { exact: true }).fill('cabina2024');
-  await page.getByLabel('Repite la contraseña').fill('otra2024');
-  await page.getByRole('button', { name: 'Crear cuenta' }).click();
-  await page.getByText('Las contraseñas no coinciden').waitFor({ timeout: 5000 });
+  await page.getByLabel('Correo', { exact: true }).fill('no-es-correo');
+  await page.getByRole('button', { name: 'Enviar solicitud' }).click();
+  await page.getByText('Escribe tu nombre').waitFor({ timeout: 5000 });
+  await page.getByText('Escribe un correo válido').waitFor({ timeout: 5000 });
+  if (supabase.some((r) => r.url.includes('request_pilot_account'))) throw new Error('Envió la solicitud con datos inválidos');
   await context.close();
+});
+
+// 3b. Nadie se registra directo por la API de Supabase Auth: solo por invitación.
+await check('Supabase Auth no crea cuentas sin invitación', async () => {
+  if (!anonKey) throw new Error('No se obtuvo la clave pública de la página');
+  const res = await fetch('https://fnsfgjtmwfiizofsjajm.supabase.co/auth/v1/signup', {
+    method: 'POST',
+    headers: { apikey: anonKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'lam-smoke-signup@example.com', password: 'NoEsReal2024x' }),
+  });
+  const body = await res.text();
+  if (res.ok) throw new Error(`El registro directo se aceptó (${res.status})`);
+  if (!/Database error saving new user|signup_disabled|Signups not allowed/i.test(body)) {
+    throw new Error(`Respuesta inesperada ${res.status}: ${body.slice(0, 200)}`);
+  }
+  return `rechazado (${res.status})`;
 });
 
 // 4. Inicio de sesión con credenciales falsas: comprueba que Supabase Auth responde.
