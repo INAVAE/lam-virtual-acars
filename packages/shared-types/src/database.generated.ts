@@ -2149,6 +2149,10 @@ export type Database = {
           suspended_at: string | null
           suspended_by: string | null
           suspension_note: string | null
+          avatar_url: string | null
+          bio: string | null
+          discord_username: string | null
+          ivao_vid: string | null
           time_zone: string | null
           updated_at: string
         }
@@ -2166,6 +2170,10 @@ export type Database = {
           suspended_at?: string | null
           suspended_by?: string | null
           suspension_note?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          discord_username?: string | null
+          ivao_vid?: string | null
           time_zone?: string | null
           updated_at?: string
         }
@@ -2183,6 +2191,10 @@ export type Database = {
           suspended_at?: string | null
           suspended_by?: string | null
           suspension_note?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          discord_username?: string | null
+          ivao_vid?: string | null
           time_zone?: string | null
           updated_at?: string
         }
@@ -2480,6 +2492,7 @@ export type Database = {
         Args: { p_display_name: string; p_email: string }
         Returns: string
       }
+      get_pilot_profile: { Args: { p_pilot_number: number }; Returns: Json }
       list_platform_accounts: {
         Args: never
         Returns: {

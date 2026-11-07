@@ -1,5 +1,6 @@
 import type { AirlineRole } from '@lam/shared-types';
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { ConfirmButton } from '@/components/confirm-button';
 import { ScopeRequired } from '@/components/scope-required';
@@ -388,7 +389,17 @@ function PilotsView({ airline }: { airline: Airline }) {
               rows.map((m) => (
                 <tr key={m.id}>
                   <Td>
-                    <p className="font-medium">{m.profile?.display_name ?? 'Perfil no disponible'}</p>
+                    {m.profile ? (
+                      <Link
+                        to={`/pilots/${m.profile.pilot_number}`}
+                        state={{ from: '/pilots' }}
+                        className="font-medium underline-offset-4 hover:underline"
+                      >
+                        {m.profile.display_name}
+                      </Link>
+                    ) : (
+                      <p className="font-medium">Perfil no disponible</p>
+                    )}
                     {m.profile ? <p className="font-mono text-xs text-muted">{formatPilotNumber(m.profile.pilot_number)}</p> : null}
                   </Td>
                   <Td className="break-all text-muted">{m.profile?.email}</Td>

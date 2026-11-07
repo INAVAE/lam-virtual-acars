@@ -90,14 +90,17 @@ export const HELP_CHAPTERS: HelpChapter[] = [
   },
   {
     id: 'perfil',
-    title: 'Tu perfil: SimBrief, hora local y seguridad',
-    summary: 'Settings: lo que conviene dejar listo antes de reservar.',
+    title: 'Tu cuenta y tu perfil: foto, SimBrief, hora local y seguridad',
+    summary: 'El menú de tu cuenta, Mi cuenta y Settings: lo que conviene dejar listo antes de reservar.',
     audience: 'pilot',
     steps: [
+      ['Menú de tu cuenta', 'Tu foto o tus iniciales, arriba a la derecha. Muestra tu correo, tu número LAM y tus roles, y lleva a tu perfil de piloto, a Mi cuenta, a Contraseña y sesiones, a Settings y a «Cerrar sesión» (se cierra en todas las pestañas).'],
+      ['Mi cuenta', 'Datos personales: foto de perfil (se recorta en cuadro), nombre, país, VID de IVAO, usuario de Discord y una presentación breve. Lo ven los pilotos de tus aerolíneas; el correo solo lo ve el staff.'],
+      ['Tu perfil de piloto', 'Tus totales (vuelos, horas de vuelo y block, millas, puntaje y tomas), actividad por mes, aerolíneas y roles, tipos de aeronave, rutas, historial de vuelos, habilitaciones, insignias de tours, eventos y entrenamientos completados.'],
       ['Usuario de SimBrief', 'En Settings → Perfil de piloto escribe tu usuario de SimBrief (el de navigraph.com/simbrief). Sin él no se puede importar el plan de vuelo.'],
       ['Aerolínea principal', 'Es la que se selecciona sola al entrar. Útil si vuelas en varias.'],
       ['Zona horaria', 'La operación usa UTC (Zulu). En Settings → Hora eliges tu zona y toda hora Zulu muestra también la local. Un clic en el reloj de arriba cambia cuál va primero.'],
-      ['Contraseña y sesiones', 'Cambia tu contraseña cuando quieras. «Cerrar otras sesiones» saca tu cuenta de cualquier otro equipo.'],
+      ['Contraseña y sesiones', 'Mi cuenta → «Contraseña y sesiones». Cambia tu contraseña cuando quieras; «Cerrar otras sesiones» saca tu cuenta de cualquier otro equipo.'],
       ['Tema claro u oscuro', 'El botón del sol o la luna en la barra superior. Se recuerda en ese navegador.'],
     ],
     shot: {
@@ -274,6 +277,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Roles', 'Piloto, jefe de operaciones o administrador; valen solo dentro de esa aerolínea. Solo el superadministrador nombra administradores.'],
       ['Habilitaciones de tipo', 'Si la aerolínea exige habilitación, «Habilitaciones» define qué tipos puede reservar cada piloto. Nadie se otorga habilitaciones a sí mismo.'],
       ['Suspender', 'Una membresía suspendida conserva su historial y deja de poder reservar.'],
+      ['Perfil del piloto', 'Clic en el nombre de un piloto abre su perfil completo: correo, aerolíneas y roles, totales, horas, tipos, rutas, todos sus PIREP (también los que están en revisión) e insignias.'],
     ],
   },
   {
@@ -383,6 +387,8 @@ export const HELP_FAQ: [question: string, answer: string][] = [
   ['¿Quién ve mis reportes de incidencia?', 'Tú y quien los atiende: el staff de la aerolínea que elegiste y el superadministrador.'],
   ['Pedí mi cuenta y no me llega ningún correo.', 'Es normal hasta que el superadministrador aprueba tu solicitud: el único correo es la invitación. Si ya pasó un tiempo, pide a tu aerolínea que la revisen. Revisa también no deseados.'],
   ['La invitación dice que el enlace venció.', 'Los enlaces duran 24 horas. Pide que te reenvíen la invitación; el nuevo enlace sustituye al anterior.'],
+  ['¿Quién ve mi perfil de piloto?', 'Tú, el staff de tus aerolíneas, el superadministrador y los pilotos que comparten aerolínea contigo. Los demás pilotos no ven tu correo ni tus PIREP en revisión o rechazados.'],
+  ['¿Cómo cambio mi foto?', 'Menú de tu cuenta → Mi cuenta → «Subir foto». PNG, JPG o WebP; se recorta en cuadro y se reduce a 256 px.'],
   ['¿Puedo volar en varias aerolíneas?', 'Sí. Solicita ingreso en cada una desde el Dashboard. Tu número de piloto es el mismo en todas.'],
 ];
 
@@ -447,6 +453,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-07', 'Menú de la cuenta con foto, Mi cuenta (datos personales, foto, contraseña y sesiones) y perfil completo del piloto desde Pilots.'],
   ['2026-11-07', 'Menú lateral que se oculta y botón «Ampliar» en el mapa, las tarjetas y las gráficas: pantalla completa u otra pestaña. Cerrar sesión cierra todas las pestañas.'],
   ['2026-11-07', 'PIREP: «Cambio de aeronave» solo cuando cambia el avión cargado; ya no cuando el mismo avión cambia su matrícula ATC (A380 de iniBuilds).'],
   ['2026-11-06', 'Administration → Cuentas: todas las cuentas con su último acceso y sus aerolíneas, filtro «Sin aerolínea», y revocar o restaurar el acceso.'],

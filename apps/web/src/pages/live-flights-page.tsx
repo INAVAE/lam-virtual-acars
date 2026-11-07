@@ -635,7 +635,17 @@ export function LiveFlightsPage() {
     } catch {
       // Sin almacenamiento disponible: la selección dura lo que la pestaña.
     }
-    setParams(selectedIds.length > 0 ? { flights: selectedIds.join(',') } : {}, { replace: true });
+    setParams(
+      (prev) => {
+        // Conserva los demás parámetros (p. ej. «ver» del módulo ampliado).
+        const next = new URLSearchParams(prev);
+        next.delete('flight');
+        if (selectedIds.length > 0) next.set('flights', selectedIds.join(','));
+        else next.delete('flights');
+        return next;
+      },
+      { replace: true },
+    );
     // setParams cambia de identidad con cada navegación.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIds]);

@@ -49,7 +49,9 @@ export function ExpandButton({ onClick, label, className }: { onClick: () => voi
  */
 export function useExpandable(id: string) {
   const [params, setParams] = useSearchParams();
-  const [expanded, setExpanded] = useState(() => params.get(EXPAND_PARAM) === id);
+  const [expanded, setExpanded] = useState(
+    () => params.get(EXPAND_PARAM) === id || new URLSearchParams(window.location.search).get(EXPAND_PARAM) === id,
+  );
   const ref = useRef<HTMLElement | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
 
@@ -144,7 +146,7 @@ export function ExpandToolbar({
 }
 
 /** Clases del contenedor cuando está ampliado. */
-export const expandedClasses = 'lam-expanded fixed inset-0 z-[60] overflow-auto rounded-none border-0 bg-bg p-4';
+export const expandedClasses = 'lam-expanded fixed inset-0 z-[60] m-0! overflow-auto rounded-none border-0 bg-bg p-4';
 
 /**
  * Envoltura ampliable para módulos que no son un Panel (el mapa en vivo, una fila de

@@ -1,7 +1,7 @@
 import type { Json } from '@lam/shared-types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { ConfirmButton } from '@/components/confirm-button';
@@ -607,7 +607,9 @@ function PlatformAccounts() {
                   <tr key={a.user_id}>
                     <Td>
                       <p className="font-medium">
-                        {a.display_name}
+                        <Link to={`/pilots/${a.pilot_number}`} state={{ from: '/administration?tab=accounts' }} className="underline-offset-4 hover:underline">
+                          {a.display_name}
+                        </Link>
                         {isSelf ? <span className="ml-2 text-sm font-normal text-muted">(tú)</span> : null}
                       </p>
                       <p className="text-xs text-muted">

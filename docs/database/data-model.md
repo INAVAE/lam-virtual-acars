@@ -184,6 +184,8 @@ Detalle en ADR 0011.
 | --- | --- |
 | `account_requests` | Solicitudes de cuenta de piloto: correo (minúsculas), nombre, aerolínea de interés, VID de IVAO, mensaje, estado (`pending`, `approved`, `rejected`), nota y quién revisó, cuándo salió la invitación (`invited_at`), último error de envío y el usuario creado (`user_id`). Una sola solicitud abierta por correo |
 
+`profiles.avatar_url` (bucket público `avatars`), `ivao_vid`, `discord_username` y `bio` son datos que edita la propia persona en Mi cuenta.
+
 `profiles.suspended_at`, `suspended_by` y `suspension_note` registran quién revocó el acceso de una cuenta (`account_status = 'suspended'`), cuándo y por qué.
 
 Supabase Auth solo crea usuarios para correos con una solicitud aprobada (disparador `before_auth_user_created`). Detalle en ADR 0012.

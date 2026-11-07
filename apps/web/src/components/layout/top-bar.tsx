@@ -1,14 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, CircleHelp, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, UserRound } from 'lucide-react';
+import { ChevronDown, CircleHelp, IdCard, KeyRound, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Settings, Sun, UserRound } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { Select } from '@/components/ui/input';
-import { useProfile } from '@/hooks/use-lam-data';
+import { Avatar } from '@/components/avatar';
+import { useAirlines, useMyMemberships, useProfile } from '@/hooks/use-lam-data';
 import { useCanHandleTickets, useTicketInboxCount } from '@/hooks/use-support';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
-import { formatPilotNumber } from '@/lib/format';
+import { useAuth } from '@/lib/auth';
+import { formatLocalDateTime, formatPilotNumber, formatRoles } from '@/lib/format';
 import { getSupabase } from '@/lib/supabase';
 import { cn } from '@/lib/cn';
 import { useTheme } from '@/lib/theme';
@@ -94,8 +96,37 @@ function HelpButton() {
   );
 }
 
+function MenuItem({
+  to,
+  icon: Icon,
+  label,
+  hint,
+  onClick,
+}: {
+  to: string;
+  icon: typeof UserRound;
+  label: string;
+  hint: string;
+  onClick: () => void;
+}) {
+  return (
+    <Link role="menuitem" to={to} onClick={onClick} className="flex items-start gap-2.5 rounded px-2.5 py-2 hover:bg-surface-2">
+      <Icon className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden />
+      <span className="min-w-0">
+        <span className="block text-sm">{label}</span>
+        <span className="block text-xs text-muted">{hint}</span>
+      </span>
+    </Link>
+  );
+}
+
+/** Menú de la cuenta: quién eres, tu perfil, tus datos, tu contraseña y cerrar sesión. */
 function UserMenu() {
   const profile = useProfile();
+  const memberships = useMyMemberships();
+  const airlines = useAirlines();
+  const { isOrgAdmin } = useAirlineScope();
+  const { session } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -131,8 +162,17 @@ function UserMenu() {
     navigate('/bienvenida', { replace: true });
   }
 
-  const name = profile.data?.display_name ?? '…';
-  const number = profile.data ? formatPilotNumber(profile.data.pilot_number) : '';
+  const p = profile.data;
+  const name = p?.display_name ?? '…';
+  const number = p ? formatPilotNumber(p.pilot_number) : '';
+  const airlineName = new Map((airlines.data ?? []).map((a) => [a.id, a.icao_code ?? a.name]));
+  const active = (memberships.data ?? []).filter((m) => m.status === 'active');
+  const roleLine = isOrgAdmin
+    ? 'Superadministrador'
+    : active.length > 0
+      ? active.map((m) => `${formatRoles(m.roles)} · ${airlineName.get(m.airline_id) ?? ''}`).join(' / ')
+      : 'Sin aerolínea';
+  const close = () => setOpen(false);
 
   return (
     <div ref={ref} className="relative">
@@ -141,10 +181,11 @@ function UserMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
+        aria-label={`Tu cuenta: ${name}`}
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 items-center gap-2 rounded-md px-2 hover:bg-surface-2"
+        className="flex h-10 items-center gap-2 rounded-md px-1.5 hover:bg-surface-2"
       >
-        <UserRound className="size-4 text-muted" aria-hidden />
+        <Avatar name={p?.display_name} url={p?.avatar_url} size="xs" />
         <span className="hidden text-left leading-tight sm:block">
           <span className="block max-w-[10rem] truncate text-sm font-medium">{name}</span>
           <span className="block font-mono text-xs text-muted">{number}</span>
@@ -155,27 +196,48 @@ function UserMenu() {
         <div
           id={menuId}
           role="menu"
-          className="absolute right-0 z-40 mt-1 w-56 rounded-md border border-line bg-surface p-1 shadow-lg shadow-black/20"
+          aria-label="Tu cuenta"
+          className="absolute right-0 z-40 mt-1 w-80 max-w-[calc(100vw-1.5rem)] rounded-md border border-line bg-surface p-1 shadow-lg shadow-black/20"
         >
-          <Link
-            role="menuitem"
-            to="/settings"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 rounded px-2.5 py-2 text-sm hover:bg-surface-2"
-          >
-            <UserRound className="size-4" aria-hidden />
-            Mi perfil y seguridad
-          </Link>
-          <button
-            role="menuitem"
-            type="button"
-            disabled={signingOut}
-            onClick={signOut}
-            className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-sm hover:bg-surface-2 disabled:opacity-60"
-          >
-            <LogOut className="size-4" aria-hidden />
-            {signingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
-          </button>
+          <div className="flex items-center gap-3 border-b border-line px-2.5 pb-3 pt-2">
+            <Avatar name={p?.display_name} url={p?.avatar_url} size="md" />
+            <div className="min-w-0">
+              <p className="truncate font-medium">{name}</p>
+              <p className="truncate text-xs text-muted">{p?.email ?? session?.user.email}</p>
+              <p className="mt-1 text-xs">
+                <span className="font-mono">{number}</span> · <span className="text-muted">{roleLine}</span>
+              </p>
+            </div>
+          </div>
+          {session?.user.last_sign_in_at ? (
+            <p className="flex justify-between px-2.5 py-2 text-xs text-muted">
+              <span>Sesión iniciada</span>
+              <span className="text-ink">{formatLocalDateTime(session.user.last_sign_in_at)}</span>
+            </p>
+          ) : null}
+          <div className="border-t border-line pt-1">
+            {p ? (
+              <MenuItem to={`/pilots/${p.pilot_number}`} icon={IdCard} label="Mi perfil de piloto" hint="Estadísticas, historial e insignias" onClick={close} />
+            ) : null}
+            <MenuItem to="/account" icon={UserRound} label="Mi cuenta" hint="Datos personales y foto" onClick={close} />
+            <MenuItem to="/account?tab=security" icon={KeyRound} label="Contraseña y sesiones" hint="Cambia tu contraseña o cierra otras sesiones" onClick={close} />
+            <MenuItem to="/settings" icon={Settings} label="Settings" hint="SimBrief, hora local y conector LAM ACARS" onClick={close} />
+          </div>
+          <div className="mt-1 border-t border-line pt-1">
+            <button
+              role="menuitem"
+              type="button"
+              disabled={signingOut}
+              onClick={signOut}
+              className="flex w-full items-start gap-2.5 rounded px-2.5 py-2 text-left hover:bg-surface-2 disabled:opacity-60"
+            >
+              <LogOut className="mt-0.5 size-4 shrink-0 text-danger-ink" aria-hidden />
+              <span>
+                <span className="block text-sm">{signingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}</span>
+                <span className="block text-xs text-muted">Se cierra también en las demás pestañas</span>
+              </span>
+            </button>
+          </div>
         </div>
       ) : null}
     </div>

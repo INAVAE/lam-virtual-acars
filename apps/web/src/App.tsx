@@ -25,10 +25,12 @@ import { PirepDetailPage } from '@/pages/pirep-detail-page';
 import { PirepsPage } from '@/pages/pireps-page';
 import { NotFoundPage } from '@/pages/not-found-page';
 import { OperationsPage } from '@/pages/operations-page';
+import { PilotProfilePage } from '@/pages/pilot-profile-page';
 import { PilotsPage } from '@/pages/pilots-page';
 import { PublicHomePage } from '@/pages/public-home-page';
 import { RoutesPage } from '@/pages/routes-page';
 import { SettingsPage } from '@/pages/settings-page';
+import { AccountPage } from '@/pages/account-page';
 import { StatisticsPage } from '@/pages/statistics-page';
 import { TourDetailPage } from '@/pages/tour-detail-page';
 import { TourEditorPage } from '@/pages/tour-editor-page';
@@ -76,6 +78,7 @@ export function App() {
           <Route path="airlines" element={<AirlinesPage />} />
           <Route path="airlines/:slug" element={<AirlineDetailPage />} />
           <Route path="pilots" element={<PilotsPage />} />
+          <Route path="pilots/:pilotNumber" element={<PilotProfilePage />} />
           <Route path="fleet" element={<FleetPage />} />
           <Route path="airports" element={<AirportsPage />} />
           <Route path="routes" element={<RoutesPage />} />
@@ -83,6 +86,7 @@ export function App() {
           <Route path="operations" element={<OperationsPage />} />
           <Route path="administration" element={<AdministrationPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="account" element={<AccountPage />} />
           <Route path="help" element={<HelpPage />} />
         </Route>
       </Route>

@@ -2,6 +2,19 @@
 
 Última actualización: 2026-11-06 (cuentas de la plataforma)
 
+## Menú de cuenta, Mi cuenta y perfil del piloto (2026-11-07)
+
+- **Menú de la cuenta** (barra superior, al estilo de Evaluación de competencias): foto o iniciales, correo, número LAM y roles; enlaces a Mi perfil de piloto, Mi cuenta, Contraseña y sesiones, Settings y Cerrar sesión (en todas las pestañas).
+- **Mi cuenta** (`/account`): foto de perfil (bucket público `avatars`, carpeta del propio usuario, recortada a 256 px WebP en el navegador), nombre, país, VID de IVAO, usuario de Discord y presentación; la contraseña y las sesiones pasaron aquí desde Settings. El VID de la solicitud de cuenta pasa al perfil al aceptar la invitación.
+- **Perfil del piloto** (`/pilots/:número`, clic en el nombre en Pilots o en Administration → Cuentas): aerolíneas y roles, totales (vuelos, horas de vuelo y block, NM, puntaje, tomas, aeropuertos), actividad de 12 meses, por aerolínea, tipos, rutas, historial de 50 PIREP, habilitaciones, insignias de tours y eventos. RPC `get_pilot_profile`: lo ven la persona, su staff, el superadministrador y quienes comparten aerolínea; el correo y los PIREP no aceptados, solo los primeros tres.
+- Migración `pilot_profiles`, prueba 024 (12). Capturas 62–64.
+
+## Menú lateral ocultable y módulos ampliables (2026-11-07)
+
+- Botón junto al selector de aerolínea que reduce el menú lateral a iconos (se recuerda en el navegador; el contenido pasa a 1920 px de ancho máximo).
+- «Ampliar» (como «Ampliar» de Reunión mensual de ventas) en el mapa en vivo, Operations Center, Estadísticas, PIREP, Dashboard y el perfil del piloto: el módulo ocupa la ventana sin volver a montarse, con «Pantalla completa», «Abrir en otra pestaña» (`?ver=<módulo>`) y «Cerrar» (Esc). Componentes `Expandable` y `Panel expandable`.
+- Cerrar sesión en una pestaña cierra la de las demás (evento `storage` además del canal de Supabase) y las pestañas abiertas con «Abrir en otra pestaña» se cierran solas. Capturas 59–61.
+
 ## «Cambio de aeronave» falso con el A380 de iniBuilds (2026-11-07)
 
 - PIREP-2026-00014 y 00019 (QTR783/784, Jesus Medina) marcaban la falta grave «Cambio de aeronave» aunque el avión fue el mismo todo el vuelo: el A380 cambia su matrícula ATC (ATC ID) un par de minutos después de cargar y el conector tomaba cualquier cambio de identidad como cambio de avión.

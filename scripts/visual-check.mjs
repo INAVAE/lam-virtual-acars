@@ -957,6 +957,49 @@ const ACCOUNT_REQUESTS = [
   },
 ];
 
+// Perfil completo del piloto (Pilots → nombre).
+const PILOT_PROFILE = {
+  viewer: { self: true, staff: true, admin: true },
+  profile: {
+    user_id: USER_ID, pilot_number: 1001, display_name: 'Piloto de Prueba', email: 'piloto@example.com', country_code: 'MX', avatar_url: null,
+    bio: 'Capitán virtual de A320 y 737. Vuelo en IVAO desde 2019, sobre todo en México y el Caribe.', ivao_vid: '512345', discord_username: 'piloto.lam',
+    simbrief_username: 'pilotolam', time_zone: 'America/Mexico_City', joined_at: minsAgo(30000), account_status: 'active', last_sign_in_at: minsAgo(5),
+    is_superadmin: true, primary_airline_id: id(101),
+  },
+  memberships: [
+    { airline_id: id(101), name: 'Líneas Aéreas Mexicanas', icao_code: 'MXL', slug: 'lineas-aereas-mexicanas', logo_path: 'airlines/lineas-aereas-mexicanas.png', brand_primary_color: '#0b7a5a', status: 'active', roles: ['pilot', 'airline_admin'], requested_at: minsAgo(29000), decided_at: minsAgo(28900) },
+    { airline_id: id(102), name: 'Qatar Airways Virtual', icao_code: 'QTR', slug: 'qatar-airways-virtual', logo_path: null, brand_primary_color: '#5c0632', status: 'active', roles: ['pilot'], requested_at: minsAgo(9000), decided_at: minsAgo(8900) },
+  ],
+  totals: { flights: 14, block_minutes: 2310, flight_minutes: 1985, distance_nm: 9120, fuel_used_kg: 84500, average_score: 93.4, average_landing_vs_fpm: -168, best_landing_vs_fpm: -74, airports: 9, first_flight_at: minsAgo(28000), last_flight_at: minsAgo(400), pending: 1, rejected: 0 },
+  by_airline: [
+    { icao_code: 'MXL', name: 'Líneas Aéreas Mexicanas', flights: 11, block_minutes: 1290, distance_nm: 4310 },
+    { icao_code: 'QTR', name: 'Qatar Airways Virtual', flights: 3, block_minutes: 1020, distance_nm: 4810 },
+  ],
+  aircraft_types: [
+    { icao_code: 'A320', model: 'A320', manufacturer: 'Airbus', flights: 7, block_minutes: 640, distance_nm: 2150, last_at: minsAgo(400) },
+    { icao_code: 'B738', model: '737-800', manufacturer: 'Boeing', flights: 4, block_minutes: 650, distance_nm: 2160, last_at: minsAgo(3000) },
+    { icao_code: 'A388', model: 'A380-800', manufacturer: 'Airbus', flights: 3, block_minutes: 1020, distance_nm: 4810, last_at: minsAgo(1500) },
+  ],
+  routes: [
+    { origin: 'MMMX', destination: 'MMGL', origin_city: 'Ciudad de México', destination_city: 'Guadalajara', flights: 4, distance_nm: 249, last_at: minsAgo(400) },
+    { origin: 'MMMX', destination: 'MMUN', origin_city: 'Ciudad de México', destination_city: 'Cancún', flights: 3, distance_nm: 698, last_at: minsAgo(3000) },
+    { origin: 'OTHH', destination: 'EGLL', origin_city: 'Doha', destination_city: 'Londres', flights: 2, distance_nm: 2830, last_at: minsAgo(1500) },
+  ],
+  monthly: Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - 11 + i);
+    const flights = [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 5, 6][i];
+    return { month: d.toISOString().slice(0, 7), flights, block_minutes: flights * 160 };
+  }),
+  recent_pireps: [
+    { id: PIREP_ID, folio: 'PIREP-2026-00021', callsign: 'MXL4100', status: 'pending', airline_icao: 'MXL', origin: 'MMMX', destination: 'MMGL', aircraft_icao: 'A320', registration: 'XA-MXE', block_minutes: 78, flight_minutes: 62, distance_nm: 251, landing_vs_fpm: -142, score: 95, date: minsAgo(400), can_open: true },
+    { id: id(2401), folio: 'PIREP-2026-00014', callsign: 'QTR783', status: 'accepted', airline_icao: 'QTR', origin: 'OTHH', destination: 'EGLL', aircraft_icao: 'A388', registration: 'A7-APJ', block_minutes: 412, flight_minutes: 389, distance_nm: 2830, landing_vs_fpm: -96, score: 100, date: minsAgo(1500), can_open: true },
+  ],
+  type_ratings: [{ airline_icao: 'MXL', icao_code: 'A320', model: 'A320', granted_at: minsAgo(20000) }],
+  tour_badges: [{ tour_id: id(1700), code: 'MXRIV', name: 'Riviera Maya', color: '#0ea5e9', badge_path: null, airline_icao: 'MXL', awarded_at: minsAgo(5000) }],
+  events: [],
+  trainings: [],
+};
+
 // Cuentas de la plataforma (Administration → Cuentas).
 const PLATFORM_ACCOUNTS = [
   {
@@ -1043,6 +1086,7 @@ async function handleSupabase(route) {
     get_event: EVENT_DETAIL,
     get_route_type_usage: ROUTE_TYPE_USAGE,
     list_platform_accounts: PLATFORM_ACCOUNTS,
+    get_pilot_profile: PILOT_PROFILE,
   };
   const rpcName = url.pathname.startsWith('/rest/v1/rpc/') ? url.pathname.slice('/rest/v1/rpc/'.length) : null;
   if (rpcName === 'get_live_flight_route') {
@@ -1306,6 +1350,16 @@ await shoot('61-panel-expanded', 'statistics', {
   action: async (page) => {
     await page.getByRole('button', { name: 'Ampliar Actividad por mes' }).click();
     await page.getByRole('button', { name: 'Cerrar', exact: true }).waitFor();
+  },
+});
+await shoot('62-pilot-profile', 'pilots/1001', { waitFor: 'Historial de vuelos', action: async (page) => page.getByText('PIREP-2026-00014').waitFor() });
+await shoot('63-account', 'account', { waitFor: 'Datos personales', action: async (page) => page.getByLabel('Usuario de Discord').waitFor() });
+await shoot('64-user-menu', '', {
+  fullPage: false,
+  waitFor: 'Mis aerolíneas',
+  action: async (page) => {
+    await page.getByRole('button', { name: /^Tu cuenta/ }).click();
+    await page.getByRole('menuitem', { name: /Mi perfil de piloto/ }).waitFor();
   },
 });
 await shoot('57-platform-accounts', 'administration?tab=accounts', { waitFor: 'Cuentas de la plataforma', action: async (page) => page.getByText('Marisol Pérez').waitFor() });
