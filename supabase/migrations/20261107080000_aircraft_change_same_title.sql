@@ -7,7 +7,7 @@
 -- el título del avión era el mismo de principio a fin.
 --
 -- - build_pirep cuenta el evento solo si el título es distinto al de la sesión.
---   (El conector 0.1.27 ya solo emite el evento cuando cambia el título.)
+--   (El conector 0.1.28 ya solo emite el evento cuando cambia el título.)
 -- - Los PIREP ya generados con esa falta sin anular, cuyos eventos tienen todos
 --   el mismo título que la sesión, la quedan anulada con el motivo.
 -- =============================================================================
