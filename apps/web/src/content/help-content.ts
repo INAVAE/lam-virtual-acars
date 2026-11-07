@@ -58,6 +58,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Las dos piezas', 'La web, que se abre en cualquier navegador sin instalar nada, y el conector LAM ACARS, una aplicación de Windows que lee el simulador y envía el vuelo a la web.'],
       ['Una cuenta, varias aerolíneas', 'Tu cuenta y tu número de piloto (LAM + 4 dígitos) son únicos en LAM. Con la misma cuenta te unes a una o varias aerolíneas, y en cada una puedes tener un rol distinto.'],
       ['Más espacio en pantalla', 'El botón junto al selector de aerolínea oculta el menú lateral y lo deja solo con iconos (pasa el puntero para ver el nombre); se recuerda en tu navegador. El mapa, las tarjetas y las gráficas tienen el botón «Ampliar» (⤢): ocupan toda la ventana, y desde ahí pasas a pantalla completa o los abres en otra pestaña. Esc o «Cerrar» los regresan.'],
+      ['Idioma', 'El botón con el globo de letras (ES / EN) en la barra superior, y en las pantallas de entrada, cambia el idioma de lectura entre español e inglés; se recuerda en tu navegador. Las fechas y números también cambian de formato. Lo que escriben las personas (comentarios, descripciones, nombres) y algunos mensajes del servidor se quedan como se escribieron; el manual en PDF está en español.'],
       ['Varias pestañas, una sesión', 'Las pestañas que abras comparten tu sesión. Si cierras sesión en una, se cierra en todas y te pide entrar de nuevo.'],
       ['Qué NO es', 'No es una aerolínea real ni está relacionada con ninguna. Todo lo que muestra es para simulación: el clima, las rutas, el control de IVAO y los planes de vuelo no sirven para volar en la vida real.'],
     ],
@@ -476,6 +477,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-07', 'Idioma de lectura: español o inglés desde la barra superior (y en las pantallas de entrada).'],
   ['2026-11-07', 'Training: calendario de entrenamientos con instructor, inscripción con confirmación, horas Zulu y local, archivo .ics y Google Calendar, canal de Discord y reconocimientos en el perfil.'],
   ['2026-11-07', 'Menú de la cuenta con foto, Mi cuenta (datos personales, foto, contraseña y sesiones) y perfil completo del piloto desde Pilots.'],
   ['2026-11-07', 'Menú lateral que se oculta y botón «Ampliar» en el mapa, las tarjetas y las gráficas: pantalla completa u otra pestaña. Cerrar sesión cierra todas las pestañas.'],

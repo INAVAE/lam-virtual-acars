@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './button';
+import { currentLocale } from '@/lib/i18n';
 
 interface PaginationProps {
   page: number;
@@ -8,7 +9,6 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
 }
 
-const numberFormat = new Intl.NumberFormat('es-MX');
 
 export function Pagination({ page, pageSize, total, onPageChange }: PaginationProps) {
   if (!total) return null;
@@ -18,7 +18,7 @@ export function Pagination({ page, pageSize, total, onPageChange }: PaginationPr
   return (
     <nav aria-label="Paginación" className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
       <p>
-        {numberFormat.format(from)} a {numberFormat.format(to)} de {numberFormat.format(total)}
+        {new Intl.NumberFormat(currentLocale()).format(from)} a {new Intl.NumberFormat(currentLocale()).format(to)} de {new Intl.NumberFormat(currentLocale()).format(total)}
       </p>
       <div className="flex items-center gap-2">
         <Button variant="secondary" size="sm" disabled={page === 0} onClick={() => onPageChange(page - 1)}>

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { UtcClock } from '@/components/layout/utc-clock';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 interface AuthLayoutProps {
   title: string;
@@ -31,7 +32,8 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
         </p>
       </aside>
 
-      <main className="flex flex-col justify-center px-5 py-10 sm:px-10">
+      <main className="relative flex flex-col justify-center px-5 py-10 sm:px-10">
+        <LanguageSwitcher className="absolute right-4 top-4" />
         <div className="mx-auto w-full max-w-sm">
           <Link to="/bienvenida" className="mb-8 block font-display text-lg font-semibold lg:hidden">
             LAM Virtual ACARS

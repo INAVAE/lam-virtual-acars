@@ -1,11 +1,12 @@
 /** Utilidades de la página de estadísticas y del rendimiento de pilotos. */
 import type { AirlineStatistics } from '@lam/shared-types';
+import { currentLocale } from './i18n';
 
 /** "2026-03" → "mar 26" (mes corto en español, UTC). */
 export function monthLabel(month: string, withYear = true): string {
   const [y, m] = month.split('-').map(Number);
   if (!y || !m) return month;
-  const name = new Intl.DateTimeFormat('es-MX', { month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, 1))).replace('.', '');
+  const name = new Intl.DateTimeFormat(currentLocale(), { month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, 1))).replace('.', '');
   return withYear ? `${name} ${String(y).slice(2)}` : name;
 }
 

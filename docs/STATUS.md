@@ -2,6 +2,13 @@
 
 Última actualización: 2026-11-06 (cuentas de la plataforma)
 
+## Idioma de lectura: español e inglés (2026-11-07)
+
+- Botón de idioma (ES / EN) en la barra superior, la página pública y las pantallas de entrada; se recuerda en el navegador (`lam:lang`) y se sincroniza entre pestañas.
+- La web sigue escrita en español. En inglés, `lib/translator.ts` reemplaza los textos visibles y los atributos `title`, `placeholder`, `aria-label` y `alt` con el diccionario `content/i18n-en.ts` (≈2,000 textos y 118 plantillas con `{0}`), con un MutationObserver para lo que React vuelve a pintar; el diccionario se descarga solo al elegir inglés. Fechas, números, meses y países usan el idioma activo (`currentLocale()`).
+- No se traduce lo que escriben las personas, algunos mensajes del servidor ni el manual en PDF. Para textos nuevos: agregarlos al diccionario (o se quedan en español).
+- Capturas 69–72.
+
 ## Training: entrenamientos (2026-11-07)
 
 - Sección **Training** (menú Operación): calendario del mes (el día sigue a la hora principal elegida, Zulu o local) y lista de próximos, mis inscripciones y anteriores. Folio `TRN-AAAA-NNNN`.

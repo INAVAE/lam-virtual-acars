@@ -1241,19 +1241,20 @@ const TILE_PNG = placeholderTile();
 const results = [];
 const browser = await chromium.launch();
 
-async function shoot(name, path, { viewport = { width: 1440, height: 900 }, airlineId = null, theme = 'dark', action, waitFor, fullPage = true, marks = [], signedOut = false } = {}) {
+async function shoot(name, path, { viewport = { width: 1440, height: 900 }, airlineId = null, theme = 'dark', action, waitFor, fullPage = true, marks = [], signedOut = false, lang = 'es' } = {}) {
   if (ONLY_MANUAL && !name.startsWith('m-')) return;
   // Las del manual se toman al doble de resolución para que se lean impresas.
   const context = await browser.newContext({ viewport, locale: 'es-MX', colorScheme: theme, deviceScaleFactor: name.startsWith('m-') ? 2 : 1 });
   await context.addInitScript(
-    ([key, session, selected, themeValue]) => {
+    ([key, session, selected, themeValue, langValue]) => {
+      window.localStorage.setItem('lam:lang', langValue);
       if (session) window.localStorage.setItem(key, JSON.stringify(session));
       else window.localStorage.removeItem(key);
       window.localStorage.setItem('lam.theme', themeValue);
       if (selected) window.localStorage.setItem('lam.selectedAirline', selected);
       else window.localStorage.removeItem('lam.selectedAirline');
     },
-    [`sb-${PROJECT_REF}-auth-token`, signedOut ? null : fakeSession(), airlineId, theme],
+    [`sb-${PROJECT_REF}-auth-token`, signedOut ? null : fakeSession(), airlineId, theme, lang],
   );
   const page = await context.newPage();
   const problems = [];
@@ -1400,6 +1401,17 @@ await shoot('61-panel-expanded', 'statistics', {
   action: async (page) => {
     await page.getByRole('button', { name: 'Ampliar Actividad por mes' }).click();
     await page.getByRole('button', { name: 'Cerrar', exact: true }).waitFor();
+  },
+});
+await shoot('69-english-dashboard', '', { lang: 'en', airlineId: MXL.id, waitFor: 'My airlines' });
+await shoot('70-english-training', 'training', { lang: 'en', waitFor: 'Upcoming trainings' });
+await shoot('71-english-live', `live?flights=${id(1500)}`, { lang: 'en', fullPage: false, waitFor: 'Live flights' });
+await shoot('72-language-menu', '', {
+  fullPage: false,
+  waitFor: 'Mis aerolíneas',
+  action: async (page) => {
+    await page.getByRole('button', { name: /Idioma \/ Language/ }).click();
+    await page.getByRole('menuitemradio', { name: /English/ }).waitFor();
   },
 });
 await shoot('65-training-calendar', 'training', { waitFor: 'Calendario', action: async (page) => page.getByText('Próximos entrenamientos').waitFor() });

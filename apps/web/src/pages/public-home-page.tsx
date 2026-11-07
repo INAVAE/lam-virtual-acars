@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import { AirlineLogo } from '@/components/airline-logo';
 import { UtcClock } from '@/components/layout/utc-clock';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,11 +30,14 @@ export function PublicHomePage() {
           />
           LAM Virtual ACARS
         </span>
-        {user ? null : (
-          <Link to="/entrar" className="text-sm font-medium underline-offset-4 hover:underline">
-            Iniciar sesión
-          </Link>
-        )}
+        <span className="flex items-center gap-3">
+          <LanguageSwitcher />
+          {user ? null : (
+            <Link to="/entrar" className="text-sm font-medium underline-offset-4 hover:underline">
+              Iniciar sesión
+            </Link>
+          )}
+        </span>
       </header>
 
       <main className="mx-auto max-w-6xl px-5 pb-16">

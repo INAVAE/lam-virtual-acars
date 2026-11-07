@@ -1,4 +1,5 @@
 /**
+import { currentLocale, monthShort } from './i18n';
  * Horas UTC (Zulu) y locales. La operación usa UTC; la hora local del piloto se
  * muestra al lado. Funciones puras: la zona y el orden llegan como parámetros.
  */
@@ -76,12 +77,11 @@ export function clockTime(date: Date, timeZone: string, seconds = false): string
   return seconds ? `${p.hour}:${p.minute}:${p.second}` : `${p.hour}:${p.minute}`;
 }
 
-const MONTHS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
 /** "25 OCT 14:30" en la zona indicada. */
 export function dayTime(date: Date, timeZone: string): string {
   const p = parts(date, timeZone);
-  return `${p.day} ${MONTHS[Number(p.month) - 1]} ${p.hour}:${p.minute}`;
+  return `${p.day} ${monthShort(Number(p.month) - 1)} ${p.hour}:${p.minute}`;
 }
 
 export interface DualTime {
@@ -116,9 +116,9 @@ export function utcTimeOfDay(value: string, timeZone: string, primary: TimePrima
 
 /** Fecha y hora con el formato de la app ("30 oct 2026, 10:05 p.m.") en la zona indicada. */
 export function formatDateTimeIn(iso: string, timeZone: string): string {
-  return formatter('es-MX', { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(new Date(iso));
+  return formatter(currentLocale(), { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(new Date(iso));
 }
 
 export function formatDateIn(iso: string, timeZone: string): string {
-  return formatter('es-MX', { dateStyle: 'medium', timeZone }).format(new Date(iso));
+  return formatter(currentLocale(), { dateStyle: 'medium', timeZone }).format(new Date(iso));
 }

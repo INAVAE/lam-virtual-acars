@@ -1,5 +1,6 @@
 import type { PirepFinding, PirepMetrics, PirepStatus } from '@lam/shared-types';
 import { formatNumber } from './format';
+import { currentLocale } from './i18n';
 
 export const pirepStatusLabels: Record<PirepStatus, string> = {
   pending: 'En revisión',
@@ -49,7 +50,7 @@ export function formatMinutes(minutes: number | null | undefined): string {
 /** Horas totales con un decimal, como en una bitácora: 12.5 h. */
 export function formatHours(minutes: number | null | undefined): string {
   if (!minutes) return '0.0 h';
-  return `${(minutes / 60).toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} h`;
+  return `${(minutes / 60).toLocaleString(currentLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} h`;
 }
 
 function formatValue(value: number, unit: string | null): string {

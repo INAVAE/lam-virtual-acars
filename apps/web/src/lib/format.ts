@@ -1,4 +1,5 @@
 import type { AircraftStatus, AirlineOperationType, AirlineRole, MembershipStatus } from '@lam/shared-types';
+import { currentLang, currentLocale } from './i18n';
 
 /** Número de piloto LAM: LAM + 4 dígitos (LAM1001). */
 export function formatPilotNumber(pilotNumber: number): string {
@@ -28,10 +29,10 @@ export function setDisplayTimeZone(timeZone: string | undefined): void {
 }
 
 function zoned(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
-  const key = `${displayTimeZone ?? ''}|${JSON.stringify(options)}`;
+  const key = `${currentLocale()}|${displayTimeZone ?? ''}|${JSON.stringify(options)}`;
   let f = zoneFormatters.get(key);
   if (!f) {
-    f = new Intl.DateTimeFormat('es-MX', { ...options, timeZone: displayTimeZone });
+    f = new Intl.DateTimeFormat(currentLocale(), { ...options, timeZone: displayTimeZone });
     zoneFormatters.set(key, f);
   }
   return f;
@@ -62,12 +63,10 @@ export function formatRoles(roles: readonly AirlineRole[]): string {
     .join(', ');
 }
 
-const regionNames = new Intl.DisplayNames(['es'], { type: 'region' });
-
 export function countryName(code: string | null): string {
   if (!code) return 'Sin especificar';
   try {
-    return regionNames.of(code) ?? code;
+    return new Intl.DisplayNames([currentLang()], { type: 'region' }).of(code) ?? code;
   } catch {
     return code;
   }
@@ -134,10 +133,8 @@ export function wakeCategoryLabel(value: string): string {
   return wakeLabels[value] ?? value;
 }
 
-const numberFormat = new Intl.NumberFormat('es-MX');
-
 export function formatNumber(value: number): string {
-  return numberFormat.format(value);
+  return new Intl.NumberFormat(currentLocale()).format(value);
 }
 
 export function formatLocalDateTime(iso: string): string {

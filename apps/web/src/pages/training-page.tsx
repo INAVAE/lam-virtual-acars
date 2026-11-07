@@ -13,6 +13,7 @@ import { useNow } from '@/hooks/use-now';
 import { useTrainings, type TrainingSummary } from '@/hooks/use-trainings';
 import { cn } from '@/lib/cn';
 import { describeError } from '@/lib/errors';
+import { monthName, weekdaysShort } from '@/lib/i18n';
 import { formatMinutes } from '@/lib/pirep';
 import { DualTimeText, useTimePrefs } from '@/lib/time-context';
 import {
@@ -26,8 +27,6 @@ import {
   trainingResults,
 } from '@/lib/training';
 
-const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 type View = 'calendar' | 'list';
 type ListFilter = 'upcoming' | 'mine' | 'past';
@@ -124,10 +123,10 @@ function MonthCalendar({ trainings, year, month, timeZone }: { trainings: Traini
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[44rem] table-fixed border-collapse text-sm" aria-label={`Entrenamientos de ${MONTHS[month - 1]} de ${year}`}>
+      <table className="w-full min-w-[44rem] table-fixed border-collapse text-sm" aria-label={`${monthName(month - 1)} ${year}`}>
         <thead>
           <tr>
-            {WEEKDAYS.map((d) => (
+            {weekdaysShort().map((d) => (
               <th key={d} scope="col" className="pb-2 text-left text-xs font-medium text-muted">
                 {d}
               </th>
@@ -261,7 +260,7 @@ export function TrainingPage() {
       ) : view === 'calendar' ? (
         <Expandable id="calendario-de-entrenamientos" title="Calendario de entrenamientos">
           <Panel
-            title={`${MONTHS[ym.month - 1]![0]!.toUpperCase()}${MONTHS[ym.month - 1]!.slice(1)} ${ym.year}`}
+            title={`${monthName(ym.month - 1).charAt(0).toUpperCase()}${monthName(ym.month - 1).slice(1)} ${ym.year}`}
             description={`${all.filter((t) => dateKeyIn(t.starts_at, calendarZone).startsWith(`${ym.year}-${String(ym.month).padStart(2, '0')}`)).length} entrenamientos este mes`}
             actions={
               <div className="mr-10 flex items-center gap-1">

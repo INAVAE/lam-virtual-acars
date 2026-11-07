@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { Select } from '@/components/ui/input';
 import { Avatar } from '@/components/avatar';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import { useAirlines, useMyMemberships, useProfile } from '@/hooks/use-lam-data';
 import { useCanHandleTickets, useTicketInboxCount } from '@/hooks/use-support';
 import { useAirlineScope } from '@/lib/airline-scope';
@@ -278,6 +279,7 @@ export function TopBar({
       <div className="ml-auto flex items-center gap-1 sm:gap-3">
         <UtcClock className="hidden md:flex" />
         <HelpButton />
+        <LanguageSwitcher />
         <ThemeToggle />
         <UserMenu />
       </div>

@@ -14,6 +14,7 @@ import { BrowserRouter } from 'react-router';
 import { Toaster } from 'sonner';
 import { App } from './App';
 import { AuthProvider } from './lib/auth';
+import { LanguageProvider } from './lib/i18n';
 import { envStatus } from './lib/supabase';
 import { ThemeProvider, useTheme } from './lib/theme';
 import { ConfigMissingPage } from './pages/config-missing-page';
@@ -45,7 +46,9 @@ createRoot(root).render(
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <BrowserRouter basename={basename}>
-              <App />
+              <LanguageProvider>
+                <App />
+              </LanguageProvider>
             </BrowserRouter>
           </AuthProvider>
         </QueryClientProvider>

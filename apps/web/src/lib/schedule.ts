@@ -1,4 +1,5 @@
 /** Días de operación: máscara de bits con lunes = 1 … domingo = 64. */
+import { currentLocale } from './i18n';
 export const WEEKDAYS = [
   { bit: 1, short: 'L', name: 'Lunes' },
   { bit: 2, short: 'M', name: 'Martes' },
@@ -34,7 +35,7 @@ export function formatDuration(minutes: number): string {
 
 /** Minutos acumulados a horas con un decimal: 125 -> "2.1". */
 export function formatHours(minutes: number): string {
-  return (minutes / 60).toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return (minutes / 60).toLocaleString(currentLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
 
 /** "14:30:00" -> "14:30Z" */
