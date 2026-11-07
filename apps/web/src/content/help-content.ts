@@ -72,13 +72,19 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     summary: 'Lo que haces una sola vez, antes de tu primer vuelo.',
     audience: 'pilot',
     steps: [
-      ['Crea tu cuenta', 'En la página de inicio pulsa «Crear cuenta de piloto». Escribe tu nombre para mostrar, tu correo y una contraseña de al menos 8 caracteres.'],
-      ['Confirma tu correo', 'Llega un correo con un enlace. Ábrelo para activar la cuenta; sin ese paso no puedes entrar. Si no llega, revisa la carpeta de no deseados.'],
+      ['Solicita tu cuenta', 'En la página de inicio pulsa «Solicitar cuenta de piloto». Escribe tu nombre y tu correo; si quieres, la aerolínea a la que te interesa unirte, tu VID de IVAO y unas líneas sobre ti. No eliges contraseña todavía.'],
+      ['Espera la invitación', 'El superadministrador revisa tu solicitud. Hasta que la aprueba no llega ningún correo. Al aprobarla te llega «Invitación a LAM Virtual ACARS»; si no la ves, revisa la carpeta de no deseados.'],
+      ['Crea tu contraseña', 'Abre el enlace de la invitación: te pide una contraseña de al menos 8 caracteres y entras. El enlace vence en 24 horas; si venció, pide que te la reenvíen.'],
       ['Solicita ingreso', 'En el Dashboard, en «Mis aerolíneas», elige la aerolínea y pulsa «Solicitar ingreso». Puedes cancelarla mientras esté pendiente.'],
       ['Espera la aprobación', 'El administrador o el jefe de operaciones de la aerolínea aprueba tu solicitud en Pilots. Al aprobarla ya puedes reservar.'],
       ['Si olvidas la contraseña', 'Usa «Olvidé mi contraseña» en la pantalla de entrada. El enlace del correo te deja elegir una nueva y solo sirve una vez.'],
     ],
-    note: 'Si entras y ves «Sin aerolínea asignada», tu cuenta está activa pero todavía nadie aprobó tu ingreso.',
+    note: 'Las cuentas se crean solo por invitación, para que entre únicamente quien vuela con LAM. Si entras y ves «Sin aerolínea asignada», tu cuenta está activa pero todavía nadie aprobó tu ingreso a una aerolínea.',
+    shot: {
+      file: 'm-09-request-account',
+      caption: 'Solicitar cuenta de piloto.',
+      marks: ['Nombre y correo', 'Aerolínea de interés (opcional)', 'Enviar solicitud'],
+    },
   },
   {
     id: 'perfil',
@@ -321,9 +327,16 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     steps: [
       ['Aerolíneas', 'Crear aerolíneas, activarlas y nombrar a sus administradores.'],
       ['Aeropuertos y tipos', 'Importar el catálogo de OurAirports, dar de alta aeropuertos y ajustar los tipos de aeronave, incluida la figura del mapa.'],
+      ['Solicitudes de cuenta', 'Administration → «Solicitudes de cuenta» (el Dashboard avisa cuando hay pendientes). «Aprobar y enviar invitación» manda el correo de invitación; «Rechazar» la cierra con una nota opcional que la persona no ve. Una aprobada que nadie aceptó se puede reenviar; también puedes invitar a alguien directamente con su nombre y correo.'],
       ['Administration', 'La bitácora de cambios administrativos de toda la plataforma y la lista de superadministradores.'],
       ['Incidencias de la plataforma', 'Los reportes que no son de una aerolínea (la web en general o el conector) llegan solo al superadministrador.'],
     ],
+    note: 'Nadie puede crearse una cuenta por su cuenta, ni siquiera por la API de Supabase: el usuario solo se crea para un correo con solicitud aprobada.',
+    shot: {
+      file: 'm-10-account-requests',
+      caption: 'Solicitudes de cuenta en Administration.',
+      marks: ['Pestaña Solicitudes de cuenta', 'Datos de la solicitud', 'Aprobar y enviar invitación, o rechazar', 'Invitar a un piloto directamente'],
+    },
   },
   {
     id: 'ayuda',
@@ -364,12 +377,14 @@ export const HELP_FAQ: [question: string, answer: string][] = [
   ['No veo la ruta del plan en el mapa.', 'Aparece para planes importados desde el 5 de noviembre de 2026. Si tu reserva es anterior, vuelve a importar el plan en My Flights.'],
   ['El control de IVAO tarda en aparecer.', 'Si nadie había abierto el mapa en un rato, la primera carga puede tardar hasta un minuto.'],
   ['¿Quién ve mis reportes de incidencia?', 'Tú y quien los atiende: el staff de la aerolínea que elegiste y el superadministrador.'],
+  ['Pedí mi cuenta y no me llega ningún correo.', 'Es normal hasta que el superadministrador aprueba tu solicitud: el único correo es la invitación. Si ya pasó un tiempo, pide a tu aerolínea que la revisen. Revisa también no deseados.'],
+  ['La invitación dice que el enlace venció.', 'Los enlaces duran 24 horas. Pide que te reenvíen la invitación; el nuevo enlace sustituye al anterior.'],
   ['¿Puedo volar en varias aerolíneas?', 'Sí. Solicita ingreso en cada una desde el Dashboard. Tu número de piloto es el mismo en todas.'],
 ];
 
 export const HELP_TROUBLESHOOTING: [symptom: string, cause: string, fix: string][] = [
   ['La página se queda cargando', 'Se interrumpió la conexión con el servidor o una extensión del navegador bloquea la petición.', 'Recarga. Si sigue, prueba en una ventana privada para descartar las extensiones.'],
-  ['«Correo o contraseña incorrectos»', 'La contraseña no coincide o el correo aún no se confirma.', 'Usa «Olvidé mi contraseña». Si no confirmaste el correo, busca el mensaje de confirmación.'],
+  ['«Correo o contraseña incorrectos»', 'La contraseña no coincide, o tu cuenta aún no existe porque no has aceptado la invitación.', 'Usa «Olvidé mi contraseña». Si nunca creaste tu contraseña, abre el enlace de la invitación o pide que te la reenvíen.'],
   ['«Sin aerolínea asignada»', 'Tu solicitud de ingreso sigue pendiente o no has pedido ninguna.', 'Solicita ingreso desde el Dashboard y espera la aprobación del staff.'],
   ['La reserva se rechaza', 'Una regla de la aerolínea no se cumple: tipo, habilitación, disponibilidad, máximo de reservas o membresía.', 'Lee el mensaje: dice qué regla falló. Elige otra aeronave o ruta.'],
   ['«Configura tu usuario de SimBrief»', 'Falta tu usuario de SimBrief en el perfil.', 'Escríbelo en Settings → Perfil de piloto e importa de nuevo.'],
@@ -427,6 +442,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-06', 'Cuentas por invitación: quien quiere entrar solicita su cuenta, el superadministrador la aprueba y solo entonces llega el correo para crear la contraseña.'],
   ['2026-11-06', 'Live Flights: distancia restante por la ruta del plan de SimBrief y tiempo al destino que considera el descenso y la aproximación.'],
   ['2026-11-05', 'Flight Booking: «Reservar un nuevo vuelo directo», sin ruta registrada, con opción de registrar la ruta y plan de SimBrief en la misma ventana.'],
   ['2026-11-05', 'Live Flights: ruta del plan de SimBrief en el detalle del vuelo; distancia recorrida y por volar y tiempos en cada tarjeta.'],

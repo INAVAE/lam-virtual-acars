@@ -1,6 +1,6 @@
 import type { Session, User } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { supabase } from './supabase';
+import { pendingEmailLink, supabase } from './supabase';
 
 interface AuthState {
   session: Session | null;
@@ -10,6 +10,8 @@ interface AuthState {
   /** true si la sesión viene de un enlace de recuperación de contraseña. */
   recovering: boolean;
   clearRecovering: () => void;
+  /** true si la sesión viene de la invitación de una cuenta de piloto aprobada: falta elegir contraseña. */
+  welcome: boolean;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -17,14 +19,21 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
-  const [recovering, setRecovering] = useState(false);
+  const [recovering, setRecovering] = useState(pendingEmailLink?.type === 'recovery');
+  const [welcome] = useState(pendingEmailLink?.type === 'invite');
 
   useEffect(() => {
     if (!supabase) return;
     let active = true;
 
-    supabase.auth
-      .getSession()
+    const client = supabase;
+    // Enlace de invitación o de recuperación con la sesión en el fragmento.
+    const opened = pendingEmailLink
+      ? client.auth.setSession({ access_token: pendingEmailLink.access_token, refresh_token: pendingEmailLink.refresh_token }).then(() => undefined)
+      : Promise.resolve();
+    opened
+      .catch(() => undefined)
+      .then(() => client.auth.getSession())
       .then(({ data }) => {
         if (active) setSession(data.session);
       })
@@ -51,8 +60,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       recovering,
       clearRecovering: () => setRecovering(false),
+      welcome,
     }),
-    [session, loading, recovering],
+    [session, loading, recovering, welcome],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

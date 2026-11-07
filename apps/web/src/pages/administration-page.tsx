@@ -1,6 +1,8 @@
 import type { Json } from '@lam/shared-types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
+import { useSearchParams } from 'react-router';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { ConfirmButton } from '@/components/confirm-button';
 import { Alert } from '@/components/ui/alert';
@@ -14,6 +16,7 @@ import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
+import { useAccountRequestAction, useAccountRequests, usePendingAccountRequests, type AccountRequest } from '@/hooks/use-account-requests';
 import { useAuditLog, useOrgAdmins, type AuditRow } from '@/hooks/use-audit';
 import { useAirlines } from '@/hooks/use-lam-data';
 import { useAirlineScope } from '@/lib/airline-scope';
@@ -298,26 +301,189 @@ function SuperAdmins() {
   );
 }
 
+// -----------------------------------------------------------------------------
+// Solicitudes de cuenta de piloto
+// -----------------------------------------------------------------------------
+const requestStatus = {
+  pending: { label: 'Pendiente', tone: 'warn' },
+  approved: { label: 'Aprobada', tone: 'ok' },
+  rejected: { label: 'Rechazada', tone: 'neutral' },
+} as const;
+
+function RequestCard({ request }: { request: AccountRequest }) {
+  const act = useAccountRequestAction();
+  const [rejecting, setRejecting] = useState(false);
+  const [note, setNote] = useState('');
+  const status = requestStatus[request.status];
+  const accepted = Boolean(request.user_id);
+
+  async function run(body: Parameters<typeof act.mutateAsync>[0], ok: string) {
+    try {
+      await act.mutateAsync(body);
+      toast.success(ok);
+      setRejecting(false);
+    } catch (error) {
+      toast.error(describeError(error));
+    }
+  }
+
+  return (
+    <article className="rounded-md border border-line bg-surface px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <Badge tone={status.tone}>{accepted ? 'Cuenta creada' : status.label}</Badge>
+        <span className="font-medium text-ink">{request.display_name}</span>
+        <span className="font-mono text-muted">{request.email}</span>
+        <span className="ml-auto text-xs text-muted">{formatLocalDateTime(request.created_at)}</span>
+      </div>
+      <p className="mt-1 text-sm text-muted">
+        {request.airline ? `Quiere unirse a ${request.airline.name}` : 'Sin aerolínea indicada'}
+        {request.ivao_vid ? ` · VID IVAO ${request.ivao_vid}` : ''}
+      </p>
+      {request.message ? <p className="mt-1.5 whitespace-pre-line text-[15px]">{request.message}</p> : null}
+      {request.status === 'approved' && !accepted ? (
+        <p className="mt-1.5 text-sm text-muted">
+          {request.invited_at ? `Invitación enviada ${formatLocalDateTime(request.invited_at)}; falta que la acepte (vence en 24 h).` : 'Aprobada, sin invitación enviada.'}
+        </p>
+      ) : null}
+      {request.last_error ? <Alert tone="danger">{`El correo no salió: ${request.last_error}`}</Alert> : null}
+      {request.review_note ? <p className="mt-1.5 text-sm text-muted">Nota: {request.review_note}</p> : null}
+
+      {request.status === 'pending' ? (
+        rejecting ? (
+          <div className="mt-3 space-y-2">
+            <label htmlFor={`rej-${request.id}`} className="text-sm font-medium">
+              Motivo (opcional, solo para el staff)
+            </label>
+            <Textarea id={`rej-${request.id}`} rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="danger" loading={act.isPending} onClick={() => run({ action: 'reject', request_id: request.id, note: note.trim() || null }, 'Solicitud rechazada')}>
+                Rechazar
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setRejecting(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" loading={act.isPending} onClick={() => run({ action: 'approve', request_id: request.id }, `Aprobada: invitación enviada a ${request.email}`)}>
+              Aprobar y enviar invitación
+            </Button>
+            <Button size="sm" variant="secondary" disabled={act.isPending} onClick={() => setRejecting(true)}>
+              Rechazar
+            </Button>
+          </div>
+        )
+      ) : null}
+      {request.status === 'approved' && !accepted ? (
+        <div className="mt-3">
+          <Button size="sm" variant="secondary" loading={act.isPending} onClick={() => run({ action: 'resend', request_id: request.id }, `Invitación reenviada a ${request.email}`)}>
+            Reenviar invitación
+          </Button>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function InvitePilot() {
+  const act = useAccountRequestAction();
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    try {
+      await act.mutateAsync({ action: 'invite', email: email.trim(), display_name: name.trim() });
+      toast.success(`Invitación enviada a ${email.trim()}`);
+      setEmail('');
+      setName('');
+    } catch (error) {
+      toast.error(describeError(error));
+    }
+  }
+
+  return (
+    <Panel title="Invitar a un piloto" description="Para alguien que no llenó la solicitud: le llega el mismo correo de invitación.">
+      <form className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end" onSubmit={submit}>
+        <Field id="inv-name" label="Nombre">
+          <Input id="inv-name" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />
+        </Field>
+        <Field id="inv-email" label="Correo">
+          <Input id="inv-email" type="email" value={email} maxLength={254} onChange={(e) => setEmail(e.target.value)} />
+        </Field>
+        <Button type="submit" loading={act.isPending} disabled={name.trim().length < 2 || !email.includes('@')}>
+          Invitar
+        </Button>
+      </form>
+    </Panel>
+  );
+}
+
+function AccountRequests() {
+  const requests = useAccountRequests();
+  const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | ''>('pending');
+  const all = requests.data ?? [];
+  const rows = filter ? all.filter((r) => r.status === filter) : all;
+  const count = (s: AccountRequest['status']) => all.filter((r) => r.status === s).length;
+
+  return (
+    <div className="space-y-5">
+      <Panel
+        title="Solicitudes de cuenta de piloto"
+        description="Nadie entra a LAM sin aprobación. Al aprobar, la persona recibe un correo para elegir su contraseña; después pide unirse a una aerolínea."
+        actions={
+          <Select aria-label="Estado" className="h-9 w-auto" value={filter} onChange={(e) => setFilter(e.target.value as typeof filter)}>
+            <option value="pending">Pendientes ({count('pending')})</option>
+            <option value="approved">Aprobadas ({count('approved')})</option>
+            <option value="rejected">Rechazadas ({count('rejected')})</option>
+            <option value="">Todas ({all.length})</option>
+          </Select>
+        }
+      >
+        {requests.isLoading ? <Skeleton className="h-24" /> : null}
+        {requests.error ? <Alert tone="danger">{describeError(requests.error)}</Alert> : null}
+        {requests.data && rows.length === 0 ? (
+          <p className="rounded-md border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
+            {filter === 'pending' ? 'No hay solicitudes por revisar.' : 'No hay solicitudes en ese estado.'}
+          </p>
+        ) : null}
+        <div className="space-y-2">
+          {rows.map((r) => (
+            <RequestCard key={r.id} request={r} />
+          ))}
+        </div>
+      </Panel>
+      <InvitePilot />
+    </div>
+  );
+}
+
 export function AdministrationPage() {
   const { isOrgAdmin, ready } = useAirlineScope();
-  const [tab, setTab] = useState<'audit' | 'admins'>('audit');
+  const [params, setParams] = useSearchParams();
+  const requested = params.get('tab');
+  const tab: 'requests' | 'audit' | 'admins' = requested === 'audit' || requested === 'admins' ? requested : 'requests';
+  const setTab = (t: 'requests' | 'audit' | 'admins') => setParams(t === 'requests' ? {} : { tab: t }, { replace: true });
+  const pending = usePendingAccountRequests().data ?? 0;
 
   if (!ready) return <Skeleton className="h-64" />;
   if (!isOrgAdmin) return <Alert>Esta sección es solo para superadministradores de LAM.</Alert>;
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Administration" description="Bitácora de cambios administrativos y acceso global a la plataforma." />
+      <PageHeader title="Administration" description="Solicitudes de cuenta de piloto, bitácora de cambios administrativos y acceso global a la plataforma." />
       <Tabs
         label="Administración"
         value={tab}
         onChange={setTab}
         items={[
+          { value: 'requests', label: 'Solicitudes de cuenta', count: pending },
           { value: 'audit', label: 'Bitácora' },
           { value: 'admins', label: 'Superadministradores' },
         ]}
       />
-      {tab === 'audit' ? <AuditLog /> : <SuperAdmins />}
+      {tab === 'requests' ? <AccountRequests /> : tab === 'audit' ? <AuditLog /> : <SuperAdmins />}
     </div>
   );
 }

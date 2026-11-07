@@ -178,6 +178,14 @@ Detalle en `docs/architecture/pirep.md`.
 
 Detalle en ADR 0011.
 
+## Cuentas por invitación
+
+| Tabla | Qué guarda |
+| --- | --- |
+| `account_requests` | Solicitudes de cuenta de piloto: correo (minúsculas), nombre, aerolínea de interés, VID de IVAO, mensaje, estado (`pending`, `approved`, `rejected`), nota y quién revisó, cuándo salió la invitación (`invited_at`), último error de envío y el usuario creado (`user_id`). Una sola solicitud abierta por correo |
+
+Supabase Auth solo crea usuarios para correos con una solicitud aprobada (disparador `before_auth_user_created`). Detalle en ADR 0012.
+
 ## Aerolíneas registradas
 
 | Aerolínea | ICAO | Operación | RMK | Sitio | Estado |

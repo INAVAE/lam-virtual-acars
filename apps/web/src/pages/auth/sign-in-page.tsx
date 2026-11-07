@@ -40,7 +40,7 @@ export function SignInPage() {
         <>
           ¿Aún no tienes cuenta?{' '}
           <Link to="/registro" className="font-medium text-ink underline underline-offset-4">
-            Crear cuenta
+            Solicitar cuenta de piloto
           </Link>
         </>
       }

@@ -17,6 +17,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_requests: {
+        Row: {
+          airline_id: string | null
+          created_at: string
+          display_name: string
+          email: string
+          id: string
+          invited_at: string | null
+          ivao_vid: string | null
+          last_error: string | null
+          message: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          airline_id?: string | null
+          created_at?: string
+          display_name: string
+          email: string
+          id?: string
+          invited_at?: string | null
+          ivao_vid?: string | null
+          last_error?: string | null
+          message?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          airline_id?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string
+          id?: string
+          invited_at?: string | null
+          ivao_vid?: string | null
+          last_error?: string | null
+          message?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_requests_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       acars_devices: {
         Row: {
           app_version: string | null
@@ -2404,6 +2463,28 @@ export type Database = {
       }
     }
     Functions: {
+      approve_account_request: {
+        Args: { p_request_id: string }
+        Returns: Json
+      }
+      create_account_invitation: {
+        Args: { p_display_name: string; p_email: string }
+        Returns: string
+      }
+      reject_account_request: {
+        Args: { p_note?: string; p_request_id: string }
+        Returns: undefined
+      }
+      request_pilot_account: {
+        Args: {
+          p_airline_id?: string
+          p_display_name: string
+          p_email: string
+          p_ivao_vid?: string
+          p_message?: string
+        }
+        Returns: undefined
+      }
       approve_acars_link: { Args: { p_code: string }; Returns: Json }
       book_flight: {
         Args: { p_aircraft_id: string; p_callsign: string; p_route_id: string }

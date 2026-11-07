@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { PASSWORD_MIN_LENGTH, newPasswordSchema, type NewPasswordInput } from '@lam/validation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,8 @@ const passwordHint = `Al menos ${PASSWORD_MIN_LENGTH} caracteres, con letras y n
 export function ResetPasswordPage() {
   const { session, loading, clearRecovering } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const welcome = params.get('bienvenida') === '1';
   const [serverError, setServerError] = useState<string | null>(null);
   const {
     register,
@@ -52,12 +54,15 @@ export function ResetPasswordPage() {
       return;
     }
     clearRecovering();
-    toast.success('Contraseña actualizada');
+    toast.success(welcome ? 'Bienvenido a LAM. Ahora solicita unirte a una aerolínea desde «Mis aerolíneas».' : 'Contraseña actualizada');
     navigate('/', { replace: true });
   }
 
   return (
-    <AuthLayout title="Elige una contraseña nueva" subtitle={session.user.email ?? undefined}>
+    <AuthLayout
+      title={welcome ? 'Crea tu contraseña' : 'Elige una contraseña nueva'}
+      subtitle={welcome ? `Tu cuenta de piloto fue aprobada. Elige la contraseña con la que entrarás como ${session.user.email ?? ''}.` : (session.user.email ?? undefined)}
+    >
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
         {serverError ? <Alert tone="danger">{serverError}</Alert> : null}
         <Field id="password" label="Contraseña nueva" error={errors.password?.message} hint={passwordHint}>
@@ -77,7 +82,7 @@ export function ResetPasswordPage() {
           />
         </Field>
         <Button type="submit" loading={isSubmitting}>
-          Guardar contraseña
+          {welcome ? 'Crear contraseña y entrar' : 'Guardar contraseña'}
         </Button>
       </form>
     </AuthLayout>

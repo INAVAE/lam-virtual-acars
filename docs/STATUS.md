@@ -1,6 +1,18 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-05 (centro de ayuda)
+Última actualización: 2026-11-06 (cuentas por invitación)
+
+## Cuentas de piloto con aprobación previa (2026-11-06)
+
+- Ya nadie crea su propia cuenta. «Solicitar cuenta de piloto» (`/registro`, sin contraseña) llama a `request_pilot_account` y guarda una fila en `account_requests` (nombre, correo, aerolínea de interés opcional, VID de IVAO y mensaje). No crea usuario ni manda correo, responde igual si el correo ya existe y tiene un freno de 30 solicitudes por hora en total, más un campo trampa para robots.
+- El superadministrador revisa en **Administration → Solicitudes de cuenta** (el Dashboard avisa si hay pendientes): «Aprobar y enviar invitación», «Rechazar» (nota interna), «Reenviar invitación» y «Invitar a un piloto» directamente. La Edge Function `account-requests` llama a los RPC con el token de quien pulsa (`approve_account_request`, `reject_account_request`, `create_account_invitation`) y manda la invitación de Supabase Auth con la clave de servicio (`inviteUserByEmail`); anota el resultado con `record_account_invitation`.
+- El piloto abre la invitación, crea su contraseña en `/restablecer?bienvenida=1` y entra; después solicita ingreso a una aerolínea como antes.
+- **Candado:** el disparador `before_auth_user_created` en `auth.users` (`private.guard_auth_signup`) rechaza cualquier usuario nuevo que Supabase Auth intente crear sin una solicitud aprobada para ese correo, incluido el registro directo por la API. Las cuentas existentes no cambian.
+- Migración `account_requests`, prueba 021 (18); 486 pruebas pgTAP. ADR 0012. Capturas 55, 56, m-09 y m-10.
+
+## Distancia y tiempo por la ruta del plan (2026-11-06)
+
+- Live Flights mide lo que falta por la ruta del plan de SimBrief (proyección sobre el tramo más cercano, con penalización si el rumbo no coincide; en línea recta si el avión está a más de 100 NM de la ruta). El tiempo al destino usa la velocidad sobre el suelo en crucero y la limita a 300 kt de 100 a 30 NM y a 220 kt en las últimas 30 NM. Con QTR783 el error bajó de 10–15 a 1–3 minutos.
 
 ## Vuelo directo y datos del vuelo en Live Flights (2026-11-05)
 

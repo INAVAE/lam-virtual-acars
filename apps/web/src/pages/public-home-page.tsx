@@ -56,7 +56,7 @@ export function PublicHomePage() {
               ) : (
                 <>
                   <Link to="/registro" className={linkPrimary}>
-                    Crear cuenta de piloto
+                    Solicitar cuenta de piloto
                   </Link>
                   <Link to="/entrar" className={linkSecondary}>
                     Iniciar sesión

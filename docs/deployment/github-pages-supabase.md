@@ -20,6 +20,8 @@ Las migraciones de la Fase 1 ya están aplicadas en el proyecto `fnsfgjtmwfiizof
 
 En *Authentication → Sign In / Providers → Email*: confirmación de correo activada. En *Password*: mínimo 8 caracteres, letras y números.
 
+Las cuentas se crean por invitación (ADR 0012): la Edge Function `account-requests` (`verify_jwt = true`) usa `inviteUserByEmail` con `redirectTo` = `LAM_SITE_URL` + `auth/callback` (por omisión la URL de Pages). Opcional: apagar *Allow new users to sign up* en *Authentication → Sign In / Providers*; el disparador `before_auth_user_created` ya bloquea el registro directo. La plantilla *Invite user* de *Authentication → Emails* conviene traducirla al español.
+
 > El correo integrado de Supabase tiene un límite bajo de envíos por hora y es solo para pruebas. Antes de abrir el registro a pilotos, configurar un SMTP propio en *Authentication → Emails → SMTP Settings*.
 
 ### Primer superadministrador

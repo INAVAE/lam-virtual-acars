@@ -1,5 +1,6 @@
 import type { DashboardSummary } from '@lam/shared-types';
 import { useMemo } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { AirlineLogo } from '@/components/airline-logo';
 import { Alert } from '@/components/ui/alert';
@@ -18,6 +19,7 @@ import {
   type Airline,
   type Membership,
 } from '@/hooks/use-lam-data';
+import { usePendingAccountRequests } from '@/hooks/use-account-requests';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
 import { formatHours } from '@/lib/pirep';
@@ -410,6 +412,7 @@ export function DashboardPage() {
   const memberships = useMyMemberships();
   const profile = useProfile();
   const summary = useDashboardSummary(selected?.id ?? null);
+  const pendingAccounts = usePendingAccountRequests().data ?? 0;
 
   const canManage =
     isOrgAdmin ||
@@ -434,6 +437,16 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <ScopeHeader />
+
+      {isOrgAdmin && pendingAccounts > 0 ? (
+        <Alert>
+          {pendingAccounts === 1 ? 'Hay una solicitud de cuenta de piloto' : `Hay ${pendingAccounts} solicitudes de cuenta de piloto`} esperando
+          aprobación.{' '}
+          <Link to="/administration" className="font-medium underline underline-offset-4">
+            Revisar en Administration
+          </Link>
+        </Alert>
+      ) : null}
 
       {profile.data?.account_status === 'suspended' ? (
         <Alert tone="danger">

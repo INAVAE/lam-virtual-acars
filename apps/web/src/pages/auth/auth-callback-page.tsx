@@ -13,18 +13,23 @@ function linkError(): string | null {
 
 /** Destino de los enlaces de confirmación de correo. supabase-js canjea el código al cargar. */
 export function AuthCallbackPage() {
-  const { session, loading } = useAuth();
+  const { session, loading, welcome } = useAuth();
   const navigate = useNavigate();
   const error = linkError();
 
   useEffect(() => {
     if (!loading && session) {
+      if (welcome) {
+        // Cuenta aprobada: primero la contraseña.
+        navigate('/restablecer?bienvenida=1', { replace: true });
+        return;
+      }
       toast.success('Correo confirmado. Bienvenido a LAM.');
       navigate('/', { replace: true });
     }
-  }, [loading, session, navigate]);
+  }, [loading, session, welcome, navigate]);
 
-  if (loading || session) return <FullPageStatus message="Confirmando tu cuenta…" />;
+  if (loading || session) return <FullPageStatus message={welcome ? 'Abriendo tu invitación…' : 'Confirmando tu cuenta…'} />;
 
   return (
     <AuthLayout title="No pudimos iniciar tu sesión">
@@ -32,7 +37,7 @@ export function AuthCallbackPage() {
         {error ? <p className="text-danger-ink">{error}</p> : null}
         <p>
           Si abriste el enlace en otro navegador o dispositivo, tu correo probablemente ya quedó confirmado. Inicia sesión
-          con tu contraseña.
+          con tu contraseña. Si era una invitación que venció, pide al administrador que te la reenvíe.
         </p>
         <Link to="/entrar" className="font-medium underline underline-offset-4">
           Iniciar sesión

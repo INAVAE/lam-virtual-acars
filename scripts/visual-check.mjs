@@ -852,6 +852,8 @@ function rowsFor(url) {
       return SCORING_RULES;
     case 'support_tickets':
       return ticketRows(url);
+    case 'account_requests':
+      return eqParam(url, 'status') ? ACCOUNT_REQUESTS.filter((r) => r.status === eqParam(url, 'status')) : ACCOUNT_REQUESTS;
     default:
       return [];
   }
@@ -942,6 +944,19 @@ const TICKETS = [
   },
 ];
 
+// Solicitudes de cuenta de piloto.
+const ACCOUNT_REQUESTS = [
+  {
+    id: id(2200), email: 'carlos.ruiz@example.com', display_name: 'Carlos Ruiz', airline_id: id(101), ivao_vid: '712345',
+    message: 'Vuelo en IVAO desde 2021, sobre todo A320 en México. Me invitó Luis Hernández.', status: 'pending', review_note: null,
+    reviewed_at: null, invited_at: null, last_error: null, user_id: null, created_at: minsAgo(50), airline: { name: 'Líneas Aéreas Mexicanas', icao_code: 'MXL' },
+  },
+  {
+    id: id(2201), email: 'andrea.vm@example.com', display_name: 'Andrea Villa', airline_id: null, ivao_vid: null, message: null,
+    status: 'approved', review_note: null, reviewed_at: minsAgo(300), invited_at: minsAgo(300), last_error: null, user_id: null, created_at: minsAgo(900), airline: null,
+  },
+];
+
 function ticketRows(url) {
   let rows = TICKETS;
   const status = eqParam(url, 'status');
@@ -969,6 +984,12 @@ async function handleSupabase(route) {
     return route.fulfill({ status: 200, headers: CORS, json: { id: USER_ID, aud: 'authenticated', role: 'authenticated', email: PROFILE.email } });
   }
   if (url.pathname.startsWith('/auth/v1/')) return route.fulfill({ status: 200, headers: CORS, json: {} });
+  if (url.pathname === '/functions/v1/account-requests') {
+    return route.fulfill({ status: 200, headers: CORS, json: { ok: true } });
+  }
+  if (url.pathname === '/rest/v1/rpc/request_pilot_account') {
+    return route.fulfill({ status: 204, headers: CORS, body: '' });
+  }
   if (url.pathname === '/functions/v1/weather') {
     const icaos = (request.postDataJSON() ?? {}).icaos ?? [];
     return route.fulfill({ status: 200, headers: CORS, json: { source: 'NOAA Aviation Weather Center', upstream_error: null, reports: icaos.map(weatherReport) } });
@@ -1097,18 +1118,19 @@ const TILE_PNG = placeholderTile();
 const results = [];
 const browser = await chromium.launch();
 
-async function shoot(name, path, { viewport = { width: 1440, height: 900 }, airlineId = null, theme = 'dark', action, waitFor, fullPage = true, marks = [] } = {}) {
+async function shoot(name, path, { viewport = { width: 1440, height: 900 }, airlineId = null, theme = 'dark', action, waitFor, fullPage = true, marks = [], signedOut = false } = {}) {
   if (ONLY_MANUAL && !name.startsWith('m-')) return;
   // Las del manual se toman al doble de resolución para que se lean impresas.
   const context = await browser.newContext({ viewport, locale: 'es-MX', colorScheme: theme, deviceScaleFactor: name.startsWith('m-') ? 2 : 1 });
   await context.addInitScript(
     ([key, session, selected, themeValue]) => {
-      window.localStorage.setItem(key, JSON.stringify(session));
+      if (session) window.localStorage.setItem(key, JSON.stringify(session));
+      else window.localStorage.removeItem(key);
       window.localStorage.setItem('lam.theme', themeValue);
       if (selected) window.localStorage.setItem('lam.selectedAirline', selected);
       else window.localStorage.removeItem('lam.selectedAirline');
     },
-    [`sb-${PROJECT_REF}-auth-token`, fakeSession(), airlineId, theme],
+    [`sb-${PROJECT_REF}-auth-token`, signedOut ? null : fakeSession(), airlineId, theme],
   );
   const page = await context.newPage();
   const problems = [];
@@ -1221,6 +1243,17 @@ await shoot('44-register-route', 'booking', {
     await page.getByRole('dialog').getByText('Elige el origen').waitFor();
   },
 });
+await shoot('55-request-account', 'registro', {
+  signedOut: true,
+  waitFor: 'Solicitar cuenta de piloto',
+  action: async (page) => {
+    await page.getByLabel('Nombre', { exact: true }).fill('Carlos Ruiz');
+    await page.getByLabel('Correo', { exact: true }).fill('carlos.ruiz@example.com');
+    await page.getByRole('button', { name: 'Enviar solicitud' }).click();
+    await page.getByText('Solicitud enviada').waitFor();
+  },
+});
+await shoot('56-account-requests', 'administration', { waitFor: 'Solicitudes de cuenta de piloto', action: async (page) => page.getByText('Carlos Ruiz').waitFor() });
 await shoot('54-direct-flight', 'booking', {
   airlineId: MXL.id,
   waitFor: 'MXL100',
@@ -1532,6 +1565,29 @@ await shoot('m-08-help-report', 'help?tab=report', {
     (p) => p.getByRole('tablist', { name: 'Secciones de la ayuda' }),
     (p) => p.getByRole('radiogroup'),
     (p) => p.getByRole('link', { name: 'Descargar el manual en PDF' }),
+  ],
+});
+await shoot('m-09-request-account', 'registro', {
+  ...M,
+  signedOut: true,
+  viewport: { width: 1280, height: 1100 },
+  waitFor: 'Solicitar cuenta de piloto',
+  marks: [
+    (p) => p.getByLabel('Correo', { exact: true }),
+    (p) => p.getByLabel(/Aerolínea a la que quieres unirte/),
+    (p) => p.getByRole('button', { name: 'Enviar solicitud' }),
+  ],
+});
+await shoot('m-10-account-requests', 'administration', {
+  ...M,
+  viewport: { width: 1280, height: 1000 },
+  waitFor: 'Solicitudes de cuenta de piloto',
+  action: async (page) => page.getByText('carlos.ruiz@example.com').waitFor(),
+  marks: [
+    (p) => p.getByRole('tab', { name: /Solicitudes de cuenta/ }),
+    (p) => p.getByText('carlos.ruiz@example.com'),
+    (p) => p.getByRole('button', { name: 'Aprobar y enviar invitación' }),
+    (p) => p.getByRole('button', { name: 'Invitar', exact: true }),
   ],
 });
 await shoot('28-airline-scoring', `airlines/${MXL.slug}`, { airlineId: MXL.id, waitFor: 'Puntuación de PIREP' });

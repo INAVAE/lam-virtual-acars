@@ -122,6 +122,17 @@ Nadie inserta ni edita PIREPs desde la API: los genera `private.build_pirep` al 
 
 La firma (`author_name`, `author_pilot_number`), el estado inicial y quién atendió (`handled_by`, `handler_name`, `handled_at`) los pone el disparador `support_tickets_guard`. Solo `status` y `response` tienen permiso de UPDATE; no hay DELETE. Máximo 10 reportes por hora por persona (`support_tickets_rate_limit`). Pruebas: `018_support_tickets.test.sql`.
 
+## Cuentas por invitación
+
+| Tabla o función | Sin sesión | Piloto, staff de aerolínea | Superadministrador |
+| --- | --- | --- | --- |
+| `account_requests` | No lee | No lee | Lee todas |
+| `request_pilot_account` | Solicita (sin revelar si el correo existe; 30 por hora en total) | Igual | Igual |
+| `approve_account_request`, `reject_account_request`, `create_account_invitation` | — | — | Aprueba, rechaza (solo pendientes) e invita |
+| `record_account_invitation` | — | — | Solo la clave de servicio (Edge Function `account-requests`) |
+
+Nadie escribe en la tabla directamente. El candado `private.guard_auth_signup` actúa cuando inserta Supabase Auth (`session_user = supabase_auth_admin`) y rechaza correos sin solicitud aprobada. Pruebas: `021_account_requests.test.sql`.
+
 ## Vuelo directo
 
 `book_direct_flight` (miembros activos; si `allow_direct_flights` está apagada, solo quien administra la aerolínea) y `direct_aircraft_options` (miembros). Con `p_register_route` aplica las reglas de `register_route` (incluida `pilots_register_routes`). Pruebas: `020_direct_flights.test.sql`.
