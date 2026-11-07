@@ -492,6 +492,7 @@ function AccountAccess({ account }: { account: PlatformAccount }) {
       <ConfirmButton
         size="sm"
         variant="secondary"
+        className="whitespace-nowrap"
         title={`Restaurar el acceso de ${account.display_name}`}
         message="Podrá volver a iniciar sesión y operar en las aerolíneas donde es miembro activo. Las reservas canceladas no se recuperan."
         confirmLabel="Restaurar acceso"
@@ -513,9 +514,10 @@ function AccountAccess({ account }: { account: PlatformAccount }) {
     <ConfirmButton
       size="sm"
       variant="ghost"
+      className="whitespace-nowrap"
       title={`Revocar el acceso de ${account.display_name}`}
       message={
-        <div className="space-y-3">
+        <div className="space-y-3 text-left">
           <p>
             Ya no podrá iniciar sesión ni usar el conector, y se cancelan sus reservas sin iniciar. Su historial (PIREP y
             membresías) se conserva y puedes restaurar el acceso cuando quieras.
