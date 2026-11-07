@@ -178,6 +178,13 @@ Detalle en `docs/architecture/pirep.md`.
 
 Detalle en ADR 0011.
 
+## Training
+
+| Tabla | Qué guarda |
+| --- | --- |
+| `trainings` | Entrenamientos: folio `TRN-AAAA-NNNN`, título, categoría, nivel, descripción, aeronave y aerolínea opcionales, inicio y fin (UTC), cupo, instructor (perfil o nombre externo), Discord (enlace y canal), material, estado (`scheduled`, `cancelled`) y motivo |
+| `training_registrations` | Inscripciones: estado (`pending`, `approved`, `rejected`, `withdrawn`), nota del piloto, comentario de revisión, resultado (`completed` es el reconocimiento, `absent`) y quién y cuándo |
+
 ## Cuentas por invitación
 
 | Tabla | Qué guarda |

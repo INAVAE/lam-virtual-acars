@@ -257,6 +257,26 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     ],
   },
   {
+    id: 'training',
+    title: 'Training: entrenamientos',
+    summary: 'Calendario de entrenamientos, inscripción con confirmación y reconocimientos en tu perfil.',
+    audience: 'all',
+    steps: [
+      ['Calendario', 'Training muestra el mes con cada entrenamiento en su día, del color de su categoría (operaciones de vuelo, operación de aeronaves, procedimientos, navegación, ATC, meteorología, teoría, seguridad, simulador). «Lista» los ordena y filtra por próximos, tus inscripciones y anteriores. Las horas van en Zulu y en tu hora local; el clic en el reloj de arriba cambia cuál va primero y en qué fecha cae cada uno.'],
+      ['Inscribirte', 'Cualquier piloto con membresía activa en cualquier aerolínea abre el entrenamiento y pulsa «Solicitar participación», con una nota opcional. Su estado se ve en la tarjeta y en el detalle: «Pendiente de confirmación», «Participación confirmada» o «No aprobada», con el comentario de quien organiza. Puedes retirarte mientras no empiece.'],
+      ['Agrégalo a tu calendario', '«Agregar a mi calendario (.ics)» descarga el archivo para Outlook, Apple Calendar o cualquier calendario (con aviso 30 minutos antes); «Google Calendar» lo agrega directo. Ambos llevan el enlace de Discord y la página del entrenamiento.'],
+      ['El día del entrenamiento', 'Entra al canal de Discord con el botón morado del detalle. Si hay material, también está ahí.'],
+      ['Reconocimientos', 'Al terminar, el instructor marca «Completó» o «No asistió». Completar aparece en «Reconocimientos e insignias» de tu perfil de piloto.'],
+      ['Programar (staff)', 'Administradores y jefes de operaciones de cualquier aerolínea (y el superadministrador) usan «Programar entrenamiento»: tema, categoría, nivel, descripción, aeronave, organizadora, fecha y hora (capturadas en Zulu o en tu hora local, se guardan en UTC), cupo, instructor (piloto de LAM o externo), enlace y canal de Discord y material. Quien programa y el instructor de LAM confirman inscripciones, pasan lista, editan o cancelan con motivo.'],
+    ],
+    note: 'Cada entrenamiento tiene folio TRN-AAAA-NNNN. Con cupo lleno ya no se confirma a nadie más, pero puedes dejar tu solicitud por si alguien se retira.',
+    shot: {
+      file: 'm-12-training-detail',
+      caption: 'Detalle de un entrenamiento visto por quien lo organiza.',
+      marks: ['Canal de Discord', 'Agregar al calendario (.ics)', 'Confirmar la participación'],
+    },
+  },
+  {
     id: 'estadisticas',
     title: 'Statistics',
     summary: 'Cómo va la aerolínea y cómo vas tú.',
@@ -387,6 +407,8 @@ export const HELP_FAQ: [question: string, answer: string][] = [
   ['¿Quién ve mis reportes de incidencia?', 'Tú y quien los atiende: el staff de la aerolínea que elegiste y el superadministrador.'],
   ['Pedí mi cuenta y no me llega ningún correo.', 'Es normal hasta que el superadministrador aprueba tu solicitud: el único correo es la invitación. Si ya pasó un tiempo, pide a tu aerolínea que la revisen. Revisa también no deseados.'],
   ['La invitación dice que el enlace venció.', 'Los enlaces duran 24 horas. Pide que te reenvíen la invitación; el nuevo enlace sustituye al anterior.'],
+  ['¿Cómo sé si me confirmaron en un entrenamiento?', 'En Training, tu tarjeta muestra «Pendiente de confirmación», «Participación confirmada» o «No aprobada». También en «Mis inscripciones» y en el detalle, con el comentario del instructor.'],
+  ['El entrenamiento sale a otra hora en mi calendario.', 'El archivo .ics guarda la hora en UTC y tu calendario la convierte a tu zona. Revisa que la zona de tu calendario sea la tuya; en LAM la eliges en Settings → Hora.'],
   ['¿Quién ve mi perfil de piloto?', 'Tú, el staff de tus aerolíneas, el superadministrador y los pilotos que comparten aerolínea contigo. Los demás pilotos no ven tu correo ni tus PIREP en revisión o rechazados.'],
   ['¿Cómo cambio mi foto?', 'Menú de tu cuenta → Mi cuenta → «Subir foto». PNG, JPG o WebP; se recorta en cuadro y se reduce a 256 px.'],
   ['¿Puedo volar en varias aerolíneas?', 'Sí. Solicita ingreso en cada una desde el Dashboard. Tu número de piloto es el mismo en todas.'],
@@ -437,6 +459,7 @@ export const ticketModules = [
   'PIREP',
   'Events',
   'Tours',
+  'Training',
   'Pilots',
   'Airlines',
   'Fleet',
@@ -453,6 +476,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-07', 'Training: calendario de entrenamientos con instructor, inscripción con confirmación, horas Zulu y local, archivo .ics y Google Calendar, canal de Discord y reconocimientos en el perfil.'],
   ['2026-11-07', 'Menú de la cuenta con foto, Mi cuenta (datos personales, foto, contraseña y sesiones) y perfil completo del piloto desde Pilots.'],
   ['2026-11-07', 'Menú lateral que se oculta y botón «Ampliar» en el mapa, las tarjetas y las gráficas: pantalla completa u otra pestaña. Cerrar sesión cierra todas las pestañas.'],
   ['2026-11-07', 'PIREP: «Cambio de aeronave» solo cuando cambia el avión cargado; ya no cuando el mismo avión cambia su matrícula ATC (A380 de iniBuilds).'],

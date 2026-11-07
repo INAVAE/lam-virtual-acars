@@ -111,6 +111,7 @@ export function moduleForPath(path: string): string | null {
     pireps: 'PIREP',
     events: 'Events',
     tours: 'Tours',
+    training: 'Training',
     pilots: 'Pilots',
     airlines: 'Airlines',
     fleet: 'Fleet',
@@ -120,6 +121,7 @@ export function moduleForPath(path: string): string | null {
     operations: 'Operations Center',
     administration: 'Administration',
     settings: 'Settings',
+    account: 'Cuenta y acceso',
   };
   return map[first] ?? null;
 }

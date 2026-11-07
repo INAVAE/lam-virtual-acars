@@ -11,11 +11,13 @@ import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
 import { usePilotProfile, type PilotProfileData } from '@/hooks/use-pilot-profile';
+import { usePilotTrainings, type PilotTraining } from '@/hooks/use-trainings';
 import { describeError } from '@/lib/errors';
 import { countryName, formatLocalDate, formatLocalDateTime, formatNumber, formatPilotNumber, roleLabels, statusLabels } from '@/lib/format';
 import { formatHours, formatMinutes, formatVs, pirepStatusLabels, pirepStatusTone, scoreTone } from '@/lib/pirep';
 import { monthLabel } from '@/lib/statistics';
 import { DualTimeText } from '@/lib/time-context';
+import { trainingCategories } from '@/lib/training';
 
 const membershipTone = { active: 'ok', pending: 'warn', suspended: 'danger', rejected: 'neutral' } as const;
 
@@ -137,8 +139,7 @@ function MonthlyBars({ data }: { data: PilotProfileData['monthly'] }) {
   );
 }
 
-function Recognitions({ data }: { data: PilotProfileData }) {
-  const trainings = data.trainings ?? [];
+function Recognitions({ data, trainings }: { data: PilotProfileData; trainings: PilotTraining[] }) {
   const empty = data.tour_badges.length === 0 && trainings.length === 0 && data.events.length === 0 && data.type_ratings.length === 0;
   return (
     <Panel expandable title="Reconocimientos e insignias" description="Tours terminados, entrenamientos completados, eventos y habilitaciones.">
@@ -158,7 +159,8 @@ function Recognitions({ data }: { data: PilotProfileData }) {
                         {t.title}
                       </Link>
                       <span className="block text-xs text-muted">
-                        {t.folio} · {formatLocalDate(t.completed_at)}
+                        {t.folio} · {trainingCategories[t.category].label} · {formatLocalDate(t.completed_at)}
+                        {t.instructor ? ` · ${t.instructor}` : ''}
                       </span>
                     </span>
                   </li>
@@ -223,6 +225,7 @@ export function PilotProfilePage() {
   const location = useLocation();
   const number = Number.parseInt((pilotNumber ?? '').replace(/^LAM/i, ''), 10);
   const profile = usePilotProfile(Number.isFinite(number) ? number : null);
+  const trainings = usePilotTrainings(Number.isFinite(number) ? number : null);
   const from = (location.state as { from?: string } | null)?.from;
   const d = profile.data;
 
@@ -302,7 +305,7 @@ export function PilotProfilePage() {
             </Panel>
           </div>
 
-          <Recognitions data={d} />
+          <Recognitions data={d} trainings={trainings.data ?? []} />
 
           <div className="grid gap-5 xl:grid-cols-2">
             <Panel expandable title="Tipos de aeronave que vuela">

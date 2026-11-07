@@ -2,6 +2,15 @@
 
 Última actualización: 2026-11-06 (cuentas de la plataforma)
 
+## Training: entrenamientos (2026-11-07)
+
+- Sección **Training** (menú Operación): calendario del mes (el día sigue a la hora principal elegida, Zulu o local) y lista de próximos, mis inscripciones y anteriores. Folio `TRN-AAAA-NNNN`.
+- Programan los administradores y jefes de operaciones de cualquier aerolínea y el superadministrador: tema, categoría (10), nivel, descripción, aeronave, aerolínea organizadora, inicio y fin (capturados en UTC o en la zona del usuario, guardados en UTC; máx. 24 h), cupo, instructor (piloto de LAM o externo), enlace y canal de Discord, material.
+- Cualquier piloto con membresía activa se inscribe con nota; el creador o el instructor de LAM confirma o no aprueba (respeta el cupo); el piloto ve «Pendiente de confirmación», «Participación confirmada» o «No aprobada». Retiro hasta que empiece.
+- Archivo .ics (UTC, aviso 30 min, Discord y enlace) y enlace de Google Calendar, generados en el navegador (`lib/training.ts`, con pruebas).
+- Al empezar, «Completó» o «No asistió» por participante; «Completó» aparece en Reconocimientos e insignias del perfil (`get_pilot_trainings`). Editar y cancelar con motivo.
+- Tablas `trainings` y `training_registrations` solo por funciones (`get_trainings`, `get_training`, `save_training`, `cancel_training`, `register_training`, `withdraw_training_registration`, `review_training_registration`, `set_training_result`, `search_training_instructors`). Migración `trainings`, prueba 025 (22). Capturas 65–68, m-11 y m-12.
+
 ## Menú de cuenta, Mi cuenta y perfil del piloto (2026-11-07)
 
 - **Menú de la cuenta** (barra superior, al estilo de Evaluación de competencias): foto o iniciales, correo, número LAM y roles; enlaces a Mi perfil de piloto, Mi cuenta, Contraseña y sesiones, Settings y Cerrar sesión (en todas las pestañas).

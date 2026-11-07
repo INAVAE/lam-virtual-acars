@@ -2493,6 +2493,16 @@ export type Database = {
         Returns: string
       }
       get_pilot_profile: { Args: { p_pilot_number: number }; Returns: Json }
+      cancel_training: { Args: { p_reason?: string; p_training_id: string }; Returns: undefined }
+      get_pilot_trainings: { Args: { p_pilot_number: number }; Returns: Json }
+      get_training: { Args: { p_training_id: string }; Returns: Json }
+      get_trainings: { Args: { p_from?: string; p_to?: string }; Returns: Json }
+      register_training: { Args: { p_notes?: string; p_training_id: string }; Returns: string }
+      review_training_registration: { Args: { p_approve: boolean; p_comment?: string; p_registration_id: string }; Returns: undefined }
+      save_training: { Args: { p_training: Json; p_training_id: string | null }; Returns: string }
+      search_training_instructors: { Args: { p_query: string }; Returns: Json }
+      set_training_result: { Args: { p_registration_id: string; p_result: string | null }; Returns: undefined }
+      withdraw_training_registration: { Args: { p_registration_id: string }; Returns: undefined }
       list_platform_accounts: {
         Args: never
         Returns: {

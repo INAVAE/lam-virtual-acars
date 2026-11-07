@@ -122,6 +122,17 @@ Nadie inserta ni edita PIREPs desde la API: los genera `private.build_pirep` al 
 
 La firma (`author_name`, `author_pilot_number`), el estado inicial y quién atendió (`handled_by`, `handler_name`, `handled_at`) los pone el disparador `support_tickets_guard`. Solo `status` y `response` tienen permiso de UPDATE; no hay DELETE. Máximo 10 reportes por hora por persona (`support_tickets_rate_limit`). Pruebas: `018_support_tickets.test.sql`.
 
+## Training
+
+| Acción | Piloto | Jefe de operaciones / administrador de aerolínea | Instructor de LAM | Superadministrador |
+| --- | --- | --- | --- | --- |
+| Ver entrenamientos y participantes confirmados | Sí (cuenta activa) | Sí | Sí | Sí |
+| Programar | No | Sí (de cualquier aerolínea) | No | Sí |
+| Editar, cancelar, confirmar inscripciones y registrar resultado | No | Los que programó | Los suyos | Todos |
+| Inscribirse | Con membresía activa en alguna aerolínea | Igual | No al suyo | Igual |
+
+Las tablas no tienen permisos directos; todo pasa por funciones `security definer`. Pruebas: `025_trainings.test.sql`.
+
 ## Cuentas por invitación
 
 | Tabla o función | Sin sesión | Piloto, staff de aerolínea | Superadministrador |

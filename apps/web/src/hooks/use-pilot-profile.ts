@@ -9,7 +9,7 @@ export interface PilotProfileMembership {
   icao_code: string | null;
   slug: string;
   logo_path: string | null;
-  brand_primary_color: string | null;
+  brand_primary_color: string;
   status: 'pending' | 'active' | 'suspended' | 'rejected';
   roles: ('pilot' | 'ops_chief' | 'airline_admin')[];
   requested_at: string;
@@ -77,7 +77,6 @@ export interface PilotProfileData {
   type_ratings: { airline_icao: string | null; icao_code: string; model: string; granted_at: string }[];
   tour_badges: { tour_id: string; code: string; name: string; color: string; badge_path: string | null; airline_icao: string | null; awarded_at: string }[];
   events: { event_id: string; folio: string; name: string; starts_at: string }[];
-  trainings?: { training_id: string; folio: string; title: string; category: string; completed_at: string; starts_at: string }[];
 }
 
 /** Perfil completo de un piloto por su número LAM. */

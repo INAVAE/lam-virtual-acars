@@ -957,6 +957,49 @@ const ACCOUNT_REQUESTS = [
   },
 ];
 
+// Training: entrenamientos del mes con distintos estados.
+function trainingRow(n, over) {
+  return {
+    id: id(2600 + n), folio: `TRN-2026-${String(n).padStart(4, '0')}`, title: 'Entrenamiento', category: 'flight_ops', level: 'basic', description: null,
+    starts_at: hoursFromNow(48), ends_at: hoursFromNow(50), capacity: null, status: 'scheduled', cancel_reason: null,
+    discord_url: 'https://discord.gg/lamvirtual', discord_channel: '#training', materials_url: null, aircraft_type: null,
+    airline: { id: id(101), name: 'Líneas Aéreas Mexicanas', icao_code: 'MXL', logo_path: 'airlines/lineas-aereas-mexicanas.png', brand_primary_color: '#0b7a5a' },
+    instructor: { user_id: id(2501), display_name: 'Ana Torres', pilot_number: 1002, avatar_url: null },
+    created_by: { user_id: USER_ID, display_name: 'Piloto de Prueba', pilot_number: 1001 },
+    approved: 0, pending: 0, completed: 0, my_registration: null, can_manage: false, ...over,
+  };
+}
+const TRAININGS = [
+  trainingRow(1, { title: 'SOP del A320: del arranque al despegue', category: 'aircraft', level: 'intermediate', starts_at: hoursFromNow(30), ends_at: hoursFromNow(32), capacity: 12, approved: 7, pending: 3,
+    discord_channel: '#training-a320', aircraft_type: { id: 1, icao_code: 'A320', model: 'A320' }, can_manage: true,
+    description: 'Flujo de cabina del A320 de Fenix: preparación, arranque, rodaje y despegue con los SOP de LAM. Ten el simulador abierto en MMMX con el avión en frío.' }),
+  trainingRow(2, { title: 'Fraseología IVAO en español e inglés', category: 'atc', starts_at: hoursFromNow(80), ends_at: hoursFromNow(81.5), approved: 15,
+    my_registration: { id: id(2701), status: 'approved', result: null, review_comment: 'Nos vemos en Discord', notes: null, created_at: minsAgo(300) } }),
+  trainingRow(3, { title: 'Meteorología para el despacho: METAR, TAF y SIGMET', category: 'weather', starts_at: hoursFromNow(150), ends_at: hoursFromNow(152), capacity: 20, approved: 4,
+    my_registration: { id: id(2702), status: 'pending', result: null, review_comment: null, notes: 'Primera vez', created_at: minsAgo(60) } }),
+  trainingRow(4, { title: 'Aproximaciones RNP en el 737', category: 'navigation', level: 'advanced', starts_at: hoursFromNow(-70), ends_at: hoursFromNow(-68), approved: 9, completed: 8,
+    aircraft_type: { id: 2, icao_code: 'B738', model: '737-800' },
+    my_registration: { id: id(2703), status: 'approved', result: 'completed', review_comment: null, notes: null, created_at: minsAgo(9000) } }),
+  trainingRow(5, { title: 'Uso del conector LAM ACARS', category: 'simulator', starts_at: hoursFromNow(200), ends_at: hoursFromNow(201), status: 'cancelled', cancel_reason: 'Se moverá a la próxima semana' }),
+];
+const TRAININGS_LIST = { can_create: true, can_join: true, trainings: TRAININGS };
+function trainingDetail(trainingId) {
+  const t = TRAININGS.find((x) => x.id === trainingId) ?? TRAININGS[0];
+  const pilot = (n, name, airlines) => ({ user_id: id(2800 + n), display_name: name, pilot_number: 1010 + n, avatar_url: null, discord_username: name.split(' ')[0].toLowerCase(), airlines });
+  return {
+    ...t, can_join: true, aircraft_type_id: t.aircraft_type?.id ?? null, airline_id: t.airline?.id ?? null, instructor_id: t.instructor?.user_id ?? null, instructor_name: null,
+    registrations: [
+      { id: id(2901), status: 'pending', result: null, notes: 'Vuelo el A320 de Fenix desde hace un año', review_comment: null, created_at: minsAgo(120), reviewed_at: null, result_at: null, pilot: pilot(1, 'Carlos Ruiz', 'MXL') },
+      { id: id(2902), status: 'pending', result: null, notes: null, review_comment: null, created_at: minsAgo(90), reviewed_at: null, result_at: null, pilot: pilot(2, 'Hamad Al-Thani', 'QTR') },
+      { id: id(2903), status: 'approved', result: null, notes: 'Quiero repasar el flujo de arranque', review_comment: null, created_at: minsAgo(800), reviewed_at: minsAgo(700), result_at: null, pilot: pilot(3, 'Sofía Méndez', 'MXL') },
+      { id: id(2904), status: 'rejected', result: null, notes: null, review_comment: 'Primero toma el básico', created_at: minsAgo(900), reviewed_at: minsAgo(850), result_at: null, pilot: pilot(4, 'Luis Ramírez', 'MXL, QTR') },
+    ],
+  };
+}
+const PILOT_TRAININGS = [
+  { training_id: id(2604), folio: 'TRN-2026-0004', title: 'Aproximaciones RNP en el 737', category: 'navigation', level: 'advanced', starts_at: hoursFromNow(-70), completed_at: hoursFromNow(-67), instructor: 'Ana Torres' },
+];
+
 // Perfil completo del piloto (Pilots → nombre).
 const PILOT_PROFILE = {
   viewer: { self: true, staff: true, admin: true },
@@ -1087,11 +1130,18 @@ async function handleSupabase(route) {
     get_route_type_usage: ROUTE_TYPE_USAGE,
     list_platform_accounts: PLATFORM_ACCOUNTS,
     get_pilot_profile: PILOT_PROFILE,
+    get_pilot_trainings: PILOT_TRAININGS,
+    get_trainings: TRAININGS_LIST,
+    search_training_instructors: [{ user_id: id(2501), display_name: 'Ana Torres', pilot_number: 1002, avatar_url: null }],
   };
   const rpcName = url.pathname.startsWith('/rest/v1/rpc/') ? url.pathname.slice('/rest/v1/rpc/'.length) : null;
   if (rpcName === 'get_live_flight_route') {
     const body = request.postDataJSON() ?? {};
     return route.fulfill({ status: 200, headers: CORS, json: LIVE_ROUTES[body.p_flight_id] ?? { fixes: [], route: null } });
+  }
+  if (rpcName === 'get_training') {
+    const body = request.postDataJSON() ?? {};
+    return route.fulfill({ status: 200, headers: CORS, json: trainingDetail(body.p_training_id) });
   }
   if (rpcName === 'get_ivao_atc') return route.fulfill({ status: 200, headers: CORS, json: IVAO_ATC });
   if (rpcName === 'get_live_flight_trace') {
@@ -1352,6 +1402,10 @@ await shoot('61-panel-expanded', 'statistics', {
     await page.getByRole('button', { name: 'Cerrar', exact: true }).waitFor();
   },
 });
+await shoot('65-training-calendar', 'training', { waitFor: 'Calendario', action: async (page) => page.getByText('Próximos entrenamientos').waitFor() });
+await shoot('66-training-detail', `training/${id(2601)}`, { waitFor: 'Inscripciones', action: async (page) => page.getByText('Hamad Al-Thani').waitFor() });
+await shoot('67-training-editor', 'training/new', { waitFor: 'Programar entrenamiento', action: async (page) => page.getByLabel('Título').fill('SOP del A320') });
+await shoot('68-training-mobile', 'training?vista=lista', { viewport: { width: 390, height: 844 }, waitFor: 'Próximos entrenamientos' });
 await shoot('62-pilot-profile', 'pilots/1001', { waitFor: 'Historial de vuelos', action: async (page) => page.getByText('PIREP-2026-00014').waitFor() });
 await shoot('63-account', 'account', { waitFor: 'Datos personales', action: async (page) => page.getByLabel('Usuario de Discord').waitFor() });
 await shoot('64-user-menu', '', {
@@ -1705,6 +1759,27 @@ await shoot('m-10-account-requests', 'administration', {
     (p) => p.getByText('carlos.ruiz@example.com'),
     (p) => p.getByRole('button', { name: 'Aprobar y enviar invitación' }),
     (p) => p.getByRole('button', { name: 'Invitar', exact: true }),
+  ],
+});
+await shoot('m-11-training', 'training', {
+  ...M,
+  viewport: { width: 1280, height: 1100 },
+  waitFor: 'Próximos entrenamientos',
+  marks: [
+    (p) => p.getByRole('link', { name: 'Programar entrenamiento' }),
+    (p) => p.getByRole('group', { name: 'Vista' }),
+    (p) => p.getByRole('table').first(),
+    (p) => p.getByRole('tablist', { name: 'Filtrar entrenamientos' }),
+  ],
+});
+await shoot('m-12-training-detail', `training/${id(2601)}`, {
+  ...M,
+  viewport: { width: 1280, height: 1250 },
+  waitFor: 'Inscripciones',
+  marks: [
+    (p) => p.getByRole('link', { name: /Discord/ }),
+    (p) => p.getByRole('button', { name: /Agregar a mi calendario/ }),
+    (p) => p.getByRole('button', { name: 'Confirmar' }).first(),
   ],
 });
 await shoot('28-airline-scoring', `airlines/${MXL.slug}`, { airlineId: MXL.id, waitFor: 'Puntuación de PIREP' });

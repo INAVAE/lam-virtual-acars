@@ -26,6 +26,9 @@ import { PirepsPage } from '@/pages/pireps-page';
 import { NotFoundPage } from '@/pages/not-found-page';
 import { OperationsPage } from '@/pages/operations-page';
 import { PilotProfilePage } from '@/pages/pilot-profile-page';
+import { TrainingDetailPage } from '@/pages/training-detail-page';
+import { TrainingEditorPage } from '@/pages/training-editor-page';
+import { TrainingPage } from '@/pages/training-page';
 import { PilotsPage } from '@/pages/pilots-page';
 import { PublicHomePage } from '@/pages/public-home-page';
 import { RoutesPage } from '@/pages/routes-page';
@@ -75,6 +78,10 @@ export function App() {
           <Route path="tours/new" element={<TourEditorPage />} />
           <Route path="tours/:id" element={<TourDetailPage />} />
           <Route path="tours/:id/edit" element={<TourEditorPage />} />
+          <Route path="training" element={<TrainingPage />} />
+          <Route path="training/new" element={<TrainingEditorPage />} />
+          <Route path="training/:id" element={<TrainingDetailPage />} />
+          <Route path="training/:id/edit" element={<TrainingEditorPage />} />
           <Route path="airlines" element={<AirlinesPage />} />
           <Route path="airlines/:slug" element={<AirlineDetailPage />} />
           <Route path="pilots" element={<PilotsPage />} />

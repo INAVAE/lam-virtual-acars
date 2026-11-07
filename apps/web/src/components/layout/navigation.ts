@@ -7,6 +7,7 @@ import {
   CloudSun,
   FileText,
   Flag,
+  GraduationCap,
   LayoutDashboard,
   MapPin,
   Monitor,
@@ -48,6 +49,7 @@ export const navigation: NavGroup[] = [
       { label: 'PIREP', icon: FileText, to: '/pireps' },
       { label: 'Events', icon: CalendarClock, to: '/events' },
       { label: 'Tours', icon: Flag, to: '/tours' },
+      { label: 'Training', icon: GraduationCap, to: '/training' },
     ],
   },
   {
