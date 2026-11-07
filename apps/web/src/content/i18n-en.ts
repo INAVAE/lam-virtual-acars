@@ -1995,7 +1995,11 @@ export const EN: Dictionary = {
     "Idioma de lectura: español o inglés desde la barra superior (y en las pantallas de entrada).": "Reading language: Spanish or English from the top bar (and on the sign-in screens).",
     "Google Calendar": "Google Calendar",
     "Control": "Control",
-    "PIREP aceptados": "Accepted PIREPs"
+    "PIREP aceptados": "Accepted PIREPs",
+    "de todos los pilotos": "from all pilots",
+    "Actualizado ahora": "Updated just now",
+    "Conectando…": "Connecting…",
+    "Callsign, piloto, aeropuerto, evento, tour…": "Callsign, pilot, airport, event, tour…"
   },
   patterns: [
     [
@@ -2469,6 +2473,26 @@ export const EN: Dictionary = {
     [
       "último uso {0}",
       "last used {0}"
+    ],
+    [
+      "de {0} registradas",
+      "of {0} registered"
+    ],
+    [
+      "{0} vuelos aceptados",
+      "{0} accepted flights"
+    ],
+    [
+      "Actualizado hace {0}",
+      "Updated {0} ago"
+    ],
+    [
+      "dura {0} · termina en {1}",
+      "lasts {0} · ends in {1}"
+    ],
+    [
+      "dura {0} · empieza en {1}",
+      "lasts {0} · starts in {1}"
     ]
-  ],
+  ]
 };
