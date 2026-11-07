@@ -1,13 +1,38 @@
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { cn } from '@/lib/cn';
 import { Outlet, useLocation } from 'react-router';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { Sidebar } from './sidebar';
 import { TopBar } from './top-bar';
 
+const SIDEBAR_KEY = 'lam:sidebar';
+
+function readCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_KEY) === 'collapsed';
+  } catch {
+    return false;
+  }
+}
+
 export function AppShell() {
   const { isOrgAdmin } = useAirlineScope();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // En escritorio la barra lateral se reduce a iconos para dar espacio al mapa, las tarjetas y las gráficas.
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+
+  function toggleCollapsed() {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      window.localStorage.setItem(SIDEBAR_KEY, next ? 'collapsed' : 'open');
+    } catch {
+      // Sin almacenamiento solo dura esta visita.
+    }
+    requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+  }
+
   const location = useLocation();
 
   useEffect(() => {
@@ -24,7 +49,7 @@ export function AppShell() {
   }, [drawerOpen]);
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[256px_1fr]">
+    <div className={cn('min-h-dvh lg:grid', collapsed ? 'lg:grid-cols-[64px_1fr]' : 'lg:grid-cols-[256px_1fr]')}>
       <a
         href="#contenido"
         className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-surface focus:px-3 focus:py-2"
@@ -33,7 +58,7 @@ export function AppShell() {
       </a>
 
       <aside className="sticky top-0 hidden h-dvh border-r border-line bg-surface lg:block">
-        <Sidebar isOrgAdmin={isOrgAdmin} />
+        <Sidebar isOrgAdmin={isOrgAdmin} collapsed={collapsed} />
       </aside>
 
       {drawerOpen ? (
@@ -59,8 +84,11 @@ export function AppShell() {
       ) : null}
 
       <div className="flex min-w-0 flex-col">
-        <TopBar onOpenMenu={() => setDrawerOpen(true)} />
-        <main id="contenido" className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        <TopBar onOpenMenu={() => setDrawerOpen(true)} sidebarCollapsed={collapsed} onToggleSidebar={toggleCollapsed} />
+        <main
+          id="contenido"
+          className={cn('mx-auto w-full flex-1 px-4 py-6 sm:px-6 lg:px-8', collapsed ? 'max-w-[1920px]' : 'max-w-[1440px]')}
+        >
           <Outlet />
         </main>
       </div>

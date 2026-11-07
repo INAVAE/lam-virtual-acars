@@ -1283,6 +1283,31 @@ await shoot('55-request-account', 'registro', {
   },
 });
 await shoot('56-account-requests', 'administration', { waitFor: 'Solicitudes de cuenta de piloto', action: async (page) => page.getByText('Carlos Ruiz').waitFor() });
+await shoot('59-sidebar-collapsed', 'statistics', {
+  airlineId: MXL.id,
+  waitFor: 'Actividad por mes',
+  action: async (page) => {
+    await page.getByRole('button', { name: 'Ocultar el menú lateral' }).click();
+    await page.getByRole('button', { name: 'Mostrar el menú lateral' }).waitFor();
+  },
+});
+await shoot('60-live-expanded', `live?flights=${id(1500)}&ver=mapa-en-vivo`, {
+  fullPage: false,
+  waitFor: 'Mapa en vivo',
+  action: async (page) => {
+    await page.getByRole('button', { name: 'Abrir en otra pestaña' }).or(page.getByRole('link', { name: 'Abrir en otra pestaña' })).waitFor();
+    await page.waitForTimeout(1500);
+  },
+});
+await shoot('61-panel-expanded', 'statistics', {
+  airlineId: MXL.id,
+  fullPage: false,
+  waitFor: 'Actividad por mes',
+  action: async (page) => {
+    await page.getByRole('button', { name: 'Ampliar Actividad por mes' }).click();
+    await page.getByRole('button', { name: 'Cerrar', exact: true }).waitFor();
+  },
+});
 await shoot('57-platform-accounts', 'administration?tab=accounts', { waitFor: 'Cuentas de la plataforma', action: async (page) => page.getByText('Marisol Pérez').waitFor() });
 await shoot('58-revoke-account', 'administration?tab=accounts', {
   waitFor: 'Cuentas de la plataforma',

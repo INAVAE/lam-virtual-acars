@@ -122,6 +122,7 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
 
   return (
     <Panel
+      expandable
       title="Análisis del vuelo"
       description="Rueda del mouse para acercar y arrastra para moverte. Pasa el puntero por la ruta o por las gráficas para ver cada punto; un clic lo fija."
     >

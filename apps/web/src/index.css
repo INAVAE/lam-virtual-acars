@@ -335,3 +335,18 @@
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
 }
+
+/* Módulo ampliado: el mapa y la lista de vuelos ocupan el alto de la ventana. */
+.lam-expanded .lam-map {
+  height: calc(100dvh - 8.5rem) !important;
+}
+.lam-expanded .lam-live-list {
+  max-height: calc(100dvh - 11.5rem);
+}
+.lam-expanded:fullscreen {
+  overflow: auto;
+  background: var(--bg);
+}
+.lam-expanded > section {
+  border-color: transparent;
+}

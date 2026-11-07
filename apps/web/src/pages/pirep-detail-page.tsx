@@ -129,6 +129,7 @@ function EventsPanel({ events, loading }: { events: FlightEvent[]; loading: bool
   const visible = showAll ? events : events.filter((e) => e.type !== 'note' || isApu(e) || attitude(e) !== null);
   return (
     <Panel
+      expandable
       title="Bitácora del vuelo"
       actions={
         events.some((e) => e.type === 'note') ? (
@@ -293,7 +294,7 @@ function LandingFacts({ pirep, metrics }: { pirep: PirepDetail; metrics: PirepMe
   const rating = landingRating(pirep.landing_vs_fpm);
   const gear = td?.gear_down;
   return (
-    <Panel title="Despegue y aterrizaje">
+    <Panel expandable title="Despegue y aterrizaje">
       <div className="space-y-4">
         <div className="flex flex-wrap items-end gap-3">
           <div>
@@ -404,7 +405,7 @@ function FuelPanel({ fuel }: { fuel: PirepFuel }) {
   const stages = STAGES.filter((s) => fuel.stages?.[s.key]);
   const belowReserve = plan?.reserve_kg !== undefined && fuel.landing_kg !== undefined && fuel.landing_kg < plan.reserve_kg;
   return (
-    <Panel title="Combustible" description="Niveles medidos por LAM ACARS y comparación con el plan de SimBrief.">
+    <Panel expandable title="Combustible" description="Niveles medidos por LAM ACARS y comparación con el plan de SimBrief.">
       <div className="space-y-4">
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
           <Fact label="Calzos fuera" mono>

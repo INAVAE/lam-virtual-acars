@@ -57,6 +57,8 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Qué es', 'La plataforma de operaciones de las aerolíneas virtuales de LAM para Microsoft Flight Simulator 2024: reservas, plan de vuelo con SimBrief, registro automático del vuelo con el conector LAM ACARS, PIREP con puntaje, mapa en vivo, clima, tours, eventos y estadísticas.'],
       ['Las dos piezas', 'La web, que se abre en cualquier navegador sin instalar nada, y el conector LAM ACARS, una aplicación de Windows que lee el simulador y envía el vuelo a la web.'],
       ['Una cuenta, varias aerolíneas', 'Tu cuenta y tu número de piloto (LAM + 4 dígitos) son únicos en LAM. Con la misma cuenta te unes a una o varias aerolíneas, y en cada una puedes tener un rol distinto.'],
+      ['Más espacio en pantalla', 'El botón junto al selector de aerolínea oculta el menú lateral y lo deja solo con iconos (pasa el puntero para ver el nombre); se recuerda en tu navegador. El mapa, las tarjetas y las gráficas tienen el botón «Ampliar» (⤢): ocupan toda la ventana, y desde ahí pasas a pantalla completa o los abres en otra pestaña. Esc o «Cerrar» los regresan.'],
+      ['Varias pestañas, una sesión', 'Las pestañas que abras comparten tu sesión. Si cierras sesión en una, se cierra en todas y te pide entrar de nuevo.'],
       ['Qué NO es', 'No es una aerolínea real ni está relacionada con ninguna. Todo lo que muestra es para simulación: el clima, las rutas, el control de IVAO y los planes de vuelo no sirven para volar en la vida real.'],
     ],
     note: 'El selector de la barra superior cambia la aerolínea con la que trabajas. Casi todas las pantallas (reservas, flota, rutas, PIREP, estadísticas) siguen a ese selector.',
@@ -445,6 +447,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-07', 'Menú lateral que se oculta y botón «Ampliar» en el mapa, las tarjetas y las gráficas: pantalla completa u otra pestaña. Cerrar sesión cierra todas las pestañas.'],
   ['2026-11-07', 'PIREP: «Cambio de aeronave» solo cuando cambia el avión cargado; ya no cuando el mismo avión cambia su matrícula ATC (A380 de iniBuilds).'],
   ['2026-11-06', 'Administration → Cuentas: todas las cuentas con su último acceso y sus aerolíneas, filtro «Sin aerolínea», y revocar o restaurar el acceso.'],
   ['2026-11-06', 'Cuentas por invitación: quien quiere entrar solicita su cuenta, el superadministrador la aprueba y solo entonces llega el correo para crear la contraseña.'],

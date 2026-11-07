@@ -1,6 +1,7 @@
 import type { AirlineStatistics } from '@lam/shared-types';
 import { ArrowDown, Medal } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
+import { Expandable } from '@/components/expandable';
 import { LandingStatsPanel } from '@/components/landing-stats-panel';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -205,7 +206,8 @@ export function StatisticsPage() {
         </div>
       ) : (
         <>
-          <section aria-label="Totales" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          <Expandable id="totales" title="Totales">
+          <section aria-label="Totales" className="grid grid-cols-2 gap-3 pr-10 md:grid-cols-3 xl:grid-cols-6">
             <Kpi label="Vuelos" value={formatNumber(s.totals.flights)} hint={`${formatNumber(s.last_30_days.flights)} en 30 días`} />
             <Kpi label="Horas (block)" value={formatHours(s.totals.block_minutes)} hint={`${formatHours(s.last_30_days.block_minutes)} en 30 días`} />
             <Kpi label="Distancia" value={`${formatNumber(s.totals.distance_nm)} NM`} hint={`${formatNumber(s.last_30_days.distance_nm)} NM en 30 días`} />
@@ -217,8 +219,10 @@ export function StatisticsPage() {
               hint={s.totals.airports ? `${formatNumber(s.totals.airports)} aeropuertos servidos` : undefined}
             />
           </section>
+          </Expandable>
 
           <Panel
+            expandable
             title="Actividad por mes"
             description="Pasa el puntero por cada barra para ver el detalle del mes."
             actions={
@@ -242,7 +246,7 @@ export function StatisticsPage() {
           </Panel>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <Panel title="Rutas más voladas">
+            <Panel expandable title="Rutas más voladas">
               {s.top_routes.length === 0 ? (
                 <p className="text-sm text-muted">Sin vuelos aceptados todavía.</p>
               ) : (
@@ -263,7 +267,7 @@ export function StatisticsPage() {
                 </ul>
               )}
             </Panel>
-            <Panel title="Aeronaves">
+            <Panel expandable title="Aeronaves">
               {s.aircraft_types.length === 0 ? (
                 <p className="text-sm text-muted">Sin vuelos aceptados todavía.</p>
               ) : (
@@ -284,7 +288,7 @@ export function StatisticsPage() {
                 </ul>
               )}
             </Panel>
-            <Panel title="Aterrizajes" description="Velocidad vertical al tocar pista (fpm).">
+            <Panel expandable title="Aterrizajes" description="Velocidad vertical al tocar pista (fpm).">
               <ul className="space-y-2.5">
                 {s.landings.map((l) => (
                   <HBar
@@ -298,7 +302,7 @@ export function StatisticsPage() {
                 ))}
               </ul>
             </Panel>
-            <Panel title="Faltas más frecuentes" description={`Reglas que restaron puntos en los últimos ${months} meses (todos los PIREP).`}>
+            <Panel expandable title="Faltas más frecuentes" description={`Reglas que restaron puntos en los últimos ${months} meses (todos los PIREP).`}>
               {s.common_findings.length === 0 ? (
                 <p className="text-sm text-muted">Sin faltas en el periodo.</p>
               ) : (
@@ -311,8 +315,9 @@ export function StatisticsPage() {
             </Panel>
           </div>
 
+          <Expandable id="ranking-de-pilotos" title="Ranking de pilotos">
           <section aria-labelledby="ranking-title" className="space-y-3">
-            <div>
+            <div className="pr-10">
               <h2 id="ranking-title" className="font-display text-xl font-semibold">
                 Ranking de pilotos
               </h2>
@@ -320,6 +325,7 @@ export function StatisticsPage() {
             </div>
             <Ranking rows={s.ranking} />
           </section>
+          </Expandable>
         </>
       )}
       </>

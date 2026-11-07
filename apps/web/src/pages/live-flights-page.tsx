@@ -3,6 +3,7 @@ import { CloudRain, CloudSun, LocateFixed, Maximize, Radar, RadioTower, Route, S
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router';
 import { AirlineLogo } from '@/components/airline-logo';
+import { ExpandButton, ExpandToolbar, expandedClasses, useExpandable } from '@/components/expandable';
 import { FlightProfileChart } from '@/components/flight-profile-chart';
 import { LiveMap, planeColor } from '@/components/live-map';
 import { Alert } from '@/components/ui/alert';
@@ -525,6 +526,7 @@ function LiveProfile({ trace }: { trace: LiveTrace }) {
  */
 export function LiveFlightsPage() {
   const { selected: airline, ready } = useAirlineScope();
+  const expand = useExpandable('mapa-en-vivo');
   const airlineId = airline?.id ?? null;
   const live = useLiveFlights(airlineId);
   const now = useNow(1000);
@@ -694,6 +696,15 @@ export function LiveFlightsPage() {
 
       {live.isError ? <Alert tone="danger">{describeError(live.error)}</Alert> : null}
 
+      <div
+        ref={(el) => {
+          expand.ref.current = el;
+        }}
+        className={cn('space-y-3', expand.expanded && expandedClasses)}
+      >
+      {expand.expanded ? (
+        <ExpandToolbar title="Mapa en vivo" fullscreen={expand.fullscreen} onFullscreen={expand.toggleFullscreen} tabUrl={expand.tabUrl()} onClose={expand.close} />
+      ) : null}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="relative min-w-0">
           {!ready ? (
@@ -721,7 +732,10 @@ export function LiveFlightsPage() {
               onStationSelect={setStationKey}
             />
           )}
-          <div className="pointer-events-none absolute left-14 right-3 top-3 z-[1] flex flex-wrap items-start gap-2">
+          {expand.expanded ? null : (
+            <ExpandButton onClick={expand.open} label="el mapa en vivo" className="absolute right-3 top-3 z-[2] border border-line bg-surface/95 shadow" />
+          )}
+          <div className={cn('pointer-events-none absolute left-14 top-3 z-[1] flex flex-wrap items-start gap-2', expand.expanded ? 'right-3' : 'right-14')}>
             <span className="pointer-events-auto rounded-md border border-line bg-surface/95 px-2.5 py-1 text-sm shadow">
               <Radar className="mr-1.5 inline size-4 text-cyan" aria-hidden />
               <strong className="tabular-nums">{flights.length}</strong> en curso · <strong className="tabular-nums">{airborne}</strong> en el aire
@@ -797,7 +811,7 @@ export function LiveFlightsPage() {
           ) : visible.length === 0 ? (
             <p className="text-sm text-muted">Ningún vuelo coincide con la búsqueda.</p>
           ) : (
-            <ul className="flex max-h-[min(64vh,680px)] flex-col gap-2 overflow-y-auto pr-1">
+            <ul className="lam-live-list flex max-h-[min(64vh,680px)] flex-col gap-2 overflow-y-auto pr-1">
               {visible.map((f) => (
                 <FlightCard key={f.flight_id} flight={f} now={now} selected={selectedIds.includes(f.flight_id)} onSelect={() => toggle(f.flight_id)} />
               ))}
@@ -819,6 +833,7 @@ export function LiveFlightsPage() {
           {layers.radar && radar.isError ? ' · Radar no disponible' : null}
         </p>
       </div>
+      </div>
 
       {station ? (
         <AtcPanel
@@ -832,7 +847,7 @@ export function LiveFlightsPage() {
       {focused ? (
         <>
           <FlightDetail flight={focused} now={now} follow={follow} onFollow={() => setFollow((v) => !v)} />
-          <Panel title={`Perfil de ${focused.callsign}`} description="Altitud, velocidades, viento y combustible del vuelo hasta ahora. Se completa con cada lote del conector.">
+          <Panel expandable title={`Perfil de ${focused.callsign}`} description="Altitud, velocidades, viento y combustible del vuelo hasta ahora. Se completa con cada lote del conector.">
             {focusedTrace ? <LiveProfile key={focused.flight_id} trace={focusedTrace} /> : <Skeleton className="h-64" />}
           </Panel>
         </>

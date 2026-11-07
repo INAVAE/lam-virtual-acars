@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, CircleHelp, LogOut, Menu, Moon, Sun, UserRound } from 'lucide-react';
+import { ChevronDown, CircleHelp, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, UserRound } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -182,7 +182,16 @@ function UserMenu() {
   );
 }
 
-export function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
+export function TopBar({
+  onOpenMenu,
+  sidebarCollapsed,
+  onToggleSidebar,
+}: {
+  onOpenMenu: () => void;
+  sidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
+}) {
+  const sidebarLabel = sidebarCollapsed ? 'Mostrar el menú lateral' : 'Ocultar el menú lateral';
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-line bg-bg/90 px-3 backdrop-blur sm:px-5">
       <button
@@ -192,6 +201,16 @@ export function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
         className="inline-flex size-9 items-center justify-center rounded-md hover:bg-surface-2 lg:hidden"
       >
         <Menu className="size-5" aria-hidden />
+      </button>
+      <button
+        type="button"
+        onClick={onToggleSidebar}
+        aria-label={sidebarLabel}
+        aria-pressed={sidebarCollapsed}
+        title={sidebarLabel}
+        className="hidden size-9 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-ink lg:inline-flex"
+      >
+        {sidebarCollapsed ? <PanelLeftOpen className="size-5" aria-hidden /> : <PanelLeftClose className="size-5" aria-hidden />}
       </button>
       <AirlineSwitcher />
       <div className="ml-auto flex items-center gap-1 sm:gap-3">

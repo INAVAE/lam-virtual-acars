@@ -2,6 +2,7 @@ import type { LiveFlight, OpsDeparture, OpsFleetItem, OpsPirepQueueItem, PilotPe
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Map as MapIcon, MessageSquare, Minus, TriangleAlert } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
+import { Expandable } from '@/components/expandable';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { buttonClasses } from '@/components/ui/button';
@@ -521,7 +522,8 @@ export function OperationsPage() {
       {live.isError ? <Alert tone="danger">{describeError(live.error)}</Alert> : null}
       {ops.isError ? <Alert tone="danger">{describeError(ops.error)}</Alert> : null}
 
-      <section aria-label="Resumen" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <Expandable id="operations-center" title={`Operations Center · ${airline ? airline.name : 'Todas las aerolíneas'}`} className="space-y-5">
+      <section aria-label="Resumen" className="grid grid-cols-2 gap-3 pr-10 md:grid-cols-3 xl:grid-cols-6">
         <Kpi label="En curso" value={flights.length} />
         <Kpi label="Con alertas" value={withAlerts} tone={withAlerts > 0 ? 'warn' : undefined} />
         <Kpi label="Salidas pendientes" value={o ? o.departures.length : '—'} hint={late > 0 ? `${late} atrasadas` : undefined} tone={late > 0 ? 'warn' : undefined} />
@@ -558,6 +560,7 @@ export function OperationsPage() {
           <FleetTable rows={o.fleet} controlled={fleetControlled} />
         )}
       </div>
+      </Expandable>
     </div>
   );
 }

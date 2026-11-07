@@ -333,6 +333,7 @@ function OrganizationAirlinesPanel() {
   const airlines = useAirlines();
   return (
     <Panel
+      expandable
       title="Aerolíneas registradas"
       description="La configuración completa y la activación llegan con el módulo Airlines en la Fase 2."
     >

@@ -16,6 +16,14 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/**
+ * Al cerrar la sesión (en esta pestaña o en otra), las pestañas abiertas con
+ * «Abrir en otra pestaña» se cierran; si el navegador no lo permite, piden entrar.
+ */
+function closeExpandedTab() {
+  if (new URLSearchParams(window.location.search).has('ver')) window.close();
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
@@ -44,12 +52,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next);
       if (event === 'PASSWORD_RECOVERY') setRecovering(true);
-      if (event === 'SIGNED_OUT') setRecovering(false);
+      if (event === 'SIGNED_OUT') {
+        setRecovering(false);
+        closeExpandedTab();
+      }
     });
+
+    // Otra pestaña cerró la sesión: localStorage avisa y esta también sale.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key && /^sb-.+-auth-token$/.test(e.key) && !e.newValue) {
+        setSession(null);
+        closeExpandedTab();
+      }
+    };
+    window.addEventListener('storage', onStorage);
 
     return () => {
       active = false;
       data.subscription.unsubscribe();
+      window.removeEventListener('storage', onStorage);
     };
   }, []);
 
