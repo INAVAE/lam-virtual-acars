@@ -131,6 +131,8 @@ La firma (`author_name`, `author_pilot_number`), el estado inicial y quién aten
 | `approve_account_request`, `reject_account_request`, `create_account_invitation` | — | — | Aprueba, rechaza (solo pendientes) e invita |
 | `record_account_invitation` | — | — | Solo la clave de servicio (Edge Function `account-requests`) |
 
+| `list_platform_accounts`, `set_account_access` | — | — | Ve todas las cuentas; revoca o restaura el acceso (no el propio ni el de otro superadministrador) |
+
 Nadie escribe en la tabla directamente. El candado `private.guard_auth_signup` actúa cuando inserta Supabase Auth (`session_user = supabase_auth_admin`) y rechaza correos sin solicitud aprobada. Pruebas: `021_account_requests.test.sql`.
 
 ## Vuelo directo

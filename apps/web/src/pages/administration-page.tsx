@@ -16,7 +16,15 @@ import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
-import { useAccountRequestAction, useAccountRequests, usePendingAccountRequests, type AccountRequest } from '@/hooks/use-account-requests';
+import {
+  useAccountRequestAction,
+  useAccountRequests,
+  usePendingAccountRequests,
+  usePlatformAccounts,
+  type AccountRequest,
+  type PlatformAccount,
+  type PlatformAccountMembership,
+} from '@/hooks/use-account-requests';
 import { useAuditLog, useOrgAdmins, type AuditRow } from '@/hooks/use-audit';
 import { useAirlines } from '@/hooks/use-lam-data';
 import { useAirlineScope } from '@/lib/airline-scope';
@@ -35,6 +43,7 @@ const entityLabels: Record<string, string> = {
   aircraft: 'Aeronave',
   aircraft_types: 'Tipo de aeronave',
   routes: 'Ruta',
+  profiles: 'Acceso de cuenta',
 };
 
 const actionLabels: Record<string, string> = { insert: 'Alta', update: 'Cambio', delete: 'Baja' };
@@ -459,12 +468,202 @@ function AccountRequests() {
   );
 }
 
+// -----------------------------------------------------------------------------
+// Cuentas de la plataforma: todas, con sus aerolíneas, y revocar el acceso
+// -----------------------------------------------------------------------------
+const membershipLabel: Record<PlatformAccountMembership['status'], { label: string; tone: 'ok' | 'warn' | 'neutral' | 'danger' }> = {
+  active: { label: 'Activo', tone: 'ok' },
+  pending: { label: 'Solicitud pendiente', tone: 'warn' },
+  suspended: { label: 'Suspendido', tone: 'danger' },
+  rejected: { label: 'Rechazado', tone: 'neutral' },
+};
+
+type AccountFilter = '' | 'no-airline' | 'pending' | 'revoked';
+
+function hasActiveAirline(a: PlatformAccount) {
+  return a.memberships.some((m) => m.status === 'active');
+}
+
+function AccountAccess({ account }: { account: PlatformAccount }) {
+  const act = useAccountRequestAction();
+  const [note, setNote] = useState('');
+  if (account.account_status === 'suspended') {
+    return (
+      <ConfirmButton
+        size="sm"
+        variant="secondary"
+        title={`Restaurar el acceso de ${account.display_name}`}
+        message="Podrá volver a iniciar sesión y operar en las aerolíneas donde es miembro activo. Las reservas canceladas no se recuperan."
+        confirmLabel="Restaurar acceso"
+        onConfirm={async () => {
+          try {
+            await act.mutateAsync({ action: 'restore', user_id: account.user_id });
+            toast.success(`${account.display_name} puede volver a entrar`);
+          } catch (error) {
+            toast.error(describeError(error));
+            throw error;
+          }
+        }}
+      >
+        Restaurar acceso
+      </ConfirmButton>
+    );
+  }
+  return (
+    <ConfirmButton
+      size="sm"
+      variant="ghost"
+      title={`Revocar el acceso de ${account.display_name}`}
+      message={
+        <div className="space-y-3">
+          <p>
+            Ya no podrá iniciar sesión ni usar el conector, y se cancelan sus reservas sin iniciar. Su historial (PIREP y
+            membresías) se conserva y puedes restaurar el acceso cuando quieras.
+          </p>
+          <div>
+            <label htmlFor={`revoke-${account.user_id}`} className="mb-1 block text-sm font-medium">
+              Motivo (opcional, solo para el staff)
+            </label>
+            <Textarea id={`revoke-${account.user_id}`} rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+        </div>
+      }
+      confirmLabel="Revocar acceso"
+      onConfirm={async () => {
+        try {
+          await act.mutateAsync({ action: 'revoke', user_id: account.user_id, note: note.trim() || null });
+          toast.success(`Acceso de ${account.display_name} revocado`);
+          setNote('');
+        } catch (error) {
+          toast.error(describeError(error));
+          throw error;
+        }
+      }}
+    >
+      Revocar acceso
+    </ConfirmButton>
+  );
+}
+
+function PlatformAccounts() {
+  const accounts = usePlatformAccounts();
+  const { user } = useAuth();
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<AccountFilter>('');
+  const all = accounts.data ?? [];
+  const counts = {
+    noAirline: all.filter((a) => a.account_status === 'active' && !hasActiveAirline(a)).length,
+    pending: all.filter((a) => a.memberships.some((m) => m.status === 'pending')).length,
+    revoked: all.filter((a) => a.account_status === 'suspended').length,
+  };
+  const q = query.trim().toLowerCase().replace(/^lam/, '');
+  const rows = all.filter((a) => {
+    if (filter === 'no-airline' && (a.account_status !== 'active' || hasActiveAirline(a))) return false;
+    if (filter === 'pending' && !a.memberships.some((m) => m.status === 'pending')) return false;
+    if (filter === 'revoked' && a.account_status !== 'suspended') return false;
+    if (!q) return true;
+    return a.display_name.toLowerCase().includes(q) || a.email.toLowerCase().includes(q) || String(a.pilot_number).includes(q);
+  });
+
+  return (
+    <Panel
+      title="Cuentas de la plataforma"
+      description="Todas las personas que pueden entrar a LAM, también las que todavía no pertenecen a ninguna aerolínea."
+    >
+      <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <Input aria-label="Buscar cuenta" placeholder="Buscar por nombre, correo o LAM…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <Select aria-label="Mostrar" className="w-auto" value={filter} onChange={(e) => setFilter(e.target.value as AccountFilter)}>
+          <option value="">Todas ({all.length})</option>
+          <option value="no-airline">Sin aerolínea ({counts.noAirline})</option>
+          <option value="pending">Con solicitud de ingreso pendiente ({counts.pending})</option>
+          <option value="revoked">Con acceso revocado ({counts.revoked})</option>
+        </Select>
+      </div>
+      {accounts.isError ? <Alert tone="danger">{describeError(accounts.error)}</Alert> : null}
+      {accounts.isPending ? (
+        <Skeleton className="h-64" />
+      ) : (
+        <Table minWidth="64rem">
+          <thead>
+            <tr>
+              <Th>Piloto</Th>
+              <Th>Aerolíneas</Th>
+              <Th>Alta</Th>
+              <Th>Último acceso</Th>
+              <Th className="text-right">PIREP</Th>
+              <Th>Acceso</Th>
+              <Th className="sr-only">Acciones</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <EmptyRow colSpan={7}>No hay cuentas con estos filtros.</EmptyRow>
+            ) : (
+              rows.map((a) => {
+                const isSelf = a.user_id === user?.id;
+                return (
+                  <tr key={a.user_id}>
+                    <Td>
+                      <p className="font-medium">
+                        {a.display_name}
+                        {isSelf ? <span className="ml-2 text-sm font-normal text-muted">(tú)</span> : null}
+                      </p>
+                      <p className="text-xs text-muted">
+                        <span className="font-mono">{formatPilotNumber(a.pilot_number)}</span> · {a.email}
+                      </p>
+                    </Td>
+                    <Td>
+                      <div className="flex flex-wrap gap-1.5">
+                        {a.is_superadmin ? <Badge tone="info">Superadministrador</Badge> : null}
+                        {a.memberships.length === 0 ? (
+                          <span className="text-sm text-muted">No ha solicitado ninguna</span>
+                        ) : (
+                          a.memberships.map((m) => (
+                            <Badge key={m.airline_id} tone={membershipLabel[m.status].tone}>
+                              {m.icao_code ?? m.name} · {membershipLabel[m.status].label}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    </Td>
+                    <Td className="whitespace-nowrap">{formatLocalDate(a.created_at)}</Td>
+                    <Td className="whitespace-nowrap">{a.last_sign_in_at ? formatLocalDateTime(a.last_sign_in_at) : <span className="text-muted">Nunca</span>}</Td>
+                    <Td className="text-right tabular-nums">{a.pirep_count}</Td>
+                    <Td>
+                      {a.account_status === 'active' ? (
+                        <Badge tone="ok">Activo</Badge>
+                      ) : (
+                        <div>
+                          <Badge tone="danger">Revocado</Badge>
+                          <p className="mt-1 text-xs text-muted">
+                            {a.suspended_at ? formatLocalDate(a.suspended_at) : ''}
+                            {a.suspended_by_name ? ` · ${a.suspended_by_name}` : ''}
+                          </p>
+                          {a.suspension_note ? <p className="max-w-xs text-xs text-muted">{a.suspension_note}</p> : null}
+                        </div>
+                      )}
+                    </Td>
+                    <Td className="text-right">
+                      {isSelf || (a.is_superadmin && a.account_status === 'active') ? null : <AccountAccess account={a} />}
+                    </Td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </Table>
+      )}
+    </Panel>
+  );
+}
+
 export function AdministrationPage() {
   const { isOrgAdmin, ready } = useAirlineScope();
   const [params, setParams] = useSearchParams();
   const requested = params.get('tab');
-  const tab: 'requests' | 'audit' | 'admins' = requested === 'audit' || requested === 'admins' ? requested : 'requests';
-  const setTab = (t: 'requests' | 'audit' | 'admins') => setParams(t === 'requests' ? {} : { tab: t }, { replace: true });
+  type AdminTab = 'requests' | 'accounts' | 'audit' | 'admins';
+  const tab: AdminTab = requested === 'accounts' || requested === 'audit' || requested === 'admins' ? requested : 'requests';
+  const setTab = (t: AdminTab) => setParams(t === 'requests' ? {} : { tab: t }, { replace: true });
   const pending = usePendingAccountRequests().data ?? 0;
 
   if (!ready) return <Skeleton className="h-64" />;
@@ -472,18 +671,19 @@ export function AdministrationPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Administration" description="Solicitudes de cuenta de piloto, bitácora de cambios administrativos y acceso global a la plataforma." />
+      <PageHeader title="Administration" description="Solicitudes de cuenta de piloto, todas las cuentas y su acceso, bitácora de cambios administrativos y superadministradores." />
       <Tabs
         label="Administración"
         value={tab}
         onChange={setTab}
         items={[
           { value: 'requests', label: 'Solicitudes de cuenta', count: pending },
+          { value: 'accounts', label: 'Cuentas' },
           { value: 'audit', label: 'Bitácora' },
           { value: 'admins', label: 'Superadministradores' },
         ]}
       />
-      {tab === 'requests' ? <AccountRequests /> : tab === 'audit' ? <AuditLog /> : <SuperAdmins />}
+      {tab === 'requests' ? <AccountRequests /> : tab === 'accounts' ? <PlatformAccounts /> : tab === 'audit' ? <AuditLog /> : <SuperAdmins />}
     </div>
   );
 }

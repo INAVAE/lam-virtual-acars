@@ -2146,6 +2146,9 @@ export type Database = {
           pilot_number: number
           primary_airline_id: string | null
           simbrief_username: string | null
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_note: string | null
           time_zone: string | null
           updated_at: string
         }
@@ -2160,6 +2163,9 @@ export type Database = {
           pilot_number?: never
           primary_airline_id?: string | null
           simbrief_username?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_note?: string | null
           time_zone?: string | null
           updated_at?: string
         }
@@ -2174,6 +2180,9 @@ export type Database = {
           pilot_number?: never
           primary_airline_id?: string | null
           simbrief_username?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_note?: string | null
           time_zone?: string | null
           updated_at?: string
         }
@@ -2470,6 +2479,28 @@ export type Database = {
       create_account_invitation: {
         Args: { p_display_name: string; p_email: string }
         Returns: string
+      }
+      list_platform_accounts: {
+        Args: never
+        Returns: {
+          account_status: Database["public"]["Enums"]["account_status"]
+          created_at: string
+          display_name: string
+          email: string
+          is_superadmin: boolean
+          last_sign_in_at: string
+          memberships: Json
+          pilot_number: number
+          pirep_count: number
+          suspended_at: string
+          suspended_by_name: string
+          suspension_note: string
+          user_id: string
+        }[]
+      }
+      set_account_access: {
+        Args: { p_active: boolean; p_note?: string; p_user_id: string }
+        Returns: Json
       }
       reject_account_request: {
         Args: { p_note?: string; p_request_id: string }

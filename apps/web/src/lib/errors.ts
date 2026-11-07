@@ -4,6 +4,7 @@ export function describeError(error: unknown): string {
   const code = error && typeof error === 'object' && 'code' in error ? String((error as { code: unknown }).code) : '';
 
   if (/Invalid login credentials/i.test(raw)) return 'Correo o contraseña incorrectos.';
+  if (/User is banned|user_banned/i.test(raw) || code === 'user_banned') return 'Tu acceso a LAM Virtual ACARS fue revocado. Si crees que es un error, escribe al staff de tu aerolínea.';
   if (/Email not confirmed/i.test(raw)) return 'Confirma tu correo con el enlace que te enviamos antes de iniciar sesión.';
   if (/User already registered/i.test(raw)) return 'Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.';
   if (/rate limit/i.test(raw) || code === '429') return 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.';

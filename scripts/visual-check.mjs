@@ -957,6 +957,34 @@ const ACCOUNT_REQUESTS = [
   },
 ];
 
+// Cuentas de la plataforma (Administration → Cuentas).
+const PLATFORM_ACCOUNTS = [
+  {
+    user_id: id(2300), pilot_number: 1009, display_name: 'Marisol Pérez', email: 'marisol.p@example.com', account_status: 'active',
+    created_at: minsAgo(40), last_sign_in_at: minsAgo(35), is_superadmin: false, suspended_at: null, suspension_note: null, suspended_by_name: null,
+    memberships: [], pirep_count: 0,
+  },
+  {
+    user_id: id(2301), pilot_number: 1008, display_name: 'Carlos Ruiz', email: 'carlos.ruiz@example.com', account_status: 'active',
+    created_at: minsAgo(3000), last_sign_in_at: minsAgo(2900), is_superadmin: false, suspended_at: null, suspension_note: null, suspended_by_name: null,
+    memberships: [{ airline_id: id(101), name: 'Líneas Aéreas Mexicanas', icao_code: 'MXL', status: 'pending', roles: ['pilot'] }], pirep_count: 0,
+  },
+  {
+    user_id: USER_ID, pilot_number: 1001, display_name: 'Piloto de Prueba', email: 'piloto@example.com', account_status: 'active',
+    created_at: minsAgo(30000), last_sign_in_at: minsAgo(5), is_superadmin: true, suspended_at: null, suspension_note: null, suspended_by_name: null,
+    memberships: [
+      { airline_id: id(101), name: 'Líneas Aéreas Mexicanas', icao_code: 'MXL', status: 'active', roles: ['pilot', 'airline_admin'] },
+      { airline_id: id(102), name: 'Qatar Airways Virtual', icao_code: 'QTR', status: 'active', roles: ['pilot'] },
+    ],
+    pirep_count: 14,
+  },
+  {
+    user_id: id(2302), pilot_number: 1005, display_name: 'Usuario Revocado', email: 'revocado@example.com', account_status: 'suspended',
+    created_at: minsAgo(20000), last_sign_in_at: minsAgo(9000), is_superadmin: false, suspended_at: minsAgo(600), suspension_note: 'Cuenta compartida con otra persona.', suspended_by_name: 'Piloto de Prueba',
+    memberships: [{ airline_id: id(101), name: 'Líneas Aéreas Mexicanas', icao_code: 'MXL', status: 'active', roles: ['pilot'] }], pirep_count: 3,
+  },
+];
+
 function ticketRows(url) {
   let rows = TICKETS;
   const status = eqParam(url, 'status');
@@ -1014,6 +1042,7 @@ async function handleSupabase(route) {
     get_events: EVENTS_LIST,
     get_event: EVENT_DETAIL,
     get_route_type_usage: ROUTE_TYPE_USAGE,
+    list_platform_accounts: PLATFORM_ACCOUNTS,
   };
   const rpcName = url.pathname.startsWith('/rest/v1/rpc/') ? url.pathname.slice('/rest/v1/rpc/'.length) : null;
   if (rpcName === 'get_live_flight_route') {
@@ -1254,6 +1283,15 @@ await shoot('55-request-account', 'registro', {
   },
 });
 await shoot('56-account-requests', 'administration', { waitFor: 'Solicitudes de cuenta de piloto', action: async (page) => page.getByText('Carlos Ruiz').waitFor() });
+await shoot('57-platform-accounts', 'administration?tab=accounts', { waitFor: 'Cuentas de la plataforma', action: async (page) => page.getByText('Marisol Pérez').waitFor() });
+await shoot('58-revoke-account', 'administration?tab=accounts', {
+  waitFor: 'Cuentas de la plataforma',
+  fullPage: false,
+  action: async (page) => {
+    await page.getByRole('button', { name: 'Revocar acceso' }).first().click();
+    await page.getByRole('dialog').getByLabel(/Motivo/).fill('Cuenta duplicada');
+  },
+});
 await shoot('54-direct-flight', 'booking', {
   airlineId: MXL.id,
   waitFor: 'MXL100',

@@ -328,7 +328,9 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Aerolíneas', 'Crear aerolíneas, activarlas y nombrar a sus administradores.'],
       ['Aeropuertos y tipos', 'Importar el catálogo de OurAirports, dar de alta aeropuertos y ajustar los tipos de aeronave, incluida la figura del mapa.'],
       ['Solicitudes de cuenta', 'Administration → «Solicitudes de cuenta» (el Dashboard avisa cuando hay pendientes). «Aprobar y enviar invitación» manda el correo de invitación; «Rechazar» la cierra con una nota opcional que la persona no ve. Una aprobada que nadie aceptó se puede reenviar; también puedes invitar a alguien directamente con su nombre y correo.'],
-      ['Administration', 'La bitácora de cambios administrativos de toda la plataforma y la lista de superadministradores.'],
+      ['Cuentas', 'Administration → «Cuentas» muestra a todas las personas que pueden entrar, con su número LAM, cuándo se dieron de alta, su último acceso y sus aerolíneas (activo o solicitud pendiente). El filtro «Sin aerolínea» muestra quién ya entró pero no ha pedido ingreso o aún no se lo aprueban.'],
+      ['Revocar el acceso', 'En «Cuentas», «Revocar acceso» con un motivo opcional: la persona ya no puede iniciar sesión ni usar el conector y se cancelan sus reservas sin iniciar. Su historial se conserva y «Restaurar acceso» la reactiva. A otro superadministrador primero se le quita el rol; nadie se revoca a sí mismo.'],
+      ['Administration', 'La bitácora de cambios administrativos de toda la plataforma (incluidas las revocaciones) y la lista de superadministradores.'],
       ['Incidencias de la plataforma', 'Los reportes que no son de una aerolínea (la web en general o el conector) llegan solo al superadministrador.'],
     ],
     note: 'Nadie puede crearse una cuenta por su cuenta, ni siquiera por la API de Supabase: el usuario solo se crea para un correo con solicitud aprobada.',
@@ -395,6 +397,7 @@ export const HELP_TROUBLESHOOTING: [symptom: string, cause: string, fix: string]
   ['El avión no aparece en Live Flights', 'El conector no ha iniciado el vuelo o no hay conexión.', 'Revisa que el conector diga la fase actual y que «Pendientes de enviar» baje.'],
   ['El conector ve la APU encendida aunque la apagaste', 'Tu avión usa su propia APU y no se lo informa al simulador.', 'Con la versión más reciente del conector no impide cerrar el vuelo; si no, usa «Terminar vuelo». El PIREP la muestra como «Sin dato». Repórtalo con el nombre del avión.'],
   ['Las fases del vuelo salen raras', 'Algunos aviones publican sus datos de forma distinta.', 'Reporta una incidencia con el folio del PIREP, el avión y la bitácora de %LOCALAPPDATA%\\LamAcars\\logs.'],
+  ['«Tu acceso fue revocado»', 'Un superadministrador revocó el acceso de tu cuenta.', 'Escribe al staff de tu aerolínea; solo un superadministrador puede restaurarlo.'],
   ['La página se ve vieja o rara', 'El navegador guardó una versión anterior.', 'Recarga forzando la actualización: Ctrl+Shift+R, o Cmd+Shift+R en Mac.'],
   ['Guardo algo y no se queda', 'La sesión caducó con la pestaña abierta.', 'Recarga y vuelve a entrar; lo guardado antes no se pierde.'],
 ];
@@ -442,6 +445,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-06', 'Administration → Cuentas: todas las cuentas con su último acceso y sus aerolíneas, filtro «Sin aerolínea», y revocar o restaurar el acceso.'],
   ['2026-11-06', 'Cuentas por invitación: quien quiere entrar solicita su cuenta, el superadministrador la aprueba y solo entonces llega el correo para crear la contraseña.'],
   ['2026-11-06', 'Live Flights: distancia restante por la ruta del plan de SimBrief y tiempo al destino que considera el descenso y la aproximación.'],
   ['2026-11-05', 'Flight Booking: «Reservar un nuevo vuelo directo», sin ruta registrada, con opción de registrar la ruta y plan de SimBrief en la misma ventana.'],

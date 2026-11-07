@@ -58,6 +58,8 @@ export function usePendingAccountRequests() {
 
 type AccountAction =
   | { action: 'approve' | 'resend'; request_id: string }
+  | { action: 'revoke'; user_id: string; note: string | null }
+  | { action: 'restore'; user_id: string }
   | { action: 'reject'; request_id: string; note: string | null }
   | { action: 'invite'; email: string; display_name: string };
 
@@ -76,6 +78,49 @@ export function useAccountRequestAction() {
         throw error;
       }
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['account-requests'] }),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['account-requests'] }),
+        queryClient.invalidateQueries({ queryKey: ['platform-accounts'] }),
+      ]),
+  });
+}
+
+export interface PlatformAccountMembership {
+  airline_id: string;
+  name: string;
+  icao_code: string | null;
+  status: 'pending' | 'active' | 'suspended' | 'rejected';
+  roles: string[];
+}
+
+export interface PlatformAccount {
+  user_id: string;
+  pilot_number: number;
+  display_name: string;
+  email: string;
+  account_status: 'active' | 'suspended';
+  created_at: string;
+  last_sign_in_at: string | null;
+  is_superadmin: boolean;
+  suspended_at: string | null;
+  suspension_note: string | null;
+  suspended_by_name: string | null;
+  memberships: PlatformAccountMembership[];
+  pirep_count: number;
+}
+
+/** Todas las cuentas de la plataforma, con sus aerolíneas (solo superadministrador). */
+export function usePlatformAccounts() {
+  const { isOrgAdmin } = useAirlineScope();
+  return useQuery({
+    queryKey: ['platform-accounts'],
+    enabled: isOrgAdmin,
+    refetchInterval: 5 * 60_000,
+    queryFn: async (): Promise<PlatformAccount[]> => {
+      const { data, error } = await getSupabase().rpc('list_platform_accounts');
+      if (error) throw error;
+      return (data ?? []) as unknown as PlatformAccount[];
+    },
   });
 }

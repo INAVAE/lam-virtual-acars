@@ -1,6 +1,12 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-06 (cuentas por invitación)
+Última actualización: 2026-11-06 (cuentas de la plataforma)
+
+## Cuentas de la plataforma y revocar el acceso (2026-11-06)
+
+- **Administration → Cuentas** (superadministrador): todas las cuentas con número LAM, correo, alta, último acceso, PIREP y aerolíneas con el estado de cada membresía; filtros «Sin aerolínea», «Con solicitud de ingreso pendiente» y «Con acceso revocado». Resuelve que quien ya entró pero no pidió aerolínea no aparecía en ningún lado. RPC `list_platform_accounts`.
+- **Revocar acceso / Restaurar acceso:** `set_account_access` pone `profiles.account_status = 'suspended'` (que ya bloqueaba todas las funciones de aerolínea y el conector), guarda motivo, fecha y quién lo hizo (`suspended_at`, `suspended_by`, `suspension_note`) y cancela las reservas sin iniciar. La Edge Function `account-requests` (acciones `revoke` y `restore`) además bloquea el inicio de sesión en Supabase Auth (`ban_duration`). La web muestra «Tu acceso fue revocado» a una sesión abierta. Nadie se revoca a sí mismo; a otro superadministrador primero se le quita el rol. Queda en la bitácora.
+- Migración `platform_accounts`, prueba 022 (15); 501 pruebas pgTAP. Capturas 57 y 58.
 
 ## Cuentas de piloto con aprobación previa (2026-11-06)
 
