@@ -251,7 +251,7 @@ export function PilotProfilePage() {
           <Header data={d} />
 
           <Expandable id="totales-del-piloto" title={`Totales de ${d.profile.display_name}`}>
-            <section aria-label="Totales" className="grid grid-cols-2 gap-3 pr-10 md:grid-cols-4 xl:grid-cols-8">
+            <section aria-label="Totales" className="grid grid-cols-2 gap-3 pr-10 md:grid-cols-4">
               <Kpi label="Vuelos" value={formatNumber(d.totals.flights)} hint={d.totals.pending ? `${d.totals.pending} en revisión` : 'PIREP aceptados'} />
               <Kpi label="Horas de vuelo" value={formatHours(d.totals.flight_minutes)} hint="Del despegue al aterrizaje" />
               <Kpi label="Horas block" value={formatHours(d.totals.block_minutes)} hint="De calzos fuera a calzos" />
@@ -276,7 +276,7 @@ export function PilotProfilePage() {
               <MonthlyBars data={d.monthly} />
             </Panel>
             <Panel expandable title="Por aerolínea">
-              <Table>
+              <Table minWidth="26rem">
                 <thead>
                   <tr>
                     <Th>Aerolínea</Th>
@@ -309,7 +309,7 @@ export function PilotProfilePage() {
 
           <div className="grid gap-5 xl:grid-cols-2">
             <Panel expandable title="Tipos de aeronave que vuela">
-              <Table>
+              <Table minWidth="26rem">
                 <thead>
                   <tr>
                     <Th>Tipo</Th>
@@ -340,7 +340,7 @@ export function PilotProfilePage() {
               </Table>
             </Panel>
             <Panel expandable title="Rutas voladas">
-              <Table>
+              <Table minWidth="26rem">
                 <thead>
                   <tr>
                     <Th>Ruta</Th>

@@ -1,5 +1,6 @@
-/**
 import { currentLocale, monthShort } from './i18n';
+
+/**
  * Horas UTC (Zulu) y locales. La operación usa UTC; la hora local del piloto se
  * muestra al lado. Funciones puras: la zona y el orden llegan como parámetros.
  */
