@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<body style="margin:0;padding:0;background:#f1f4f8;font-family:Arial,Helvetica,sans-serif;color:#0f1a2a;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f4f8;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #dde3ea;border-radius:8px;">
+          <tr>
+            <td style="padding:24px 28px 8px 28px;">
+              <div style="font-size:18px;font-weight:bold;color:#0f1a2a;">LAM Virtual ACARS</div>
+              <div style="font-size:13px;color:#5b6778;">Líneas Aéreas Mexicanas · Microsoft Flight Simulator 2024</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 28px 8px 28px;">
+              <h1 style="margin:0 0 12px 0;font-size:22px;color:#0f1a2a;">Tu cuenta de piloto fue aprobada</h1>
+              <p style="margin:0 0 12px 0;font-size:15px;line-height:22px;">
+                {{ if .Data.display_name }}Hola, {{ .Data.display_name }}:{{ else }}Hola:{{ end }}
+              </p>
+              <p style="margin:0 0 20px 0;font-size:15px;line-height:22px;">
+                Ya puedes entrar a LAM Virtual ACARS. Pulsa el botón para crear tu contraseña.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="border-radius:6px;background:#08775a;">
+                    <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:12px 24px;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">Crear mi contraseña</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:20px 0 8px 0;font-size:15px;line-height:22px;"><strong>Después:</strong></p>
+              <ol style="margin:0 0 16px 20px;padding:0;font-size:15px;line-height:22px;">
+                <li>En el Dashboard, en «Mis aerolíneas», solicita ingreso a tu aerolínea.</li>
+                <li>Cuando el staff la apruebe, ya puedes reservar tu primer vuelo.</li>
+              </ol>
+              <p style="margin:0 0 8px 0;font-size:13px;line-height:19px;color:#5b6778;">
+                El enlace vence en 24 horas y solo sirve una vez. Si venció, pide que te reenvíen la invitación.
+              </p>
+              <p style="margin:0 0 20px 0;font-size:13px;line-height:19px;color:#5b6778;">
+                Si el botón no funciona, copia esta dirección en tu navegador:<br>
+                <a href="{{ .ConfirmationURL }}" style="color:#08775a;word-break:break-all;">{{ .ConfirmationURL }}</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 28px 24px 28px;border-top:1px solid #dde3ea;font-size:12px;line-height:18px;color:#5b6778;">
+              Recibiste este correo porque un administrador de LAM aprobó una cuenta de piloto para esta dirección. Si no la esperabas, ignóralo: sin crear la contraseña no se activa nada.<br>
+              Simulación para Microsoft Flight Simulator 2024; operaciones virtuales no oficiales.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
