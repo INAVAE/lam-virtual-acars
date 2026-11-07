@@ -101,3 +101,7 @@ Algunos complementos tienen su propia APU y no mueven la variable estándar `APU
 - **Servidor (`20261106070000_apu_unreliable`):** si la APU estaba en marcha al conectar, no hubo ningún encendido ni apagado y el vuelo despegó, `metrics.fuel.apu` queda como `{unreliable: true}` y la web muestra «Sin dato» en lugar de contar todo el vuelo. Se corrigieron los PIREP 00005 y 00007.
 - Para leer la APU de un complemento así hace falta su variable propia (L:var o SDK), como con PMDG. Pedir la bitácora del conector y el nombre exacto del avión.
 - **Conector 0.1.26:** la bitácora anota, al cambiar, `APU PCT RPM`, `APU SWITCH`, `APU GENERATOR SWITCH:1` y `APU GENERATOR ACTIVE:1` en todos los aviones (línea «Genérico (SimConnect): APU SWITCH = 0»). Prueba para el piloto: avión en la puerta, encender la APU, esperar un minuto, apagarla y enviar `acars-AAAAMMDD.log` de ese día (fecha UTC).
+
+## Cambio de aeronave (conector 0.1.27)
+
+La identidad de la aeronave son cuatro cadenas de SimConnect: `TITLE`, `ATC ID`, `ATC MODEL` y `ATC TYPE`. El A380 de iniBuilds cambia `ATC ID` (la matrícula) un par de minutos después de cargar, y el conector registraba eso como `aircraft_changed`, que en el PIREP es falta grave. Desde 0.1.27 el evento solo se emite cuando cambia `TITLE`, y no con la primera lectura. El servidor (`build_pirep`) además ignora los eventos cuyo título es igual al de la sesión, lo que cubre a los conectores anteriores.

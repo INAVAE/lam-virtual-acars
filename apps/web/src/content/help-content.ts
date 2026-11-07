@@ -445,6 +445,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-07', 'PIREP: «Cambio de aeronave» solo cuando cambia el avión cargado; ya no cuando el mismo avión cambia su matrícula ATC (A380 de iniBuilds).'],
   ['2026-11-06', 'Administration → Cuentas: todas las cuentas con su último acceso y sus aerolíneas, filtro «Sin aerolínea», y revocar o restaurar el acceso.'],
   ['2026-11-06', 'Cuentas por invitación: quien quiere entrar solicita su cuenta, el superadministrador la aprueba y solo entonces llega el correo para crear la contraseña.'],
   ['2026-11-06', 'Live Flights: distancia restante por la ruta del plan de SimBrief y tiempo al destino que considera el descenso y la aproximación.'],

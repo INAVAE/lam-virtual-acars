@@ -426,11 +426,17 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
         lock (_flightGate) _recorder?.AddEvent(type, data);
     }
 
+    private string? _lastAircraftTitle;
+
     private void OnAircraftChanged(AircraftIdentity aircraft)
     {
         Set(nameof(AircraftText), () => AircraftText = $"{aircraft.Title}{(aircraft.AtcId is { } id ? $" · {id}" : string.Empty)}");
-        _log.Write($"Aeronave: {aircraft.Title} ({aircraft.GuessIcao() ?? "tipo sin identificar"}, adaptador {_sim.Adapter.Name})");
-        if (InFlight)
+        _log.Write($"Aeronave: {aircraft.Title} · ATC ID {aircraft.AtcId ?? "—"} ({aircraft.GuessIcao() ?? "tipo sin identificar"}, adaptador {_sim.Adapter.Name})");
+        // Solo es cambio de avión si cambia el título: algunos aviones (el A380 de iniBuilds)
+        // cambian su matrícula ATC al cargar la librea o el EFB, y eso no cuenta.
+        var titleChanged = _lastAircraftTitle is not null && !string.Equals(_lastAircraftTitle, aircraft.Title, StringComparison.Ordinal);
+        _lastAircraftTitle = aircraft.Title;
+        if (InFlight && titleChanged)
             AddFlightEvent(FlightEventTypes.AircraftChanged, new Dictionary<string, object?> { ["title"] = aircraft.Title, ["icao"] = _sim.AircraftIcao });
         if (_sim.Adapter is PmdgAdapter) CheckPmdgSetup();
     }

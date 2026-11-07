@@ -2,6 +2,12 @@
 
 Última actualización: 2026-11-06 (cuentas de la plataforma)
 
+## «Cambio de aeronave» falso con el A380 de iniBuilds (2026-11-07)
+
+- PIREP-2026-00014 y 00019 (QTR783/784, Jesus Medina) marcaban la falta grave «Cambio de aeronave» aunque el avión fue el mismo todo el vuelo: el A380 cambia su matrícula ATC (ATC ID) un par de minutos después de cargar y el conector tomaba cualquier cambio de identidad como cambio de avión.
+- `build_pirep` solo cuenta el evento si el título es distinto al de la sesión (migración `aircraft_change_same_title`, prueba 023). La falta del 00019 quedó anulada por el sistema con el motivo; el 00014 ya estaba anulado a mano.
+- Conector 0.1.27: solo emite `aircraft_changed` cuando cambia el título, y la primera lectura de la aeronave (p. ej. al reabrir el conector a medio vuelo) ya no cuenta.
+
 ## Cuentas de la plataforma y revocar el acceso (2026-11-06)
 
 - **Administration → Cuentas** (superadministrador): todas las cuentas con número LAM, correo, alta, último acceso, PIREP y aerolíneas con el estado de cada membresía; filtros «Sin aerolínea», «Con solicitud de ingreso pendiente» y «Con acceso revocado». Resuelve que quien ya entró pero no pidió aerolínea no aparecía en ningún lado. RPC `list_platform_accounts`.
