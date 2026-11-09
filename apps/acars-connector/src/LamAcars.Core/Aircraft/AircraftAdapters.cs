@@ -180,16 +180,33 @@ public class GenericAdapter : IAircraftAdapter
 /// avión: el freno de estacionamiento del Fenix no siempre se refleja en
 /// BRAKE PARKING POSITION, y con calzos puestos el avión ya está asegurado en
 /// la posición aunque se suelte el freno (procedimiento normal).
+///
+/// La APU del Fenix es un sistema propio: «APU PCT RPM» y el generador estándar
+/// no la siguen. Se toma del panel: interruptor APU MASTER SW en ON y la luz
+/// AVAIL del botón START encendida (la APU llegó al 95 % y entrega aire y
+/// energía). Al poner MASTER SW en OFF la luz se apaga y la APU cuenta como apagada.
 /// </summary>
 public sealed class FenixAdapter : GenericAdapter
 {
     public const string ParkingBrakeLever = "L:S_MIP_PARKING_BRAKE";
     public const string Chocks = "L:B_CONFIG_CHOCKS";
+    public const string ApuMaster = "L:S_OH_ELEC_APU_MASTER";
+    public const string ApuStart = "L:S_OH_ELEC_APU_START";
+    public const string ApuMasterOnLight = "L:I_OH_ELEC_APU_MASTER_L";
+    public const string ApuAvailLight = "L:I_OH_ELEC_APU_START_U";
+    public const string ApuStartOnLight = "L:I_OH_ELEC_APU_START_L";
+    public const string ApuBleed = "L:S_OH_PNEUMATIC_APU_BLEED";
 
     private static readonly SimVar[] Extra =
     {
         new(ParkingBrakeLever, "number"),
         new(Chocks, "number"),
+        new(ApuMaster, "number"),
+        new(ApuStart, "number"),
+        new(ApuMasterOnLight, "number"),
+        new(ApuAvailLight, "number"),
+        new(ApuStartOnLight, "number"),
+        new(ApuBleed, "number"),
     };
 
     public override string Name => "Fenix A32x";
@@ -200,14 +217,22 @@ public sealed class FenixAdapter : GenericAdapter
 
     public override IReadOnlyList<SimVar> Variables { get; } = new GenericAdapter().Variables.Concat(Extra).ToArray();
 
-    public override IReadOnlyList<string> Diagnostics { get; } = new[] { ParkingBrakeLever, Chocks, "BRAKE PARKING POSITION" }.Concat(ApuDiagnostics).ToArray();
+    public override IReadOnlyList<string> Diagnostics { get; } =
+        new[] { ParkingBrakeLever, Chocks, "BRAKE PARKING POSITION", ApuMaster, ApuStart, ApuMasterOnLight, ApuAvailLight, ApuStartOnLight, ApuBleed }
+            .Concat(ApuDiagnostics).ToArray();
 
     public override SimSample Map(IReadOnlyDictionary<string, double> values, DateTimeOffset time, bool paused)
     {
         var sample = base.Map(values, time, paused);
-        var lever = values.TryGetValue(ParkingBrakeLever, out var l) && l > 0.5;
-        var chocks = values.TryGetValue(Chocks, out var c) && c > 0.5;
-        return sample with { ParkingBrake = sample.ParkingBrake || lever || chocks };
+        bool On(string name) => values.TryGetValue(name, out var x) && double.IsFinite(x) && x > 0.5;
+        var lever = On(ParkingBrakeLever);
+        var chocks = On(Chocks);
+        // MASTER SW en ON y AVAIL encendida. Si el Fenix no publica sus variables,
+        // queda lo que digan las estándar.
+        bool? apu = values.ContainsKey(ApuMaster) || values.ContainsKey(ApuAvailLight)
+            ? (On(ApuMaster) && On(ApuAvailLight)) || sample.ApuRunning == true
+            : sample.ApuRunning;
+        return sample with { ParkingBrake = sample.ParkingBrake || lever || chocks, ApuRunning = apu };
     }
 }
 

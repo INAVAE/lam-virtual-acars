@@ -7,7 +7,7 @@ Código: `apps/acars-connector/src/LamAcars.Core/Aircraft/`.
 
 | Adaptador | Coincide con | Además de las variables estándar |
 | --- | --- | --- |
-| Fenix A32x | título o ATC TYPE con "Fenix" | L:S_MIP_PARKING_BRAKE y L:B_CONFIG_CHOCKS. Con calzos, el avión cuenta como asegurado. |
+| Fenix A32x | título o ATC TYPE con "Fenix" | L:S_MIP_PARKING_BRAKE y L:B_CONFIG_CHOCKS (con calzos, el avión cuenta como asegurado). APU por el panel: L:S_OH_ELEC_APU_MASTER en ON y la luz AVAIL L:I_OH_ELEC_APU_START_U (las variables estándar de la APU no siguen a la del Fenix; desde 0.1.29). |
 | PMDG 737 | `737-600/700/800/900`, o "PMDG … 737" (sin MAX) | Bloque `PMDG_NG3_Data`: freno de estacionamiento, palanca del tren, flaps en grados (aguja) y variante exacta. |
 | PMDG 777 | `777-200/300/F`, `77W`, `77L`, o "PMDG … 777" | Bloque `PMDG_777X_Data`: freno, tren, retén de flaps (si falta el ángulo estándar) y variante exacta. |
 | Genérico | cualquier otra | Variables estándar de SimConnect. |
@@ -63,7 +63,7 @@ iniciar la sesión y en el aviso de tipo distinto al reservado.
 
 ## Verificación pendiente en el simulador
 
-- Fenix: los valores de las L: del freno y los calzos (la bitácora registra cada cambio).
+- Fenix: los valores de las L: del freno, los calzos y la APU (MASTER SW, START, luces ON/AVAIL y APU BLEED; la bitácora registra cada cambio).
 - PMDG: que el bloque llegue con `ON_SET` y que los campos coincidan. La bitácora registra modelo, freno, tren y flaps del SDK junto a las variables estándar.
 
 ## Viento (conector 0.1.21)

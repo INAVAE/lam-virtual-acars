@@ -94,4 +94,28 @@ public class ApuTests
         pmdg.Read(d, values);
         Assert.True(pmdg.Map(values, Samples.T0, false).ApuRunning);
     }
+
+    [Theory]
+    [InlineData(1, 1, true)]    // MASTER SW en ON y AVAIL: en marcha
+    [InlineData(1, 0, false)]   // arrancando: aún sin AVAIL
+    [InlineData(0, 1, false)]   // prueba de luces con la APU apagada
+    [InlineData(0, 0, false)]
+    public void Fenix_APU_por_master_y_AVAIL(double master, double avail, bool running)
+    {
+        var values = new Dictionary<string, double>
+        {
+            ["SIM ON GROUND"] = 1,
+            ["APU PCT RPM"] = 0,
+            [FenixAdapter.ApuMaster] = master,
+            [FenixAdapter.ApuAvailLight] = avail,
+        };
+        Assert.Equal(running, new FenixAdapter().Map(values, Samples.T0, false).ApuRunning);
+    }
+
+    [Fact]
+    public void Fenix_sin_sus_variables_usa_las_estandar()
+    {
+        var s = new FenixAdapter().Map(new Dictionary<string, double> { ["SIM ON GROUND"] = 1, ["APU PCT RPM"] = 0.97 }, Samples.T0, false);
+        Assert.True(s.ApuRunning);
+    }
 }
