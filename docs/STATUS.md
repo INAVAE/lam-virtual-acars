@@ -2,6 +2,10 @@
 
 Última actualización: 2026-11-08 (hoja del plan de SimBrief en Live Flights)
 
+## PIREP de tour o de evento (2026-11-09)
+
+- `get_pirep_programs(ids)` (mismas reglas de visibilidad que `pireps_select`) da el tour (código, nombre, color, leg/total) o el evento de cada PIREP; la lista de PIREP y el detalle muestran la etiqueta con enlace (`components/program-tag.tsx`). Migración `pirep_programs`; prueba 027 (+3). Ejemplo real: PIREP-2026-00026, AIFA-TOUR leg 1/10.
+
 ## Biblioteca de insignias (2026-11-08)
 
 - `lib/badge-art.ts`: insignias propias en SVG, paramétricas: 8 formas (sello, laureles, escudo, escudo con alas, hexágono, rombo, rosa de los vientos, medalla) × 3 metales (oro, plata, bronce) × 9 emblemas (avión, globo, alas, estrella, brújula, audífonos, trofeo, torre, número), con texto superior y cinta. 13 diseños en la biblioteca. Pruebas en `badge-art.test.ts`.

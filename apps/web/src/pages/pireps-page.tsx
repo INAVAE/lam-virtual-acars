@@ -9,7 +9,8 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
-import { combineStatistics, usePilotStatistics, usePireps, type PirepListItem, type PirepListView } from '@/hooks/use-pireps';
+import { combineStatistics, usePilotStatistics, usePirepPrograms, usePireps, type PirepListItem, type PirepListView } from '@/hooks/use-pireps';
+import { ProgramTag } from '@/components/program-tag';
 import { useAuth } from '@/lib/auth';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
@@ -63,6 +64,7 @@ function filterPireps(pireps: PirepListItem[], query: string): PirepListItem[] {
 }
 
 function PirepTable({ pireps, showPilot, empty }: { pireps: PirepListItem[]; showPilot: boolean; empty: string }) {
+  const programs = usePirepPrograms(pireps.map((p) => p.id)).data ?? {};
   const navigate = useNavigate();
   const columns = showPilot ? 10 : 9;
   return (
@@ -107,6 +109,7 @@ function PirepTable({ pireps, showPilot, empty }: { pireps: PirepListItem[]; sho
                     {p.callsign}
                   </Link>
                   <p className="text-xs text-muted">{p.airline?.name}</p>
+                  {programs[p.id] ? <ProgramTag program={programs[p.id]} compact className="mt-1" /> : null}
                 </Td>
                 {showPilot ? (
                   <Td>

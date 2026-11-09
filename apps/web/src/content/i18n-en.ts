@@ -3,6 +3,9 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "En tu PIREP": "In your PIREP",
+    "El PIREP de un leg lleva la etiqueta del tour con su número de leg (por ejemplo «Tour AIFA-TOUR · Leg 1/10»), en la lista de PIREP y en el detalle; al pulsarla abre el tour. Los de un evento llevan la etiqueta del evento.": "A leg's PIREP carries the tour tag with its leg number (for example “Tour AIFA-TOUR · Leg 1/10”), in the PIREP list and in the detail; clicking it opens the tour. Event PIREPs carry the event tag.",
+    "Los PIREP de un tour o de un evento lo indican con una etiqueta (por ejemplo «Tour AIFA-TOUR · Leg 1/10») en la lista y en el detalle, con enlace al tour o al evento.": "Tour or event PIREPs show it with a tag (for example “Tour AIFA-TOUR · Leg 1/10”) in the list and in the detail, linking to the tour or event.",
     "En Tours → «Biblioteca de insignias» hay diseños propios de LAM en oro, plata y bronce (sello, laureles, escudo, alas, hexágono, rombo, rosa de los vientos y medalla, con avión, globo, alas, estrella, brújula, audífonos, trofeo, torre o número). En el editor del tour, «Diseñar con la biblioteca» la crea con el código del tour en la cinta y la usa como su insignia; también se descarga en PNG o SVG. Recomendación: bronce para tours cortos, plata para regionales y oro para largos o exigentes.": "In Tours → “Badge library” there are LAM’s own designs in gold, silver and bronze (seal, laurels, shield, wings, hexagon, diamond, compass rose and medal, with airplane, globe, wings, star, compass, headset, trophy, tower or number). In the tour editor, “Design with the library” creates it with the tour code on the ribbon and uses it as its badge; it can also be downloaded as PNG or SVG. Recommendation: bronze for short tours, silver for regional ones and gold for long or demanding ones.",
     "En el ranking de un evento, los tres primeros lugares llevan medalla de oro, plata y bronce. Los entrenamientos completados aparecen en el perfil con su insignia: básico bronce, intermedio plata y avanzado oro.": "In an event ranking, the top three places get gold, silver and bronze medals. Completed trainings appear on the profile with their badge: basic bronze, intermediate silver and advanced gold.",
     "Biblioteca de insignias": "Badge library",
@@ -2142,6 +2145,11 @@ export const EN: Dictionary = {
     "Callsign, piloto, aeropuerto, evento, tour…": "Callsign, pilot, airport, event, tour…"
   },
   patterns: [
+    ["Tour {0}", "Tour {0}"],
+    ["· Leg {0}/{1}", "· Leg {0}/{1}"],
+    ["Evento {0}", "Event {0}"],
+    ["Vuelo del tour {0}: leg {1} de {2}", "Tour {0} flight: leg {1} of {2}"],
+    ["Vuelo del evento {0}", "Event {0} flight"],
     ["{0}.º lugar", "{0} place"],
     ["Entrenamiento {0}: {1}", "{0} training: {1}"],
     ["Flaps {0}", "Flaps {0}"],

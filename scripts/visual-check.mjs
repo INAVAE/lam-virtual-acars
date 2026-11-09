@@ -1141,6 +1141,7 @@ async function handleSupabase(route) {
     get_tour: TOUR_DETAIL,
     get_pilot_badges: BADGES,
     get_my_tour_legs: MY_TOUR_LEGS,
+    get_pirep_programs: { [PIREP_ID]: { tour: { id: id(1600), code: 'TMX01', name: 'Joyas de México', color: '#a855f7', leg: 2, legs: 5 }, event: null } },
     get_events: EVENTS_LIST,
     get_event: EVENT_DETAIL,
     get_route_type_usage: ROUTE_TYPE_USAGE,

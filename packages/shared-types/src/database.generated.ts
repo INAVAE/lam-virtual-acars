@@ -2605,6 +2605,7 @@ export type Database = {
         Args: { p_airline_id?: string; p_limit?: number; p_user_id?: string }
         Returns: Json
       }
+      get_pirep_programs: { Args: { p_pirep_ids: string[] }; Returns: Json }
       restore_pirep: {
         Args: { p_pirep_id: string }
         Returns: Database["public"]["Tables"]["pireps"]["Row"]

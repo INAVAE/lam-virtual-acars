@@ -14,6 +14,7 @@ import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  usePirepPrograms,
   useArchivePirep,
   useCommentPirep,
   usePirep,
@@ -24,6 +25,7 @@ import {
   type FlightEvent,
   type PirepDetail,
 } from '@/hooks/use-pireps';
+import { ProgramTag } from '@/components/program-tag';
 import { useAuth } from '@/lib/auth';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
@@ -727,6 +729,8 @@ export function PirepDetailPage() {
   const track = usePirepTrack(pirep.data?.flight_id, pirep.data?.session_id);
   const permissions = useAirlinePermissions(pirep.data?.airline_id);
   const restore = useRestorePirep();
+  const programs = usePirepPrograms(id ? [id] : []);
+  const program = id ? programs.data?.[id] : undefined;
   const [archiveOpen, setArchiveOpen] = useState(false);
 
   if (pirep.isPending) return <Skeleton className="h-96" />;
@@ -783,6 +787,7 @@ export function PirepDetailPage() {
             </span>{' '}
             · {p.pilot?.display_name} <span className="font-mono">{p.pilot ? formatPilotNumber(p.pilot.pilot_number) : ''}</span>
           </p>
+          {program ? <ProgramTag program={program} className="mt-1.5" /> : null}
         </div>
         <div className="flex items-center gap-3">
           {canArchive ? (

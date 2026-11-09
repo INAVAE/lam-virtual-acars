@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(8);
+select plan(11);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-000000000ac3', 'c@mtl.test', '{"display_name":"Admin C"}'),
@@ -95,8 +95,21 @@ select pg_temp.finish((select flight from t));
 set local role authenticated;
 select is(get_tour((select tour from t)) -> 'my_legs' -> 0 ->> 'state', 'accepted', 'El vuelo reservado desde el tour cuenta para el tour');
 
+select results_eq(
+  $$select x.value -> 'tour' ->> 'code', (x.value -> 'tour' ->> 'leg')::int, (x.value -> 'tour' ->> 'legs')::int
+      from jsonb_each(get_pirep_programs(array(select id from pireps where user_id = '00000000-0000-0000-0000-000000000ad4'))) x$$,
+  $$values ('MTL-01'::text, 1, 2)$$,
+  'El PIREP del leg dice su tour y su leg; el del vuelo normal no aparece'
+);
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000ac3"}';
+select is((select count(*)::int from jsonb_each(get_pirep_programs(array(select pirep_id from (select p.id as pirep_id from pireps p) q)))), 1, 'El staff de la aerolínea lo ve también');
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000ae5"}';
 select is(jsonb_array_length(get_my_tour_legs()), 0, 'Cada piloto ve solo sus legs');
+reset role;
+create temp table ids as select id from pireps;
+grant select on ids to authenticated;
+set local role authenticated;
+select is(get_pirep_programs(array(select id from ids)), '{}'::jsonb, 'Otro piloto no ve el tour de PIREP ajenos');
 
 select * from finish();
 rollback;

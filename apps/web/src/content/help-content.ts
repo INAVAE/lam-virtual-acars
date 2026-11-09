@@ -261,6 +261,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Modificar un tour', 'Quien lo propuso lo edita mientras es borrador o fue rechazado. Ya enviado, publicado, cerrado o con pilotos inscritos, solo lo modifican el superadministrador y el administrador de su aerolínea: código, legs, orden, aeronaves, fechas, reglas e insignia.'],
       ['Insignias', 'En Tours → «Biblioteca de insignias» hay diseños propios de LAM en oro, plata y bronce (sello, laureles, escudo, alas, hexágono, rombo, rosa de los vientos y medalla, con avión, globo, alas, estrella, brújula, audífonos, trofeo, torre o número). En el editor del tour, «Diseñar con la biblioteca» la crea con el código del tour en la cinta y la usa como su insignia; también se descarga en PNG o SVG. Recomendación: bronce para tours cortos, plata para regionales y oro para largos o exigentes.'],
       ['Medallas y reconocimientos', 'En el ranking de un evento, los tres primeros lugares llevan medalla de oro, plata y bronce. Los entrenamientos completados aparecen en el perfil con su insignia: básico bronce, intermedio plata y avanzado oro.'],
+      ['En tu PIREP', 'El PIREP de un leg lleva la etiqueta del tour con su número de leg (por ejemplo «Tour AIFA-TOUR · Leg 1/10»), en la lista de PIREP y en el detalle; al pulsarla abre el tour. Los de un evento llevan la etiqueta del evento.'],
       ['Si cambian los legs', 'Los legs que siguen guardan tu avance (vuelos y PIREP ya hechos). Uno que se quita deja tus vuelos como vuelos normales; uno nuevo lo tendrás que volar. Si ya terminaste el tour, conservas la insignia.'],
     ],
   },
@@ -487,6 +488,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-09', 'Los PIREP de un tour o de un evento lo indican con una etiqueta (por ejemplo «Tour AIFA-TOUR · Leg 1/10») en la lista y en el detalle, con enlace al tour o al evento.'],
   ['2026-11-08', 'Biblioteca de insignias en oro, plata y bronce: diseñador para la insignia del tour, medallas del podio en los eventos e insignias de entrenamientos por nivel.'],
   ['2026-11-08', 'Conector 0.1.42: registra cada cambio de flaps (en el Fenix A320 con el nombre del retén, por ejemplo 1+F) y los muestra en la gráfica del vuelo y en la bitácora del PIREP.'],
   ['2026-11-08', 'Conector 0.1.40: botón «Siempre visible» para dejar la ventana encima del simulador.'],

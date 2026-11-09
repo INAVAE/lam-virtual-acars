@@ -270,3 +270,23 @@ export function useUpdateScoringRule() {
     onSettled: (_d, _e, vars) => void queryClient.invalidateQueries({ queryKey: ['scoring-rules', vars.airlineId] }),
   });
 }
+
+export interface PirepProgram {
+  tour: { id: string; code: string; name: string; color: string; leg: number; legs: number } | null;
+  event: { id: string; folio: string; name: string; color: string } | null;
+}
+
+/** Tour o evento de cada PIREP (solo los que fueron de un tour o de un evento). */
+export function usePirepPrograms(ids: readonly string[]) {
+  const sorted = [...new Set(ids)].sort();
+  return useQuery({
+    queryKey: ['pirep-programs', sorted.join(',')],
+    enabled: sorted.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<Record<string, PirepProgram>> => {
+      const { data, error } = await getSupabase().rpc('get_pirep_programs', { p_pirep_ids: sorted });
+      if (error) throw error;
+      return (data ?? {}) as unknown as Record<string, PirepProgram>;
+    },
+  });
+}
