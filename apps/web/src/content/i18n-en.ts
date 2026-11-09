@@ -3,6 +3,16 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "Comentarios": "Comments",
+    "Enviar comentario": "Send comment",
+    "Comentario agregado": "Comment added",
+    "Agregar un comentario": "Add a comment",
+    "Staff": "Staff",
+    "Agrega un comentario a la conversación…": "Add a comment to the conversation…",
+    "El PIREP ya se revisó, pero puedes seguir comentando: aclaraciones, dudas o una solicitud de revisión…": "The PIREP has been reviewed, but you can keep commenting: clarifications, questions or a review request…",
+    "¿Puedo comentar un PIREP ya revisado?": "Can I comment on a PIREP that was already reviewed?",
+    "Sí. En el PIREP, sección Revisión → Comentarios, escribe y pulsa «Enviar comentario», aunque ya esté aceptado o rechazado. El staff de tu aerolínea lo ve y puede responder ahí. El comentario inicial para el revisor solo se edita mientras está pendiente.": "Yes. In the PIREP, Review → Comments section, type and press “Send comment”, even if it is already accepted or rejected. Your airline staff sees it and can reply there. The initial comment for the reviewer can only be edited while it is pending.",
+    "PIREP: el piloto y el staff pueden comentar en cualquier momento, aunque el PIREP ya esté aceptado o rechazado (sección Comentarios de la revisión).": "PIREP: the pilot and staff can comment at any time, even if the PIREP is already accepted or rejected (Comments section of the review).",
     "Copiar liga de invitación": "Copy invitation link",
     "Liga copiada": "Link copied",
     "Liga de invitación": "Invitation link",

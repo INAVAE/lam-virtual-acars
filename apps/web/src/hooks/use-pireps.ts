@@ -290,3 +290,43 @@ export function usePirepPrograms(ids: readonly string[]) {
     },
   });
 }
+
+export interface PirepComment {
+  id: string;
+  pirep_id: string;
+  author_id: string | null;
+  author_name: string;
+  author_role: 'pilot' | 'staff';
+  body: string;
+  created_at: string;
+}
+
+/** Conversación del PIREP (piloto y staff), en orden. */
+export function usePirepComments(pirepId: string | undefined) {
+  return useQuery({
+    queryKey: ['pirep-comments', pirepId],
+    enabled: Boolean(pirepId),
+    refetchInterval: 60_000,
+    queryFn: async (): Promise<PirepComment[]> => {
+      const { data, error } = await getSupabase()
+        .from('pirep_comments')
+        .select('id, pirep_id, author_id, author_name, author_role, body, created_at')
+        .eq('pirep_id', pirepId!)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as PirepComment[];
+    },
+  });
+}
+
+/** Agrega un comentario a la conversación del PIREP (en cualquier momento). */
+export function useAddPirepComment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, body }: { id: string; body: string }) => {
+      const { error } = await getSupabase().rpc('add_pirep_comment', { p_pirep_id: id, p_body: body });
+      if (error) throw error;
+    },
+    onSettled: (_d, _e, v) => queryClient.invalidateQueries({ queryKey: ['pirep-comments', v.id] }),
+  });
+}

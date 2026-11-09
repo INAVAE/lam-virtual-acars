@@ -2,6 +2,10 @@
 
 Última actualización: 2026-11-08 (hoja del plan de SimBrief en Live Flights)
 
+## Comentarios del PIREP en cualquier momento (2026-11-09)
+
+- Tabla `pirep_comments` (solo lectura por RLS para quien ve el PIREP) y `add_pirep_comment` (piloto dueño o staff de la aerolínea; cualquier estado salvo archivado; 30 por hora). La revisión del PIREP muestra la conversación y el cuadro para comentar aunque ya esté aceptado o rechazado. `pilot_comment` sigue siendo el comentario inicial editable mientras está pendiente. Migración `pirep_comments`, prueba 028 (9).
+
 ## Ligas de invitación (2026-11-09)
 
 - «Copiar liga de invitación» en el detalle de tours y eventos publicados y de entrenamientos programados (`components/invite-link.tsx`): copia la URL de la página; si el portapapeles no está disponible, la muestra para copiarla a mano.

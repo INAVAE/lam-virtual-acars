@@ -16,7 +16,9 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   usePirepPrograms,
   useArchivePirep,
+  useAddPirepComment,
   useCommentPirep,
+  usePirepComments,
   usePirep,
   usePirepTrack,
   useRestorePirep,
@@ -30,6 +32,7 @@ import { useAuth } from '@/lib/auth';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
 import { attitudeNote, flapsNote, flapsText, formatWind, formatWindComponents, windComponents } from '@/lib/flight-analysis';
+import { cn } from '@/lib/cn';
 import { formatLocalDateTime, formatNumber, formatPilotNumber } from '@/lib/format';
 import { useAirlinePermissions } from '@/lib/permissions';
 import { phaseLabel } from '@/lib/phases';
@@ -169,7 +172,63 @@ function EventsPanel({ events, loading }: { events: FlightEvent[]; loading: bool
 // -----------------------------------------------------------------------------
 // Revisión y comentarios
 // -----------------------------------------------------------------------------
-function CommentsPanel({ pirep, isOwner, canReview }: { pirep: PirepDetail; isOwner: boolean; canReview: boolean }) {
+/** Conversación del PIREP: el piloto y el staff comentan en cualquier momento, aunque ya esté revisado. */
+function Conversation({ pirep, canWrite }: { pirep: PirepDetail; canWrite: boolean }) {
+  const comments = usePirepComments(pirep.id);
+  const add = useAddPirepComment();
+  const [text, setText] = useState('');
+  const list = comments.data ?? [];
+  if (!canWrite && list.length === 0) return null;
+  return (
+    <div className="space-y-3 border-t border-line pt-4">
+      <p className="text-xs uppercase tracking-wide text-muted">Comentarios</p>
+      {list.length > 0 ? (
+        <ul className="space-y-2">
+          {list.map((c) => (
+            <li key={c.id} className={cn('rounded-md border px-3 py-2', c.author_role === 'staff' ? 'border-cyan/30 bg-cyan/5' : 'border-line bg-bg')}>
+              <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                <span className="font-medium text-ink">{c.author_name}</span>
+                <Badge tone={c.author_role === 'staff' ? 'info' : 'neutral'}>{c.author_role === 'staff' ? 'Staff' : 'Piloto'}</Badge>
+                <span>{formatLocalDateTime(c.created_at)}</span>
+              </p>
+              <p className="mt-1 whitespace-pre-wrap text-[15px]">{c.body}</p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {canWrite ? (
+        <div className="space-y-2">
+          <Textarea
+            aria-label="Agregar un comentario"
+            placeholder={pirep.status === 'pending' ? 'Agrega un comentario a la conversación…' : 'El PIREP ya se revisó, pero puedes seguir comentando: aclaraciones, dudas o una solicitud de revisión…'}
+            maxLength={2000}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <Button
+            size="sm"
+            variant="secondary"
+            loading={add.isPending}
+            disabled={text.trim() === ''}
+            onClick={async () => {
+              try {
+                await add.mutateAsync({ id: pirep.id, body: text });
+                setText('');
+                toast.success('Comentario agregado');
+              } catch (error) {
+                toast.error(describeError(error));
+              }
+            }}
+          >
+            Enviar comentario
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function CommentsPanel({ pirep, isOwner, canReview, canStaff }: { pirep: PirepDetail; isOwner: boolean; canReview: boolean; canStaff: boolean }) {
   const comment = useCommentPirep();
   const review = useReviewPirep();
   const [pilotText, setPilotText] = useState(pirep.pilot_comment ?? '');
@@ -262,6 +321,7 @@ function CommentsPanel({ pirep, isOwner, canReview }: { pirep: PirepDetail; isOw
         ) : (
           <p className="border-t border-line pt-4 text-sm text-muted">Pendiente de revisión por el jefe de operaciones.</p>
         )}
+        <Conversation pirep={pirep} canWrite={(isOwner || canStaff) && pirep.status !== 'archived'} />
       </div>
     </Panel>
   );
@@ -923,7 +983,7 @@ export function PirepDetailPage() {
         </div>
         <div className="space-y-6">
           <FindingsPanel pirep={p} canReview={canReview} />
-          <CommentsPanel pirep={p} isOwner={isOwner} canReview={canReview} />
+          <CommentsPanel pirep={p} isOwner={isOwner} canReview={canReview} canStaff={permissions.canStaff} />
           <EventsPanel events={track.data?.events ?? []} loading={track.isPending} />
         </div>
       </div>

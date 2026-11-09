@@ -1922,6 +1922,44 @@ export type Database = {
           },
         ]
       }
+      pirep_comments: {
+        Row: {
+          author_id: string | null
+          author_name: string
+          author_role: string
+          body: string
+          created_at: string
+          id: string
+          pirep_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name: string
+          author_role: string
+          body: string
+          created_at?: string
+          id?: string
+          pirep_id: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string
+          author_role?: string
+          body?: string
+          created_at?: string
+          id?: string
+          pirep_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pirep_comments_pirep_id_fkey"
+            columns: ["pirep_id"]
+            isOneToOne: false
+            referencedRelation: "pireps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pireps: {
         Row: {
           aircraft_id: string | null
@@ -2605,6 +2643,7 @@ export type Database = {
         Args: { p_airline_id?: string; p_limit?: number; p_user_id?: string }
         Returns: Json
       }
+      add_pirep_comment: { Args: { p_body: string; p_pirep_id: string }; Returns: Json }
       get_pirep_programs: { Args: { p_pirep_ids: string[] }; Returns: Json }
       restore_pirep: {
         Args: { p_pirep_id: string }

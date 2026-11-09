@@ -133,6 +133,10 @@ La firma (`author_name`, `author_pilot_number`), el estado inicial y quién aten
 
 Las tablas no tienen permisos directos; todo pasa por funciones `security definer`. Pruebas: `025_trainings.test.sql`.
 
+## Comentarios del PIREP
+
+`pirep_comments`: la lee quien ve el PIREP (el piloto y el staff de su aerolínea). Se escribe solo con `add_pirep_comment`: el piloto en sus PIREP y el staff en los de su aerolínea, en cualquier estado salvo archivado (el superadministrador también en archivados). No se edita ni se borra. Pruebas: `028_pirep_comments.test.sql`.
+
 ## Tours
 
 | Acción | Piloto (miembro de la aerolínea) | Quien lo propuso | Jefe de operaciones | Admin. de la aerolínea del tour | Superadmin |

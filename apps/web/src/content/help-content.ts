@@ -409,6 +409,7 @@ export const HELP_FAQ: [question: string, answer: string][] = [
   ['Se me cayó internet a medio vuelo.', 'No pasa nada: el conector guarda todo y lo envía al recuperar la conexión, sin duplicar ni perder datos.'],
   ['Cerré el conector por error.', 'Ábrelo de nuevo: el vuelo se reanuda donde iba.'],
   ['El vuelo no se cierra al llegar.', 'Necesita motores y APU apagados y el freno de estacionamiento puesto. Si aun así no cierra, usa «Terminar vuelo».'],
+  ['¿Puedo comentar un PIREP ya revisado?', 'Sí. En el PIREP, sección Revisión → Comentarios, escribe y pulsa «Enviar comentario», aunque ya esté aceptado o rechazado. El staff de tu aerolínea lo ve y puede responder ahí. El comentario inicial para el revisor solo se edita mientras está pendiente.'],
   ['¿Por qué mi PIREP está «pendiente»?', 'La aerolínea no aprueba automáticamente, el puntaje quedó bajo el mínimo o tiene faltas graves. Lo revisa el staff; mientras tanto puedes dejar un comentario.'],
   ['Volé la ruta de un leg y no me contó para el tour.', 'Solo cuentan los vuelos reservados desde el tour con «Reservar leg». Un vuelo reservado en Flight Booking con la misma ruta es un vuelo normal de tu aerolínea. Abre el tour y reserva ese leg desde ahí.'],
   ['Cambiaron los legs de un tour en el que voy a la mitad.', 'El administrador de la aerolínea puede ajustarlo en cualquier momento. Lo que ya volaste en los legs que siguen te cuenta; vuela los que falten. Si quitaron los que te faltaban, el tour queda terminado y ganas la insignia.'],
@@ -488,6 +489,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-09', 'PIREP: el piloto y el staff pueden comentar en cualquier momento, aunque el PIREP ya esté aceptado o rechazado (sección Comentarios de la revisión).'],
   ['2026-11-09', 'Liga de invitación en tours, eventos y entrenamientos: «Copiar liga de invitación» copia la dirección para compartirla; solo la abren pilotos con cuenta activa (sin sesión, piden entrar y después llegan a la página).'],
   ['2026-11-09', 'Los PIREP de un tour o de un evento lo indican con una etiqueta (por ejemplo «Tour AIFA-TOUR · Leg 1/10») en la lista y en el detalle, con enlace al tour o al evento.'],
   ['2026-11-08', 'Biblioteca de insignias en oro, plata y bronce: diseñador para la insignia del tour, medallas del podio en los eventos e insignias de entrenamientos por nivel.'],

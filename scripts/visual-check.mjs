@@ -869,6 +869,13 @@ function rowsFor(url) {
       return ticketRows(url);
     case 'account_requests':
       return eqParam(url, 'status') ? ACCOUNT_REQUESTS.filter((r) => r.status === eqParam(url, 'status')) : ACCOUNT_REQUESTS;
+    case 'pirep_comments':
+      return eqParam(url, 'pirep_id') === PIREP_ID
+        ? [
+            { id: id(1290), pirep_id: PIREP_ID, author_id: USER_ID, author_name: PROFILE.display_name, author_role: 'pilot', body: 'El toque largo fue por viento cruzado; pido revisar la penalización.', created_at: minsAgo(90) },
+            { id: id(1291), pirep_id: PIREP_ID, author_id: id(701), author_name: 'Ana Torres', author_role: 'staff', body: 'Revisado con el METAR: se mantiene, pero queda anotado.', created_at: minsAgo(40) },
+          ]
+        : [];
     default:
       return [];
   }
