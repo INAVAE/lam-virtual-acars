@@ -488,6 +488,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-09', 'Liga de invitación en tours, eventos y entrenamientos: «Copiar liga de invitación» copia la dirección para compartirla; solo la abren pilotos con cuenta activa (sin sesión, piden entrar y después llegan a la página).'],
   ['2026-11-09', 'Los PIREP de un tour o de un evento lo indican con una etiqueta (por ejemplo «Tour AIFA-TOUR · Leg 1/10») en la lista y en el detalle, con enlace al tour o al evento.'],
   ['2026-11-08', 'Biblioteca de insignias en oro, plata y bronce: diseñador para la insignia del tour, medallas del podio en los eventos e insignias de entrenamientos por nivel.'],
   ['2026-11-08', 'Conector 0.1.42: registra cada cambio de flaps (en el Fenix A320 con el nombre del retén, por ejemplo 1+F) y los muestra en la gráfica del vuelo y en la bitácora del PIREP.'],

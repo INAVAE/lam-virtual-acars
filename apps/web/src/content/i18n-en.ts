@@ -3,6 +3,12 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "Copiar liga de invitación": "Copy invitation link",
+    "Liga copiada": "Link copied",
+    "Liga de invitación": "Invitation link",
+    "Solo la abren pilotos con cuenta activa en LAM": "Only pilots with an active LAM account can open it",
+    "Cópiala y compártela. Solo la abren pilotos con cuenta activa en LAM.": "Copy and share it. Only pilots with an active LAM account can open it.",
+    "Liga de invitación en tours, eventos y entrenamientos: «Copiar liga de invitación» copia la dirección para compartirla; solo la abren pilotos con cuenta activa (sin sesión, piden entrar y después llegan a la página).": "Invitation link on tours, events and trainings: “Copy invitation link” copies the address to share it; only pilots with an active account can open it (without a session they sign in first and then reach the page).",
     "En tu PIREP": "In your PIREP",
     "El PIREP de un leg lleva la etiqueta del tour con su número de leg (por ejemplo «Tour AIFA-TOUR · Leg 1/10»), en la lista de PIREP y en el detalle; al pulsarla abre el tour. Los de un evento llevan la etiqueta del evento.": "A leg's PIREP carries the tour tag with its leg number (for example “Tour AIFA-TOUR · Leg 1/10”), in the PIREP list and in the detail; clicking it opens the tour. Event PIREPs carry the event tag.",
     "Los PIREP de un tour o de un evento lo indican con una etiqueta (por ejemplo «Tour AIFA-TOUR · Leg 1/10») en la lista y en el detalle, con enlace al tour o al evento.": "Tour or event PIREPs show it with a tag (for example “Tour AIFA-TOUR · Leg 1/10”) in the list and in the detail, linking to the tour or event.",
@@ -2145,6 +2151,7 @@ export const EN: Dictionary = {
     "Callsign, piloto, aeropuerto, evento, tour…": "Callsign, pilot, airport, event, tour…"
   },
   patterns: [
+    ["Liga de invitación al {0} copiada. Solo la abren pilotos con cuenta activa en LAM.", "Invitation link to the {0} copied. Only pilots with an active LAM account can open it."],
     ["Tour {0}", "Tour {0}"],
     ["· Leg {0}/{1}", "· Leg {0}/{1}"],
     ["Evento {0}", "Event {0}"],

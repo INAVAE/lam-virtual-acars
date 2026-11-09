@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { AirlineLogo } from '@/components/airline-logo';
 import { ConfirmButton } from '@/components/confirm-button';
 import { RejectDialog } from '@/components/reject-dialog';
+import { InviteLinkButton } from '@/components/invite-link';
 import { TourBadge } from '@/components/tour-badge';
 import { TourMap } from '@/components/tour-map';
 import { Alert } from '@/components/ui/alert';
@@ -591,7 +592,10 @@ export function TourDetailPage() {
             </p>
             {t.description ? <p className="max-w-3xl whitespace-pre-line pt-1 text-[15px]">{t.description}</p> : null}
           </div>
-          <OwnerActions tour={t} />
+          <div className="flex flex-col items-end gap-2">
+            {t.status === 'published' ? <InviteLinkButton path={`/tours/${t.id}`} what="tour" /> : null}
+            <OwnerActions tour={t} />
+          </div>
         </div>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line px-4 py-3 sm:grid-cols-3 lg:grid-cols-6">
           <Rule label="Legs">

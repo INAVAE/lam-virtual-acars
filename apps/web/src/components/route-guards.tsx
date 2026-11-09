@@ -42,7 +42,7 @@ export function RequireAuth() {
   if (loading) return <FullPageStatus message="Cargando tu sesión…" />;
   if (recovering) return <Navigate to="/restablecer" replace />;
   if (!user) {
-    const from = location.pathname === '/' ? undefined : location.pathname;
+    const from = location.pathname === '/' ? undefined : `${location.pathname}${location.search}`;
     return <Navigate to={from ? '/entrar' : '/bienvenida'} replace state={from ? { from } : undefined} />;
   }
   return <SignedIn />;
@@ -57,7 +57,9 @@ function SignedIn() {
 /** Pantallas de acceso: si ya hay sesión, se va al dashboard. */
 export function GuestOnly() {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <FullPageStatus message="Cargando…" />;
-  if (user) return <Navigate to="/" replace />;
+  // Con sesión se va a la página que se pidió (por ejemplo, una liga de invitación) o al dashboard.
+  if (user) return <Navigate to={(location.state as { from?: string } | null)?.from ?? '/'} replace />;
   return <Outlet />;
 }

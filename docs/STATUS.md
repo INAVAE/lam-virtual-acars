@@ -2,6 +2,11 @@
 
 Última actualización: 2026-11-08 (hoja del plan de SimBrief en Live Flights)
 
+## Ligas de invitación (2026-11-09)
+
+- «Copiar liga de invitación» en el detalle de tours y eventos publicados y de entrenamientos programados (`components/invite-link.tsx`): copia la URL de la página; si el portapapeles no está disponible, la muestra para copiarla a mano.
+- Solo abren con sesión de una cuenta activa (`RequireAuth`; cuentas revocadas ven «Tu acceso fue revocado»). Sin sesión piden entrar y, al entrar, `GuestOnly` y la pantalla de entrada regresan a la liga (incluye `?…`).
+
 ## PIREP de tour o de evento (2026-11-09)
 
 - `get_pirep_programs(ids)` (mismas reglas de visibilidad que `pireps_select`) da el tour (código, nombre, color, leg/total) o el evento de cada PIREP; la lista de PIREP y el detalle muestran la etiqueta con enlace (`components/program-tag.tsx`). Migración `pirep_programs`; prueba 027 (+3). Ejemplo real: PIREP-2026-00026, AIFA-TOUR leg 1/10.

@@ -30,6 +30,7 @@ import { formatMinutes } from '@/lib/pirep';
 import { DualTimeText, useTimePrefs } from '@/lib/time-context';
 import { downloadIcs, googleCalendarUrl, registrationStatus, trainingLevels, trainingPhase, trainingResults } from '@/lib/training';
 import { CategoryBadge, TrainingStatusBadge } from '@/pages/training-page';
+import { InviteLinkButton } from '@/components/invite-link';
 
 function pageUrl(id: string): string {
   return `${window.location.origin}${import.meta.env.BASE_URL}training/${id}`;
@@ -269,7 +270,12 @@ export function TrainingDetailPage() {
                 <TrainingStatusBadge training={t} />
               </span>
             </div>
-            <h1 className="mt-2 font-display text-3xl font-semibold leading-tight">{t.title}</h1>
+            <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+              <h1 className="font-display text-3xl font-semibold leading-tight">{t.title}</h1>
+              {t.status === 'scheduled' && trainingPhase(t, now) !== 'ended' ? (
+                <InviteLinkButton path={`/training/${t.id}`} what="entrenamiento" />
+              ) : null}
+            </div>
             {t.status === 'cancelled' ? <Alert tone="danger" className="mt-3">{`Cancelado${t.cancel_reason ? `: ${t.cancel_reason}` : '.'}`}</Alert> : null}
 
             <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">

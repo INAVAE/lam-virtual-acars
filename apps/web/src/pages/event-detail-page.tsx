@@ -56,6 +56,7 @@ import { useTheme } from '@/lib/theme';
 import { useTimePrefs } from '@/lib/time-context';
 import { enrollmentStatusTone, FLIGHT_NUMBER_PATTERN } from '@/lib/tours';
 import { BadgeArt } from '@/components/badge-art';
+import { InviteLinkButton } from '@/components/invite-link';
 import { podiumMetal } from '@/lib/badge-art';
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
@@ -573,7 +574,10 @@ export function EventDetailPage() {
             </p>
             {e.description ? <p className="max-w-3xl whitespace-pre-line pt-1 text-[15px]">{e.description}</p> : null}
           </div>
-          <OwnerActions event={e} />
+          <div className="flex flex-col items-end gap-2">
+            {e.status === 'published' ? <InviteLinkButton path={`/events/${e.id}`} what="evento" /> : null}
+            <OwnerActions event={e} />
+          </div>
         </div>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line px-4 py-3 sm:grid-cols-3 lg:grid-cols-6">
           <Fact label="Ruta">
