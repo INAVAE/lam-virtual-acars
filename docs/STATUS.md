@@ -1,6 +1,12 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-08 (tours: reservar cada leg desde el tour)
+Última actualización: 2026-11-08 (hoja del plan de SimBrief en Live Flights)
+
+## Hoja del plan de SimBrief en Live Flights (2026-11-08)
+
+- El detalle del vuelo en Live Flights muestra, debajo de la ruta, la hoja del plan como SimBrief: **Información del vuelo** (número, callsign, salida, llegada, alterno, aeronave, fecha y horas programadas de salida y llegada, tiempo en el aire y de bloque, matrícula), **Resumen del plan** (altitud inicial, índice de costo, distancia de la ruta, viento medio y componente, desviación ISA, release, AIRAC, unidades, reserva, PDF) y **Hoja de carga** (consumo en ruta, pasajeros, peso vacío, ZFW/TOW/LW estimados y máximos —en rojo si se pasan—, combustible de bloque, equipaje y carga, carga de pago). My Flights usa la misma hoja.
+- «Plan» muestra la distancia de la ruta y el tiempo en el aire de SimBrief con el nivel inicial. En tierra antes de despegar, la distancia es la de toda la ruta del plan (ya no en línea recta) y el tiempo al destino y la llegada salen del plan («según el plan», «programada en el plan»).
+- `simbrief_ofps` suma `route_distance_nm`, `aircraft_name`, `sched_out_at`, `sched_in_at`, `cost_index`, `avg_wind_dir`, `avg_wind_kt`, `avg_wind_comp`, `avg_isa_dev`, `airac`, `release_number`, `payload`, `oew`, `max_zfw`, `max_tow`, `max_ldw`; la Edge Function `simbrief-ofp` los llena (minutos truncados como SimBrief). `get_live_flight_route` entrega `plan`. Los planes importados antes no traen esos campos (aparecen como «—»). Migración `simbrief_plan_sheet`. Captura 74.
 
 ## Tours: reservar cada leg desde el tour (2026-11-08)
 

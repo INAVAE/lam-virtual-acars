@@ -133,7 +133,7 @@ erDiagram
 | `pilot_type_ratings` | Tipos que cada piloto puede volar en cada aerolínea; quién y cuándo la otorgó |
 | `flight_bookings` | Reserva: piloto, ruta, aeronave, estado (activa, volada, cancelada, vencida) y vencimiento |
 | `flights` | Operación: copia de la ruta (número, origen, destino, distancia, duración, salida programada), aeronave y matrícula, callsign del piloto, red y RMK. Estados: reservado, en vuelo, completado, cancelado |
-| `simbrief_ofps` | Último OFP de SimBrief del vuelo (ruta, nivel, combustibles, pesos, PDF) y las diferencias con la reserva |
+| `simbrief_ofps` | Último OFP de SimBrief del vuelo (ruta y puntos, nivel, distancias, horas programadas, viento medio, ISA, AIRAC, combustibles, pesos estimados y máximos, carga de pago, PDF) y las diferencias con la reserva |
 
 Por qué reserva y vuelo son tablas distintas: la reserva controla el apartado de la aeronave y su vencimiento; el vuelo es el registro operacional que usarán el ACARS (Fase 4) y el PIREP (Fase 5) y no cambia si la ruta se edita o se borra.
 

@@ -2337,6 +2337,22 @@ export type Database = {
       simbrief_ofps: {
         Row: {
           air_distance_nm: number | null
+          route_distance_nm: number | null
+          aircraft_name: string | null
+          sched_out_at: string | null
+          sched_in_at: string | null
+          cost_index: string | null
+          avg_wind_dir: number | null
+          avg_wind_kt: number | null
+          avg_wind_comp: number | null
+          avg_isa_dev: number | null
+          airac: string | null
+          release_number: number | null
+          payload: number | null
+          oew: number | null
+          max_zfw: number | null
+          max_tow: number | null
+          max_ldw: number | null
           aircraft_icao: string | null
           airline_icao: string | null
           airline_id: string
@@ -2371,6 +2387,22 @@ export type Database = {
         }
         Insert: {
           air_distance_nm?: number | null
+          route_distance_nm?: number | null
+          aircraft_name?: string | null
+          sched_out_at?: string | null
+          sched_in_at?: string | null
+          cost_index?: string | null
+          avg_wind_dir?: number | null
+          avg_wind_kt?: number | null
+          avg_wind_comp?: number | null
+          avg_isa_dev?: number | null
+          airac?: string | null
+          release_number?: number | null
+          payload?: number | null
+          oew?: number | null
+          max_zfw?: number | null
+          max_tow?: number | null
+          max_ldw?: number | null
           aircraft_icao?: string | null
           airline_icao?: string | null
           airline_id: string
@@ -2405,6 +2437,22 @@ export type Database = {
         }
         Update: {
           air_distance_nm?: number | null
+          route_distance_nm?: number | null
+          aircraft_name?: string | null
+          sched_out_at?: string | null
+          sched_in_at?: string | null
+          cost_index?: string | null
+          avg_wind_dir?: number | null
+          avg_wind_kt?: number | null
+          avg_wind_comp?: number | null
+          avg_isa_dev?: number | null
+          airac?: string | null
+          release_number?: number | null
+          payload?: number | null
+          oew?: number | null
+          max_zfw?: number | null
+          max_tow?: number | null
+          max_ldw?: number | null
           aircraft_icao?: string | null
           airline_icao?: string | null
           airline_id?: string

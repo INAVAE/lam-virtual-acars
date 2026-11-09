@@ -222,6 +222,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Elegir un vuelo', 'Al pulsarlo se dibuja su trayectoria por fases y la ruta que le falta, y su etiqueta se resalta con el color de la fase. Puedes elegir hasta 10 y la selección queda en el enlace de la página.'],
       ['Capas', 'Bajo el mapa se encienden y apagan: Etiquetas, Ruta del plan, Radar de precipitación, METAR de origen y destino y Control IVAO. La elección se recuerda en ese navegador.'],
       ['Ruta del plan', 'Los puntos del plan de SimBrief con su nombre, en línea punteada, y la ruta completa en texto en el detalle del vuelo. Aparece si el plan se importó en My Flights.'],
+      ['Plan de SimBrief', 'En Live Flights, el detalle de un vuelo muestra la ruta y la hoja del plan de SimBrief: información del vuelo (alterno, horas de salida y llegada, tiempo en el aire y de bloque, matrícula), resumen del plan (altitud inicial, índice de costo, distancia de la ruta, viento medio y su componente, desviación ISA, AIRAC) y hoja de carga (consumo, pasajeros, pesos estimados y máximos, combustible de bloque, carga de pago). Antes de despegar, la distancia, el tiempo al destino y la llegada salen del plan. Los datos nuevos aparecen en los planes importados desde el 8 de noviembre de 2026.'],
       ['Control IVAO', 'Las posiciones de control conectadas: autorizaciones, superficie y torre en el aeropuerto, aproximación y salidas en círculo, centro de control sombreando su región. Al pulsar una estación ves su frecuencia, el tiempo en línea y el ATIS.'],
     ],
     note: 'Los datos de IVAO se actualizan cada 30 a 60 segundos y solo muestran información pública de la posición, nunca datos personales del controlador. Las regiones son aproximadas.',
@@ -482,6 +483,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-08', 'Live Flights y My Flights: hoja completa del plan de SimBrief (información del vuelo, resumen del plan y hoja de carga); antes de despegar, distancia, tiempo y llegada salen del plan.'],
   ['2026-11-08', 'Tours: botón «Reservar leg» en cada leg. Solo el vuelo reservado desde el tour cuenta para el tour; Flight Booking avisa cuando una ruta es un leg que te falta.'],
   ['2026-11-08', 'Tours: el superadministrador y el administrador de la aerolínea los modifican por completo aunque estén publicados, cerrados o con pilotos con avance; el avance se conserva.'],
   ['2026-11-07', 'Idioma de lectura: español o inglés desde la barra superior (y en las pantallas de entrada).'],

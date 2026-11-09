@@ -148,8 +148,24 @@ export function routeProgress(
  * El vuelo con distancia restante y total por la ruta del plan, si la hay; así el
  * avance, el tiempo al destino y la llegada estimada salen de la ruta real.
  */
+/** Fases en tierra antes de despegar: aún falta toda la ruta. */
+export const BEFORE_TAKEOFF_PHASES: ReadonlySet<string> = new Set(['aircraft_connected', 'preflight', 'engines_started', 'pushback', 'taxi_out']);
+
+/** Largo total de la ruta del plan, o null sin ruta. */
+export function routeLengthNm(fixes: readonly RoutePoint[] | null | undefined): number | null {
+  if (!fixes || fixes.length < 2) return null;
+  let total = 0;
+  for (let i = 1; i < fixes.length; i++) total += angularDistance(fixes[i - 1]!.lat, fixes[i - 1]!.lon, fixes[i]!.lat, fixes[i]!.lon) * EARTH_NM;
+  return total;
+}
+
 export function withRouteProgress(f: LiveFlight, fixes: readonly RoutePoint[] | null | undefined): LiveFlight & { route_based?: boolean } {
   const p = f.position;
+  if (p?.on_ground && BEFORE_TAKEOFF_PHASES.has(f.phase)) {
+    // En tierra antes de despegar: falta toda la ruta del plan.
+    const total = routeLengthNm(fixes);
+    return total === null ? f : { ...f, remaining_nm: Math.round(total), route_nm: Math.round(total), route_based: true };
+  }
   if (!p || p.on_ground) return f;
   const progress = routeProgress(fixes, p.latitude, p.longitude, p.heading_deg);
   if (!progress) return f;

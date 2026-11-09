@@ -570,6 +570,14 @@ const LIVE_ROUTES = {
       { ident: 'ULUSO', type: 'wpt', lat: 20.12, lon: -101.9, via: 'UJ18', sid_star: false },
       { ident: 'GDL', type: 'vor', lat: 20.53, lon: -103.3, via: 'STAR', sid_star: true },
     ],
+    plan: {
+      generated_at: minsAgo(70), fetched_at: minsAgo(65), airline_icao: 'MXL', flight_number: '106', atc_callsign: 'MXL106',
+      origin_icao: 'MMMX', destination_icao: 'MMGL', alternate_icao: 'MMPR', aircraft_icao: 'B738', aircraft_name: 'B737-800', registration: 'XA-MXA',
+      sched_out_at: minsAgo(40), sched_in_at: minsAgo(-35), est_enroute_minutes: 58, est_block_minutes: 77, cruise_altitude_ft: 34000, cost_index: '30',
+      route_distance_nm: 268, air_distance_nm: 281, avg_wind_dir: 250, avg_wind_kt: 43, avg_wind_comp: -9, avg_isa_dev: 11, airac: '2611', release_number: 1,
+      fuel_units: 'kg', block_fuel: '6444.0', trip_fuel: '2158.0', reserve_fuel: '1650.0', zfw: '57122.0', tow: '63339.0', ldw: '61181.0', pax_count: 148,
+      cargo: '3692.0', payload: '17732.0', oew: '41145.0', max_zfw: '62731.0', max_tow: '79015.0', max_ldw: '66360.0', pdf_url: 'https://www.simbrief.com/ofp/flightplans/MMMXMMGL_PDF.pdf',
+    },
   },
 };
 
@@ -1597,6 +1605,15 @@ await shoot('31-live-flights', `live?flights=${id(1501)},${id(1500)}`, {
   action: async (page) => {
     await page.getByRole('region', { name: /Detalle del vuelo MXL106/ }).waitFor();
     await page.waitForTimeout(2500);
+  },
+});
+await shoot('74-live-flight-plan', `live?flights=${id(1500)}`, {
+  waitFor: 'Vuelos en vivo',
+  fullPage: true,
+  action: async (page) => {
+    await page.getByRole('region', { name: /Detalle del vuelo MXL106/ }).getByText('Hoja de carga').waitFor();
+    await page.getByText('Hoja de carga').scrollIntoViewIfNeeded();
+    await page.waitForTimeout(800);
   },
 });
 await shoot('49-live-layers', `live?flights=${id(1500)}`, {

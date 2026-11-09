@@ -14,7 +14,9 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLiveFlights, useLiveTraces } from '@/hooks/use-live-flights';
+import { FlightPlanSheetView } from '@/components/flight-plan-sheet';
 import { useFirData, useFlightRoutes, useIvaoAtc, useRadarFrame } from '@/hooks/use-map-layers';
+import { planDistanceNm, type FlightPlanSheet } from '@/lib/flight-plan';
 import { useNow } from '@/hooks/use-now';
 import { useWeather } from '@/hooks/use-weather';
 import { aircraftSvg, MAP_CATEGORY_LABELS, mapCategory } from '@/lib/aircraft-icons';
@@ -38,6 +40,7 @@ import { formatNumber, formatPilotNumber } from '@/lib/format';
 import {
   ageSeconds,
   alertText,
+  BEFORE_TAKEOFF_PHASES,
   eteMinutes,
   flightProgress,
   withRouteProgress,
@@ -362,19 +365,21 @@ function Datum({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** Ruta del plan de SimBrief importado en My Flights (texto de la ruta, como en el OFP). */
-function FlightPlanRoute({ flightId }: { flightId: string }) {
-  const query = useFlightRoutes([flightId], true)[0];
-  const route = query?.data?.route?.trim();
-  if (query?.isPending) return null;
+/** Ruta y hoja del plan de SimBrief importado en My Flights. */
+function FlightPlanSection({ route, plan, pending }: { route: string | null | undefined; plan: FlightPlanSheet | null | undefined; pending: boolean }) {
+  if (pending) return null;
+  const text = route?.trim();
   return (
-    <div className="mt-4 border-t border-line pt-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted">Ruta del plan (SimBrief)</p>
-      {route ? (
-        <p className="mt-1 break-words font-mono text-sm leading-relaxed">{route}</p>
-      ) : (
-        <p className="mt-1 text-sm text-muted">Sin plan de SimBrief importado.</p>
-      )}
+    <div className="mt-4 space-y-3 border-t border-line pt-3">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted">Ruta del plan (SimBrief)</p>
+        {text ? (
+          <p className="mt-1 break-words font-mono text-sm leading-relaxed">{text}</p>
+        ) : (
+          <p className="mt-1 text-sm text-muted">Sin plan de SimBrief importado.</p>
+        )}
+      </div>
+      {plan ? <FlightPlanSheetView plan={plan} /> : null}
     </div>
   );
 }
@@ -387,6 +392,12 @@ function FlightDetail({ flight, now, follow, onFollow }: { flight: LiveFlight; n
   const elapsed = Math.round((now - Date.parse(flight.started_at)) / 60_000);
   const contact = ageSeconds(flight.last_contact_at, now);
   const wind = p ? windComponents(p.wind_dir_deg, p.wind_kt, p.heading_deg) : null;
+  const planQuery = useFlightRoutes([flight.flight_id], true)[0];
+  const plan = planQuery?.data?.plan ?? null;
+  const planNm = plan ? planDistanceNm(plan) : null;
+  // Antes de despegar, el tiempo y la llegada salen del plan de SimBrief.
+  const planEte = ete === null && plan && BEFORE_TAKEOFF_PHASES.has(flight.phase) ? plan.est_enroute_minutes : null;
+  const planEta = eta === null && plan && BEFORE_TAKEOFF_PHASES.has(flight.phase) && plan.sched_in_at ? Date.parse(plan.sched_in_at) : null;
   return (
     <section aria-label={`Detalle del vuelo ${flight.callsign}`} className="rounded-lg border border-line bg-surface p-4">
       <header className="flex flex-wrap items-start gap-3">
@@ -444,12 +455,22 @@ function FlightDetail({ flight, now, follow, onFollow }: { flight: LiveFlight; n
           {wind ? <span className="block font-sans text-xs text-muted">{formatWindComponents(wind)}</span> : null}
         </Datum>
         <Datum label="En curso">{formatMinutes(elapsed)}</Datum>
-        <Datum label="Tiempo al destino">{ete !== null ? formatMinutes(ete) : '—'}</Datum>
-        <Datum label="Llegada estimada">
-          {eta !== null ? (
+        <Datum label="Tiempo al destino">
+          {ete !== null ? formatMinutes(ete) : planEte !== null ? (
             <>
-              {dual(eta).primary}
-              {dual(eta).secondary ? <span className="block text-xs text-muted">{dual(eta).secondary}</span> : null}
+              {formatMinutes(planEte)}
+              <span className="block font-sans text-xs text-muted">según el plan</span>
+            </>
+          ) : (
+            '—'
+          )}
+        </Datum>
+        <Datum label="Llegada estimada">
+          {eta !== null || planEta !== null ? (
+            <>
+              {dual((eta ?? planEta)!).primary}
+              {dual((eta ?? planEta)!).secondary ? <span className="block text-xs text-muted">{dual((eta ?? planEta)!).secondary}</span> : null}
+              {eta === null ? <span className="block font-sans text-xs text-muted">programada en el plan</span> : null}
             </>
           ) : (
             '—'
@@ -459,12 +480,21 @@ function FlightDetail({ flight, now, follow, onFollow }: { flight: LiveFlight; n
           {flight.aircraft_type} · {flight.aircraft_registration}
           <span className="block font-sans text-xs text-muted">{MAP_CATEGORY_LABELS[mapCategory(flight.map_category)]}</span>
         </Datum>
-        <Datum label="Plan">{`${formatNumber(flight.planned_distance_nm)} NM · ${formatMinutes(flight.planned_minutes)}`}</Datum>
+        <Datum label="Plan">
+          {plan && planNm !== null && plan.est_enroute_minutes !== null ? (
+            <>
+              {`${formatNumber(planNm)} NM · ${formatMinutes(plan.est_enroute_minutes)}`}
+              <span className="block font-sans text-xs text-muted">{plan.cruise_altitude_ft ? `SimBrief · FL${String(Math.round(plan.cruise_altitude_ft / 100)).padStart(3, '0')}` : 'SimBrief'}</span>
+            </>
+          ) : (
+            `${formatNumber(flight.planned_distance_nm)} NM · ${formatMinutes(flight.planned_minutes)}`
+          )}
+        </Datum>
         <Datum label="Última señal">
           <span className={contact >= STALE_SECONDS ? 'text-warn-ink' : undefined}>{formatAge(contact)}</span>
         </Datum>
       </dl>
-      <FlightPlanRoute flightId={flight.flight_id} />
+      <FlightPlanSection route={planQuery?.data?.route} plan={plan} pending={planQuery?.isPending ?? true} />
       {flight.sim_aircraft_title ? <p className="mt-3 text-xs text-muted">Simulador: {flight.sim_aircraft_title}</p> : null}
 
       {flight.alerts && flight.alerts.length > 0 ? (

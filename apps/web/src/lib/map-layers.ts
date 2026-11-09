@@ -3,6 +3,8 @@
  * radar de precipitación. Funciones puras (sin Leaflet) para poder probarlas.
  */
 
+import type { FlightPlanSheet } from './flight-plan';
+
 // -----------------------------------------------------------------------------
 // Ruta del plan (navlog de SimBrief)
 // -----------------------------------------------------------------------------
@@ -18,6 +20,8 @@ export interface RouteFix {
 export interface FlightRoute {
   fixes: RouteFix[];
   route: string | null;
+  /** Hoja del plan de SimBrief importado (null sin plan). */
+  plan: FlightPlanSheet | null;
 }
 
 /** Puntos válidos, sin repetir el mismo punto seguido (SimBrief repite el aeropuerto en SID/STAR). */

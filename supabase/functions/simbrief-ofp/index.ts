@@ -74,9 +74,21 @@ function round1(value: unknown): number | null {
   return n === null ? null : Math.round(n * 10) / 10;
 }
 
+/** Minutos completos, como los muestra SimBrief (4,230 s = 1:10). */
 function minutes(seconds: unknown): number | null {
   const n = num(seconds, 0, 7 * 24 * 3600);
-  return n === null ? null : Math.round(n / 60);
+  return n === null ? null : Math.floor(n / 60);
+}
+
+/** Hora programada (segundos Unix) a ISO. */
+function epoch(seconds: unknown): string | null {
+  const n = int(seconds, 946684800, 4102444800);
+  return n === null ? null : new Date(n * 1000).toISOString();
+}
+
+/** Entero con signo (componente de viento, desviación ISA). */
+function signed(value: unknown, limit: number): number | null {
+  return int(value, -limit, limit);
 }
 
 /** Mensaje de error de SimBrief (llega como XML aunque se pida JSON). */
@@ -156,6 +168,22 @@ function toRow(flightId: string, ofp: Obj) {
     route: text(general.route, 4000),
     cruise_altitude_ft: int(general.initial_altitude, 0, 70000),
     air_distance_nm: int(general.air_distance ?? general.route_distance, 0),
+    route_distance_nm: int(general.route_distance, 0),
+    aircraft_name: text(aircraft.name, 40),
+    sched_out_at: epoch(times.sched_out),
+    sched_in_at: epoch(times.sched_in),
+    cost_index: text(general.costindex ?? general.cost_index, 8),
+    avg_wind_dir: int(general.avg_wind_dir, 0, 360),
+    avg_wind_kt: int(general.avg_wind_spd, 0, 400),
+    avg_wind_comp: signed(general.avg_wind_comp, 400),
+    avg_isa_dev: signed(general.avg_temp_dev, 90),
+    airac: text(params.airac, 8),
+    release_number: int(general.release, 0, 9999),
+    payload: round1(weights.payload),
+    oew: round1(weights.oew),
+    max_zfw: round1(weights.max_zfw),
+    max_tow: round1(weights.max_tow),
+    max_ldw: round1(weights.max_ldw),
     est_enroute_minutes: minutes(times.est_time_enroute),
     est_block_minutes: minutes(times.est_block),
     fuel_units: units,

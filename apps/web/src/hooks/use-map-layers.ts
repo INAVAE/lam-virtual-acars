@@ -1,5 +1,6 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { cleanFixes, latestRadarFrame, type FirIndex, type FlightRoute, type IvaoAtcResponse, type RadarFrame } from '@/lib/map-layers';
+import { parseFlightPlan } from '@/lib/flight-plan';
 import { getSupabase } from '@/lib/supabase';
 
 /** Puntos del plan de SimBrief de los vuelos elegidos en el mapa. */
@@ -12,8 +13,8 @@ export function useFlightRoutes(flightIds: readonly string[], enabled: boolean) 
       queryFn: async (): Promise<FlightRoute> => {
         const { data, error } = await getSupabase().rpc('get_live_flight_route', { p_flight_id: id });
         if (error) throw error;
-        const v = (data ?? {}) as { fixes?: unknown; route?: unknown };
-        return { fixes: cleanFixes(v.fixes), route: typeof v.route === 'string' ? v.route : null };
+        const v = (data ?? {}) as { fixes?: unknown; route?: unknown; plan?: unknown };
+        return { fixes: cleanFixes(v.fixes), route: typeof v.route === 'string' ? v.route : null, plan: parseFlightPlan(v.plan) };
       },
     })),
   });

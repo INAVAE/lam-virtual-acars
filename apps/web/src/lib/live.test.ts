@@ -1,6 +1,6 @@
 import type { LivePosition } from '@lam/shared-types';
 import { describe, expect, it } from 'vitest';
-import { ageSeconds, alertText, eteMinutes, extrapolate, flightProgress, formatAge, greatCirclePoints, mergeTrace, parseSelection, routeProgress, toggleSelection, worstAlert, type CompactTracePoint } from './live';
+import { ageSeconds, alertText, eteMinutes, extrapolate, flightProgress, formatAge, greatCirclePoints, mergeTrace, parseSelection, routeLengthNm, routeProgress, toggleSelection, worstAlert, type CompactTracePoint } from './live';
 
 const T = Date.parse('2026-11-01T12:00:00Z');
 const pos = (extra: Partial<LivePosition> = {}): LivePosition => ({
@@ -121,5 +121,8 @@ describe('traza y selección en el mapa en vivo', () => {
     // Sin ruta o lejos de ella: no hay dato y se usa la línea recta.
     expect(routeProgress([], 11, -66, 270)).toBeNull();
     expect(routeProgress(fixes, 20, -66, 270)).toBeNull();
+    // En tierra antes de despegar falta toda la ruta.
+    expect(Math.round(routeLengthNm(fixes)!)).toBe(Math.round(total));
+    expect(routeLengthNm([fixes[0]!])).toBeNull();
   });
 });

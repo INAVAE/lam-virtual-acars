@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { AirlineLogo } from '@/components/airline-logo';
 import { ConfirmButton } from '@/components/confirm-button';
+import { FlightPlanSheetView } from '@/components/flight-plan-sheet';
 import { WeatherStrip } from '@/components/weather';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ import {
   simbriefDispatchUrl,
 } from '@/lib/booking';
 import { describeError } from '@/lib/errors';
+import { parseFlightPlan } from '@/lib/flight-plan';
 import { formatLocalDateTime, formatNumber, operationTypeLabel } from '@/lib/format';
 import { phaseLabel } from '@/lib/phases';
 import { DualTimeText } from '@/lib/time-context';
@@ -46,15 +48,11 @@ function Fact({ label, children, mono = false }: { label: string; children: Reac
   );
 }
 
-function fuel(value: number | null, units: string | null): string {
-  if (value === null) return '—';
-  return `${formatNumber(Math.round(value))} ${units === 'lb' ? 'lb' : 'kg'}`;
-}
-
 // -----------------------------------------------------------------------------
 // Plan de SimBrief
 // -----------------------------------------------------------------------------
 export function OfpSummary({ ofp }: { ofp: Ofp }) {
+  const plan = parseFlightPlan(ofp);
   const mismatches = parseMismatches(ofp.mismatches);
   const high = mismatches.filter((m) => m.severity === 'high');
   const low = mismatches.filter((m) => m.severity === 'low');
@@ -89,28 +87,8 @@ export function OfpSummary({ ofp }: { ofp: Ofp }) {
       ) : null}
       {mismatches.length === 0 ? <Alert tone="ok">El plan de SimBrief coincide con la reserva.</Alert> : null}
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
-        <Fact label="Nivel inicial" mono>
-          {ofp.cruise_altitude_ft ? `FL${String(Math.round(ofp.cruise_altitude_ft / 100)).padStart(3, '0')}` : '—'}
-        </Fact>
-        <Fact label="Tiempo en ruta">{ofp.est_enroute_minutes !== null ? formatDuration(ofp.est_enroute_minutes) : '—'}</Fact>
-        <Fact label="Combustible de bloque" mono>
-          {fuel(ofp.block_fuel, ofp.fuel_units)}
-        </Fact>
-        <Fact label="Alterno" mono>
-          {ofp.alternate_icao ?? '—'}
-        </Fact>
-        <Fact label="ZFW" mono>
-          {fuel(ofp.zfw, ofp.fuel_units)}
-        </Fact>
-        <Fact label="TOW" mono>
-          {fuel(ofp.tow, ofp.fuel_units)}
-        </Fact>
-        <Fact label="Pasajeros" mono>
-          {ofp.pax_count ?? '—'}
-        </Fact>
-        <Fact label="Importado">{formatLocalDateTime(ofp.fetched_at)}</Fact>
-      </dl>
+      {plan ? <FlightPlanSheetView plan={plan} /> : null}
+      <p className="text-xs text-muted">{`Importado ${formatLocalDateTime(ofp.fetched_at)}`}</p>
       {ofp.route ? (
         <div>
           <p className="text-xs uppercase tracking-wide text-muted">Ruta</p>

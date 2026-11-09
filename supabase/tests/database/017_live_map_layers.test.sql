@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(15);
+select plan(17);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000f201', 'p@capas.test', '{"display_name":"Piloto Capas"}'),
@@ -53,6 +53,13 @@ select results_eq(
   'El piloto ve los puntos del plan de su vuelo'
 );
 select is(get_live_flight_route((select flight2 from t)) -> 'fixes', '[]'::jsonb, 'Sin plan importado, la lista de puntos va vacía');
+select results_eq(
+  $$select r -> 'plan' ->> 'origin_icao', r -> 'plan' ? 'navlog', r -> 'plan' ? 'user_id', r -> 'plan' ? 'avg_wind_comp'
+      from (select get_live_flight_route((select flight from t)) r) x$$,
+  $$values ('MMMX'::text, false, false, true)$$,
+  'La hoja del plan llega sin los puntos ni datos internos'
+);
+select is(get_live_flight_route((select flight2 from t)) -> 'plan', 'null'::jsonb, 'Sin plan importado no hay hoja');
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000f202"}';
 select throws_ok($$select get_live_flight_route((select flight from t))$$, '42501', null, 'Quien no es de la aerolínea no ve la ruta');
 reset role;
