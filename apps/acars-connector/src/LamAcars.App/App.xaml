@@ -18,6 +18,18 @@
       <Setter Property="FontSize" Value="13" />
     </Style>
 
+    <!-- Las ayudas emergentes usan los colores del conector: con el fondo blanco de
+         Windows el texto claro de la aplicación no se leía. -->
+    <Style TargetType="ToolTip">
+      <Setter Property="Background" Value="{StaticResource Surface}" />
+      <Setter Property="Foreground" Value="{StaticResource Ink}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Line}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="8,5" />
+      <Setter Property="FontFamily" Value="Segoe UI" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+
     <Style x:Key="Primary" TargetType="Button">
       <Setter Property="Background" Value="{StaticResource Accent}" />
       <Setter Property="Foreground" Value="White" />
