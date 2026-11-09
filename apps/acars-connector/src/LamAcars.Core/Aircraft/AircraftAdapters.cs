@@ -256,15 +256,14 @@ public sealed class FenixAdapter : GenericAdapter
     /// Flaps por la palanca del Fenix (0–4). Los grados son los de la superficie si el
     /// simulador los informa; si no, los del retén. Con la palanca en 1: «1+F» en tierra
     /// o con flaps extendidos, «1» en vuelo sin flaps (se retraen solos a 210 kt).
-    /// Si la variable del Fenix no se mueve, quedan las estándar.
+    /// Manda la palanca: las variables estándar del índice siguen con retraso
+    /// (unos 9 s en un vuelo de prueba) y anotarían un retén intermedio falso.
     /// </summary>
     internal static SimSample MapFlaps(IReadOnlyDictionary<string, double> values, SimSample sample)
     {
         if (!values.TryGetValue(FlapsLever, out var raw) || !double.IsFinite(raw)) return sample;
         var detent = (int)Math.Round(raw);
         if (detent is < 0 or > 4) return sample;
-        // Palanca del Fenix en 0 pero las estándar marcan flaps: se confía en las estándar.
-        if (detent == 0 && sample.FlapsRatio is > 0.05) return sample;
         var surface = sample.FlapsDeg is > 0.5 ? sample.FlapsDeg : null;
         var name = FlapDetentNames[detent];
         if (detent == 1 && surface is null && !sample.OnGround) name = "1";

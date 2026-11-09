@@ -237,6 +237,20 @@ public class FenixFlapsTests
     }
 
     [Fact]
+    public void Manda_la_palanca_aunque_las_estandar_sigan_con_retraso()
+    {
+        // Vuelo real: palanca a 0 a las 22:38:37 con FLAPS HANDLE INDEX aún en 1 y la superficie en 10°.
+        var values = new Dictionary<string, double>
+        {
+            ["SIM ON GROUND"] = 0, [FenixAdapter.FlapsLever] = 0, ["FLAPS HANDLE PERCENT"] = 0.2,
+            ["FLAPS HANDLE INDEX"] = 1, ["TRAILING EDGE FLAPS LEFT ANGLE"] = 5,
+        };
+        var s = new FenixAdapter().Map(values, T, false);
+        Assert.Equal("0", s.FlapsLabel);
+        Assert.Equal(5, s.FlapsDeg);
+    }
+
+    [Fact]
     public void El_registrador_anota_cada_cambio_de_flaps()
     {
         var sink = new ListSink();
