@@ -3,7 +3,7 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
-    "Conector 0.1.32: la APU del Fenix A320 se detecta por su panel (MASTER SW y luz AVAIL).": "Connector 0.1.32: the Fenix A320 APU is detected from its panel (MASTER SW and AVAIL light).",
+    "Conector 0.1.34: la APU del Fenix A320 se detecta por su panel (MASTER SW y luz AVAIL).": "Connector 0.1.34: the Fenix A320 APU is detected from its panel (MASTER SW and AVAIL light).",
     "Información del vuelo": "Flight info",
     "Callsign": "Callsign",
     "Fecha de salida": "Departure date",

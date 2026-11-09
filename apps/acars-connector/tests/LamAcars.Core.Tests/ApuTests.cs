@@ -97,7 +97,7 @@ public class ApuTests
 
     [Theory]
     [InlineData(1, 1, true)]    // MASTER SW en ON y AVAIL: en marcha
-    [InlineData(1, 0, false)]   // arrancando: aún sin AVAIL
+    [InlineData(1, 0, false)]   // arrancando: solo la luz ON, aún sin AVAIL
     [InlineData(0, 1, false)]   // prueba de luces con la APU apagada
     [InlineData(0, 0, false)]
     public void Fenix_APU_por_master_y_AVAIL(double master, double avail, bool running)
@@ -110,6 +110,20 @@ public class ApuTests
             [FenixAdapter.ApuAvailLight] = avail,
         };
         Assert.Equal(running, new FenixAdapter().Map(values, Samples.T0, false).ApuRunning);
+    }
+
+    [Fact]
+    public void Fenix_arrancando_con_luz_ON_no_cuenta_como_en_marcha()
+    {
+        var values = new Dictionary<string, double>
+        {
+            ["SIM ON GROUND"] = 1,
+            [FenixAdapter.ApuMaster] = 1,
+            [FenixAdapter.ApuStartOnLight] = 1,
+            [FenixAdapter.ApuAvailLight] = 0,
+        };
+        Assert.False(new FenixAdapter().Map(values, Samples.T0, false).ApuRunning);
+        Assert.Equal("L:I_OH_ELEC_APU_START_U", FenixAdapter.ApuAvailLight);
     }
 
     [Fact]

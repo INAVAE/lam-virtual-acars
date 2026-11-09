@@ -183,7 +183,7 @@ public class GenericAdapter : IAircraftAdapter
 ///
 /// La APU del Fenix es un sistema propio: «APU PCT RPM» y el generador estándar
 /// no la siguen. Se toma del panel: interruptor APU MASTER SW en ON y la luz
-/// AVAIL (mitad de abajo) del botón START encendida (la APU llegó al 95 % y entrega aire y
+/// AVAIL del botón START encendida (la APU llegó al 95 % y entrega aire y
 /// energía). Al poner MASTER SW en OFF la luz se apaga y la APU cuenta como apagada.
 /// </summary>
 public sealed class FenixAdapter : GenericAdapter
@@ -195,9 +195,12 @@ public sealed class FenixAdapter : GenericAdapter
     /// <summary>MASTER SW: arriba «FAULT», abajo «ON».</summary>
     public const string ApuMasterFaultLight = "L:I_OH_ELEC_APU_MASTER_U";
     public const string ApuMasterOnLight = "L:I_OH_ELEC_APU_MASTER_L";
-    /// <summary>START: la mitad de arriba es «ON» (arrancando) y la de abajo «AVAIL» (en marcha).</summary>
-    public const string ApuStartOnLight = "L:I_OH_ELEC_APU_START_U";
-    public const string ApuAvailLight = "L:I_OH_ELEC_APU_START_L";
+    /// <summary>
+    /// START: en el Fenix, _L es «ON» (azul, arrancando) y _U es «AVAIL» (verde, en marcha).
+    /// Confirmado en vuelo: al pulsar START, _L = 1; al llegar a AVAIL, _U = 1 y _L = 0.
+    /// </summary>
+    public const string ApuStartOnLight = "L:I_OH_ELEC_APU_START_L";
+    public const string ApuAvailLight = "L:I_OH_ELEC_APU_START_U";
     public const string ApuBleed = "L:S_OH_PNEUMATIC_APU_BLEED";
 
     private static readonly SimVar[] Extra =

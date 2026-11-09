@@ -7,7 +7,7 @@ Código: `apps/acars-connector/src/LamAcars.Core/Aircraft/`.
 
 | Adaptador | Coincide con | Además de las variables estándar |
 | --- | --- | --- |
-| Fenix A32x | título o ATC TYPE con "Fenix" | L:S_MIP_PARKING_BRAKE y L:B_CONFIG_CHOCKS (con calzos, el avión cuenta como asegurado). APU por el panel: L:S_OH_ELEC_APU_MASTER en ON y la luz AVAIL L:I_OH_ELEC_APU_START_L (mitad de abajo del botón START; la de arriba, _U, es «ON»). Nombres confirmados en el inspector de Behaviors del Fenix; las variables estándar de la APU no siguen a la del Fenix (desde 0.1.32). |
+| Fenix A32x | título o ATC TYPE con "Fenix" | L:S_MIP_PARKING_BRAKE y L:B_CONFIG_CHOCKS (con calzos, el avión cuenta como asegurado). APU por el panel: L:S_OH_ELEC_APU_MASTER en ON y la luz AVAIL L:I_OH_ELEC_APU_START_U (la luz «ON» de arranque es _L; en el MASTER SW, _L es «ON»). Confirmado en vuelo con la bitácora: al pulsar START, _L = 1; al quedar AVAIL, _U = 1 y _L = 0. Las variables estándar de la APU no siguen a la del Fenix. |
 | PMDG 737 | `737-600/700/800/900`, o "PMDG … 737" (sin MAX) | Bloque `PMDG_NG3_Data`: freno de estacionamiento, palanca del tren, flaps en grados (aguja) y variante exacta. |
 | PMDG 777 | `777-200/300/F`, `77W`, `77L`, o "PMDG … 777" | Bloque `PMDG_777X_Data`: freno, tren, retén de flaps (si falta el ángulo estándar) y variante exacta. |
 | Genérico | cualquier otra | Variables estándar de SimConnect. |
