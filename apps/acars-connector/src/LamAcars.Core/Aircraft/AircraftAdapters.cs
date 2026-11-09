@@ -183,7 +183,7 @@ public class GenericAdapter : IAircraftAdapter
 ///
 /// La APU del Fenix es un sistema propio: «APU PCT RPM» y el generador estándar
 /// no la siguen. Se toma del panel: interruptor APU MASTER SW en ON y la luz
-/// AVAIL del botón START encendida (la APU llegó al 95 % y entrega aire y
+/// AVAIL (mitad de abajo) del botón START encendida (la APU llegó al 95 % y entrega aire y
 /// energía). Al poner MASTER SW en OFF la luz se apaga y la APU cuenta como apagada.
 /// </summary>
 public sealed class FenixAdapter : GenericAdapter
@@ -192,9 +192,12 @@ public sealed class FenixAdapter : GenericAdapter
     public const string Chocks = "L:B_CONFIG_CHOCKS";
     public const string ApuMaster = "L:S_OH_ELEC_APU_MASTER";
     public const string ApuStart = "L:S_OH_ELEC_APU_START";
+    /// <summary>MASTER SW: arriba «FAULT», abajo «ON».</summary>
+    public const string ApuMasterFaultLight = "L:I_OH_ELEC_APU_MASTER_U";
     public const string ApuMasterOnLight = "L:I_OH_ELEC_APU_MASTER_L";
-    public const string ApuAvailLight = "L:I_OH_ELEC_APU_START_U";
-    public const string ApuStartOnLight = "L:I_OH_ELEC_APU_START_L";
+    /// <summary>START: la mitad de arriba es «ON» (arrancando) y la de abajo «AVAIL» (en marcha).</summary>
+    public const string ApuStartOnLight = "L:I_OH_ELEC_APU_START_U";
+    public const string ApuAvailLight = "L:I_OH_ELEC_APU_START_L";
     public const string ApuBleed = "L:S_OH_PNEUMATIC_APU_BLEED";
 
     private static readonly SimVar[] Extra =
@@ -203,6 +206,7 @@ public sealed class FenixAdapter : GenericAdapter
         new(Chocks, "number"),
         new(ApuMaster, "number"),
         new(ApuStart, "number"),
+        new(ApuMasterFaultLight, "number"),
         new(ApuMasterOnLight, "number"),
         new(ApuAvailLight, "number"),
         new(ApuStartOnLight, "number"),
@@ -218,7 +222,7 @@ public sealed class FenixAdapter : GenericAdapter
     public override IReadOnlyList<SimVar> Variables { get; } = new GenericAdapter().Variables.Concat(Extra).ToArray();
 
     public override IReadOnlyList<string> Diagnostics { get; } =
-        new[] { ParkingBrakeLever, Chocks, "BRAKE PARKING POSITION", ApuMaster, ApuStart, ApuMasterOnLight, ApuAvailLight, ApuStartOnLight, ApuBleed }
+        new[] { ParkingBrakeLever, Chocks, "BRAKE PARKING POSITION", ApuMaster, ApuStart, ApuMasterFaultLight, ApuMasterOnLight, ApuStartOnLight, ApuAvailLight, ApuBleed }
             .Concat(ApuDiagnostics).ToArray();
 
     public override SimSample Map(IReadOnlyDictionary<string, double> values, DateTimeOffset time, bool paused)
