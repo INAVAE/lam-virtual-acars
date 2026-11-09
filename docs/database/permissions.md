@@ -144,7 +144,7 @@ Las tablas no tienen permisos directos; todo pasa por funciones `security define
 | Revisar inscripciones (`review_tour_enrollment`) | No | Sí | No | Sí | Sí |
 | Cerrar (`close_tour`) | No | No | No | Sí | Sí |
 
-`private.can_modify_tour` decide quién modifica (la web lo recibe como `can_modify`); `private.can_edit_tour` (creador o administrador) sigue para revisar inscripciones y enviar. Al cambiar los legs, `save_tour` conserva el id de los que siguen (vuelos y PIREP siguen contando), quita los demás (sus vuelos quedan sin leg) y recalcula las inscripciones en curso; las terminadas conservan la insignia. Pruebas: `012_phase7_tours.test.sql`, `026_tour_admin_edit.test.sql`.
+Reservar un leg (`book_tour_leg`) solo lo hace el piloto con su inscripción aprobada; es la única forma de que un vuelo cuente para el tour. `get_my_tour_legs` devuelve solo los legs pendientes de quien llama. `private.can_modify_tour` decide quién modifica (la web lo recibe como `can_modify`); `private.can_edit_tour` (creador o administrador) sigue para revisar inscripciones y enviar. Al cambiar los legs, `save_tour` conserva el id de los que siguen (vuelos y PIREP siguen contando), quita los demás (sus vuelos quedan sin leg) y recalcula las inscripciones en curso; las terminadas conservan la insignia. Pruebas: `012_phase7_tours.test.sql`, `026_tour_admin_edit.test.sql`.
 
 ## Cuentas por invitación
 

@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Pencil, Send, X } from 'lucide-react';
+import { ArrowLeft, Check, Pencil, PlaneTakeoff, Send, X } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -110,7 +110,7 @@ function BookLegDialog({ tour, leg, enrollmentId, airlineId, onClose }: { tour: 
       open
       onClose={onClose}
       title={`Reservar leg ${leg.leg_number}: ${leg.origin.icao} → ${leg.destination.icao}`}
-      description={`${formatNumber(leg.distance_nm)} NM. El PIREP cuenta como un vuelo normal de tu aerolínea y avanza el tour.`}
+      description={`${formatNumber(leg.distance_nm)} NM. Vuelo de tour: este vuelo, y solo este, cuenta para el leg ${leg.leg_number} de ${tour.code}. Su PIREP también suma como vuelo de tu aerolínea.`}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
@@ -261,10 +261,52 @@ function EnrollPanel({ tour }: { tour: TourDetail }) {
   );
 }
 
+function goToEnrollment() {
+  document.getElementById('tour-inscripcion')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/**
+ * Qué muestra la columna «Reservar» de cada leg. Solo un leg reservado aquí
+ * cuenta para el tour; un vuelo normal con la misma ruta no.
+ */
+function LegBookCell({ tour, leg, onBook }: { tour: TourDetail; leg: TourLeg; onBook: (leg: TourLeg) => void }) {
+  const mine = tour.my_enrollment;
+  const timing = tourWindow(tour);
+  if (timing === 'upcoming') return <span className="text-xs text-muted">El tour aún no empieza</span>;
+  if (timing === 'ended') return <span className="text-xs text-muted">El tour ya terminó</span>;
+  if (!mine || mine.status === 'rejected' || mine.status === 'withdrawn') {
+    return (
+      <Button size="sm" variant="secondary" onClick={goToEnrollment} title="Solo los vuelos reservados desde el tour cuentan para el tour">
+        Inscríbete para reservar
+      </Button>
+    );
+  }
+  if (mine.status === 'pending') return <span className="text-xs text-muted">Inscripción pendiente de aprobación</span>;
+  if (mine.status === 'completed') return null;
+  const block = legBlock(tour, tour.my_legs ?? [], leg.leg_number);
+  if (block === null) {
+    return (
+      <Button size="sm" onClick={() => onBook(leg)}>
+        <PlaneTakeoff className="size-4" aria-hidden />
+        {`Reservar leg ${leg.leg_number}`}
+      </Button>
+    );
+  }
+  if (block === 'booked') {
+    return (
+      <Link to="/my-flights" className={buttonClasses('secondary', 'sm')}>
+        Ver en My Flights
+      </Link>
+    );
+  }
+  if (block === 'done') return null;
+  return <span className="text-xs text-muted">{legBlockLabels[block]}</span>;
+}
+
 function LegsTable({ tour, onBook }: { tour: TourDetail; onBook: (leg: TourLeg) => void }) {
   const mine = tour.my_enrollment;
   const myLegs = tour.my_legs ?? [];
-  const canBook = mine?.status === 'approved' && tour.status === 'published' && tourWindow(tour) === 'open';
+  const showBook = tour.status === 'published';
   return (
     <Table minWidth="44rem">
       <thead>
@@ -274,13 +316,12 @@ function LegsTable({ tour, onBook }: { tour: TourDetail; onBook: (leg: TourLeg) 
           <Th className="text-right">Distancia</Th>
           <Th>Notas</Th>
           {mine ? <Th>Mi avance</Th> : null}
-          {canBook ? <Th className="text-right">Acción</Th> : null}
+          {showBook ? <Th className="text-right">Reservar</Th> : null}
         </tr>
       </thead>
       <tbody>
         {tour.legs.map((leg) => {
           const my = myLegs.find((l) => l.leg_id === leg.id);
-          const block = canBook ? legBlock(tour, myLegs, leg.leg_number) : null;
           return (
             <tr key={leg.id}>
               <Td className="font-mono font-semibold">{leg.leg_number}</Td>
@@ -310,19 +351,9 @@ function LegsTable({ tour, onBook }: { tour: TourDetail; onBook: (leg: TourLeg) 
                   )}
                 </Td>
               ) : null}
-              {canBook ? (
+              {showBook ? (
                 <Td className="text-right">
-                  {block === null ? (
-                    <Button size="sm" onClick={() => onBook(leg)}>
-                      Reservar
-                    </Button>
-                  ) : block === 'booked' ? (
-                    <Link to="/my-flights" className={buttonClasses('secondary', 'sm')}>
-                      Ver en My Flights
-                    </Link>
-                  ) : block === 'done' ? null : (
-                    <span className="text-xs text-muted">{legBlockLabels[block]}</span>
-                  )}
+                  <LegBookCell tour={tour} leg={leg} onBook={onBook} />
                 </Td>
               ) : null}
             </tr>
@@ -581,10 +612,15 @@ export function TourDetailPage() {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <TourMap legs={t.legs} color={t.color} states={mine ? states : undefined} theme={theme} height="clamp(300px, 46vh, 460px)" />
-        <EnrollPanel tour={t} />
+        <div id="tour-inscripcion" className="min-w-0">
+          <EnrollPanel tour={t} />
+        </div>
       </div>
 
-      <Panel title="Legs" description={t.ordered_legs ? 'Se vuelan en el orden de la lista.' : 'Se pueden volar en cualquier orden.'}>
+      <Panel
+        title="Legs"
+        description={`${t.ordered_legs ? 'Se vuelan en el orden de la lista.' : 'Se pueden volar en cualquier orden.'} Solo cuenta para el tour el vuelo que reservas con «Reservar leg»; un vuelo normal con la misma ruta no.`}
+      >
         <LegsTable tour={t} onBook={setBooking} />
       </Panel>
 

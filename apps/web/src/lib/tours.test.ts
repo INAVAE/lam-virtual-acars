@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { legBlock, normalizeTourCode, TOUR_CODE_PATTERN, tourProgress, tourWindow, type LegState, type MyLeg } from './tours';
+import { legBlock, matchingTourLegs, normalizeTourCode, TOUR_CODE_PATTERN, tourProgress, tourWindow, type LegState, type MyLeg, type MyTourLeg } from './tours';
 
 const legs = (...states: LegState[]): MyLeg[] =>
   states.map((state, i) => ({ leg_id: `l${i + 1}`, leg_number: i + 1, state, flight_id: null, pirep_id: null, pirep_status: null, attempts: 0 }));
@@ -50,5 +50,21 @@ describe('códigos y vigencia', () => {
     expect(tourWindow({ starts_on: '2026-12-01', ends_on: null }, now)).toBe('upcoming');
     expect(tourWindow({ starts_on: null, ends_on: '2026-11-01' }, now)).toBe('ended');
     expect(tourWindow({ starts_on: '2026-11-10', ends_on: '2026-11-10' }, now)).toBe('open');
+  });
+});
+
+describe('matchingTourLegs', () => {
+  const leg: MyTourLeg = {
+    tour_id: 't1', code: 'AIFA-TOUR', name: 'AIFA', color: '#a855f7', enrollment_id: 'e1', airline_id: 'a1',
+    leg_id: 'l1', leg_number: 3, state: 'open', origin_airport_id: 10, destination_airport_id: 20, origin_icao: 'MMSM', destination_icao: 'MMUN',
+  };
+  it('reconoce la ruta por código OACI o por id de aeropuerto', () => {
+    expect(matchingTourLegs([leg], 'mmsm', 'MMUN')).toHaveLength(1);
+    expect(matchingTourLegs([leg], 10, 20)).toHaveLength(1);
+  });
+  it('el sentido contrario u otra ruta no es el leg', () => {
+    expect(matchingTourLegs([leg], 'MMUN', 'MMSM')).toHaveLength(0);
+    expect(matchingTourLegs([leg], 10, null)).toHaveLength(0);
+    expect(matchingTourLegs(undefined, 10, 20)).toHaveLength(0);
   });
 });

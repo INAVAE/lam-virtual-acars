@@ -3,6 +3,22 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "El tour aún no empieza": "The tour has not started yet",
+    "El tour ya terminó": "The tour already ended",
+    "Inscríbete para reservar": "Enroll to book",
+    "Solo los vuelos reservados desde el tour cuentan para el tour": "Only flights booked from the tour count toward the tour",
+    "Inscripción pendiente de aprobación": "Enrollment pending approval",
+    "Se vuelan en el orden de la lista. Solo cuenta para el tour el vuelo que reservas con «Reservar leg»; un vuelo normal con la misma ruta no.": "They are flown in the order of the list. Only the flight you book with “Book leg” counts toward the tour; a regular flight on the same route does not.",
+    "Se pueden volar en cualquier orden. Solo cuenta para el tour el vuelo que reservas con «Reservar leg»; un vuelo normal con la misma ruta no.": "They can be flown in any order. Only the flight you book with “Book leg” counts toward the tour; a regular flight on the same route does not.",
+    "Esta ruta es un leg de tour.": "This route is a tour leg.",
+    "Reservada aquí es un vuelo normal y no cuenta para el tour. Para que cuente, resérvala desde el tour con «Reservar leg».": "Booked here it is a regular flight and does not count toward the tour. For it to count, book it from the tour with “Book leg”.",
+    "Reservada aquí no cuenta para el tour; resérvala desde el tour": "Booked here it does not count toward the tour; book it from the tour",
+    "Reservar con «Reservar leg»": "Book with “Book leg”",
+    "Tours: botón «Reservar leg» en cada leg. Solo el vuelo reservado desde el tour cuenta para el tour; Flight Booking avisa cuando una ruta es un leg que te falta.": "Tours: “Book leg” button on every leg. Only the flight booked from the tour counts toward the tour; Flight Booking warns when a route is a leg you still need.",
+    "Reservar cada leg": "Book each leg",
+    "En la tabla de legs del tour, cada leg tiene su botón «Reservar leg» mientras estás inscrito y aprobado. Solo ese vuelo cuenta para el tour: un vuelo normal con la misma ruta, reservado desde Flight Booking, es un vuelo de tu aerolínea y no avanza el tour. Flight Booking te avisa cuando una ruta es un leg que te falta.": "In the tour's legs table, each leg has its “Book leg” button while you are enrolled and approved. Only that flight counts toward the tour: a regular flight on the same route, booked from Flight Booking, is an airline flight and does not advance the tour. Flight Booking warns you when a route is a leg you still need.",
+    "Volé la ruta de un leg y no me contó para el tour.": "I flew a leg's route and it didn't count toward the tour.",
+    "Solo cuentan los vuelos reservados desde el tour con «Reservar leg». Un vuelo reservado en Flight Booking con la misma ruta es un vuelo normal de tu aerolínea. Abre el tour y reserva ese leg desde ahí.": "Only flights booked from the tour with “Book leg” count. A flight booked in Flight Booking on the same route is a regular airline flight. Open the tour and book that leg from there.",
     "Solo el superadministrador o el administrador de": "Only the superadmin or the administrator of",
     "modifican este tour. Quien lo propuso lo edita mientras es borrador o fue rechazado.": "can modify this tour. Whoever proposed it can edit it while it is a draft or was rejected.",
     "Este tour ya está en marcha.": "This tour is already under way.",
@@ -2011,6 +2027,11 @@ export const EN: Dictionary = {
     "Callsign, piloto, aeropuerto, evento, tour…": "Callsign, pilot, airport, event, tour…"
   },
   patterns: [
+    ["Reservar leg {0}", "Book leg {0}"],
+    ["Ir al leg {0} de {1}", "Go to leg {0} of {1}"],
+    ["Ya reservado: leg {0} de {1}", "Already booked: leg {0} of {1}"],
+    ["Leg {0} de {1}", "Leg {0} of {1}"],
+    ["{0} NM. Vuelo de tour: este vuelo, y solo este, cuenta para el leg {1} de {2}. Su PIREP también suma como vuelo de tu aerolínea.", "{0} NM. Tour flight: this flight, and only this one, counts for leg {1} of {2}. Its PIREP also counts as a flight of your airline."],
     ["Solo el superadministrador o el administrador de {0} modifican este tour", "Only the superadmin or the administrator of {0} can modify this tour"],
     [
       "(información {0})",
@@ -2363,10 +2384,6 @@ export const EN: Dictionary = {
     [
       "{0} NM por volar de {1} NM{2}",
       "{0} NM remaining of {1} NM{2}"
-    ],
-    [
-      "{0} NM. El PIREP cuenta como un vuelo normal de tu aerolínea y avanza el tour.",
-      "{0} NM. The PIREP counts as a normal flight of your airline and advances the tour."
     ],
     [
       "{0} activos en 30 días",

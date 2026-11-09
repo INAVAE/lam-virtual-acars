@@ -171,6 +171,37 @@ export function legFlown(state: LegState): boolean {
 
 export type LegBlock = 'done' | 'booked' | 'tour_flight_active' | 'out_of_order' | 'previous_unreviewed' | 'too_many_unreviewed' | null;
 
+/** Un leg que le falta al piloto en un tour donde está inscrito (get_my_tour_legs). */
+export interface MyTourLeg {
+  tour_id: string;
+  code: string;
+  name: string;
+  color: string;
+  enrollment_id: string;
+  airline_id: string;
+  leg_id: string;
+  leg_number: number;
+  state: 'open' | 'repeat' | 'booked';
+  origin_airport_id: number;
+  destination_airport_id: number;
+  origin_icao: string;
+  destination_icao: string;
+}
+
+/**
+ * Legs de tour con la misma ruta que un vuelo normal. Origen y destino van por
+ * id de aeropuerto (número) o por código OACI (texto).
+ */
+export function matchingTourLegs(
+  legs: readonly MyTourLeg[] | undefined,
+  origin: number | string | null | undefined,
+  destination: number | string | null | undefined,
+): MyTourLeg[] {
+  if (!legs || !origin || !destination) return [];
+  const same = (a: number | string, id: number, icao: string) => (typeof a === 'number' ? a === id : a.toUpperCase() === icao);
+  return legs.filter((l) => same(origin, l.origin_airport_id, l.origin_icao) && same(destination, l.destination_airport_id, l.destination_icao));
+}
+
 export const legBlockLabels: Record<Exclude<LegBlock, null>, string> = {
   done: 'Ya volado',
   booked: 'Reservado',

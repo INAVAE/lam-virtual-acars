@@ -632,6 +632,13 @@ const TOUR_DETAIL = {
     { enrollment_id: id(1650), user_id: USER_ID, name: PROFILE.display_name, number: 1001, airline_icao: 'MXL', airline_name: MXL.name, status: 'approved', auto_approved: true, created_at: minsAgo(5000), completed_at: null, legs_accepted: 1, legs_flown: 2 },
   ],
 };
+// Legs que le faltan al piloto (Flight Booking avisa que reservados ahí no cuentan para el tour).
+const MY_TOUR_LEGS = [
+  { tour_id: id(1600), code: 'TMX01', name: 'Joyas de México', color: '#a855f7', enrollment_id: id(1650), airline_id: MXL.id, leg_id: id(1702), leg_number: 3, state: 'open',
+    origin_airport_id: tapt('MMTJ').id, destination_airport_id: tapt('MMMY').id, origin_icao: 'MMTJ', destination_icao: 'MMMY' },
+  { tour_id: id(1601), code: 'CARIBE-26', name: 'Caribe en turbohélice', color: '#14b8a6', enrollment_id: id(1651), airline_id: MXL.id, leg_id: id(1711), leg_number: 2, state: 'open',
+    origin_airport_id: tapt('MMMX').id, destination_airport_id: tapt('MMMY').id, origin_icao: 'MMMX', destination_icao: 'MMMY' },
+];
 const BADGES = [{ tour_id: id(1690), code: 'BAJIO-25', name: 'Bajío en un día', color: '#eab308', badge_path: null, airline_icao: 'MXL', awarded_at: minsAgo(20000), legs: 4 }];
 
 // -----------------------------------------------------------------------------
@@ -1125,6 +1132,7 @@ async function handleSupabase(route) {
     get_tours: TOURS,
     get_tour: TOUR_DETAIL,
     get_pilot_badges: BADGES,
+    get_my_tour_legs: MY_TOUR_LEGS,
     get_events: EVENTS_LIST,
     get_event: EVENT_DETAIL,
     get_route_type_usage: ROUTE_TYPE_USAGE,
@@ -1627,6 +1635,14 @@ await shoot('37-tour-detail', `tours/${id(1600)}`, {
   action: async (page) => {
     await page.getByText('Inscripciones por aprobar').waitFor();
     await page.waitForTimeout(1200);
+  },
+});
+await shoot('73-booking-tour-leg', 'booking', {
+  airlineId: MXL.id,
+  waitFor: 'MXL210',
+  action: async (page) => {
+    await page.getByRole('row', { name: /MXL210/ }).getByRole('button', { name: 'Reservar', exact: true }).click();
+    await page.getByRole('dialog').getByText('Esta ruta es un leg de tour.').waitFor();
   },
 });
 await shoot('38-tour-editor', `tours/${id(1600)}/edit`, { waitFor: 'Editar TMX01' });

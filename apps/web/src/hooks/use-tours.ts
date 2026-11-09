@@ -2,7 +2,7 @@ import type { Json } from '@lam/shared-types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
-import type { PilotBadge, TourDetail, TourStatus, TourSummary } from '@/lib/tours';
+import type { MyTourLeg, PilotBadge, TourDetail, TourStatus, TourSummary } from '@/lib/tours';
 
 export function useTours() {
   const { user } = useAuth();
@@ -43,8 +43,27 @@ export function usePilotBadges(userId?: string) {
   });
 }
 
+/**
+ * Legs que le faltan al piloto en los tours donde está inscrito (aprobado, tour
+ * vigente). Flight Booking los usa para avisar que un vuelo normal con esa ruta
+ * no cuenta para el tour.
+ */
+export function useMyTourLegs() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['my-tour-legs', user?.id],
+    enabled: Boolean(user),
+    staleTime: 60_000,
+    queryFn: async (): Promise<MyTourLeg[]> => {
+      const { data, error } = await getSupabase().rpc('get_my_tour_legs');
+      if (error) throw error;
+      return (data ?? []) as unknown as MyTourLeg[];
+    },
+  });
+}
+
 function refreshTours(queryClient: ReturnType<typeof useQueryClient>, extra: string[] = []) {
-  for (const key of ['tours', 'tour', 'pilot-badges', ...extra]) {
+  for (const key of ['tours', 'tour', 'pilot-badges', 'my-tour-legs', ...extra]) {
     void queryClient.invalidateQueries({ queryKey: [key] });
   }
 }

@@ -251,6 +251,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     audience: 'all',
     steps: [
       ['Tours', 'Una serie de legs en orden. Te inscribes, reservas cada leg con la flota de tu aerolínea y al completar todos ganas la insignia, que aparece en tu Dashboard y en Settings.'],
+      ['Reservar cada leg', 'En la tabla de legs del tour, cada leg tiene su botón «Reservar leg» mientras estás inscrito y aprobado. Solo ese vuelo cuenta para el tour: un vuelo normal con la misma ruta, reservado desde Flight Booking, es un vuelo de tu aerolínea y no avanza el tour. Flight Booking te avisa cuando una ruta es un leg que te falta.'],
       ['Si un leg se rechaza', 'Lo vuelves a volar. Los legs se vuelan en orden y hay un máximo en revisión a la vez.'],
       ['Eventos', 'Un vuelo en grupo con fecha y hora (folio EVT-AAAA-NNNN). Te registras, el creador aprueba tu registro y reservas desde 12 horas antes.'],
       ['Ranking', 'Cada evento premia un criterio: mejor puntaje, toma más suave, primero en llegar o mayor distancia.'],
@@ -404,6 +405,7 @@ export const HELP_FAQ: [question: string, answer: string][] = [
   ['Cerré el conector por error.', 'Ábrelo de nuevo: el vuelo se reanuda donde iba.'],
   ['El vuelo no se cierra al llegar.', 'Necesita motores y APU apagados y el freno de estacionamiento puesto. Si aun así no cierra, usa «Terminar vuelo».'],
   ['¿Por qué mi PIREP está «pendiente»?', 'La aerolínea no aprueba automáticamente, el puntaje quedó bajo el mínimo o tiene faltas graves. Lo revisa el staff; mientras tanto puedes dejar un comentario.'],
+  ['Volé la ruta de un leg y no me contó para el tour.', 'Solo cuentan los vuelos reservados desde el tour con «Reservar leg». Un vuelo reservado en Flight Booking con la misma ruta es un vuelo normal de tu aerolínea. Abre el tour y reserva ese leg desde ahí.'],
   ['Cambiaron los legs de un tour en el que voy a la mitad.', 'El administrador de la aerolínea puede ajustarlo en cualquier momento. Lo que ya volaste en los legs que siguen te cuenta; vuela los que falten. Si quitaron los que te faltaban, el tour queda terminado y ganas la insignia.'],
   ['¿Cómo me inscribo a un tour o evento?', 'En Tours o Events abre el que te interese y pulsa inscribirte o registrarte. Algunos requieren la aprobación de su creador.'],
   ['No veo la ruta del plan en el mapa.', 'Aparece para planes importados desde el 5 de noviembre de 2026. Si tu reserva es anterior, vuelve a importar el plan en My Flights.'],
@@ -480,6 +482,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-08', 'Tours: botón «Reservar leg» en cada leg. Solo el vuelo reservado desde el tour cuenta para el tour; Flight Booking avisa cuando una ruta es un leg que te falta.'],
   ['2026-11-08', 'Tours: el superadministrador y el administrador de la aerolínea los modifican por completo aunque estén publicados, cerrados o con pilotos con avance; el avance se conserva.'],
   ['2026-11-07', 'Idioma de lectura: español o inglés desde la barra superior (y en las pantallas de entrada).'],
   ['2026-11-07', 'Training: calendario de entrenamientos con instructor, inscripción con confirmación, horas Zulu y local, archivo .ics y Google Calendar, canal de Discord y reconocimientos en el perfil.'],

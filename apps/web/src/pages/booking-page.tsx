@@ -8,6 +8,7 @@ import { AirportPicker } from '@/components/airport-picker';
 import { ConfirmButton } from '@/components/confirm-button';
 import { WeatherStrip } from '@/components/weather';
 import { ScopeRequired } from '@/components/scope-required';
+import { TourLegBadge, TourLegNotice } from '@/components/tour-leg-notice';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonClasses } from '@/components/ui/button';
@@ -35,6 +36,7 @@ import { useAircraftTypes } from '@/hooks/use-fleet';
 import { useWeather } from '@/hooks/use-weather';
 import { useProfile, type Airline } from '@/hooks/use-lam-data';
 import { useMyRatings } from '@/hooks/use-ratings';
+import { useMyTourLegs } from '@/hooks/use-tours';
 import {
   useDeleteRoute,
   useRegisterRoute,
@@ -60,6 +62,7 @@ import { aircraftStatusLabels, formatNumber, formatPilotNumber, operationTypeLab
 import { useAirlinePermissions } from '@/lib/permissions';
 import { formatTypeUsage, isPendingRoute } from '@/lib/routes';
 import { formatDays, formatDuration } from '@/lib/schedule';
+import { matchingTourLegs } from '@/lib/tours';
 import { DualTimeText, ScheduleTimeText } from '@/lib/time-context';
 import { OfpSummary } from '@/pages/my-flights-page';
 
@@ -130,6 +133,7 @@ function BookingDialog({ airline, route, onClose }: { airline: Airline; route: R
   const routeIcaos = [route.origin?.icao_code, route.destination?.icao_code].filter((c): c is string => Boolean(c));
   const weather = useWeather(routeIcaos);
   const book = useBookFlight();
+  const tourLegs = matchingTourLegs(useMyTourLegs().data, route.origin?.icao_code, route.destination?.icao_code);
   const [chosenId, setAircraftId] = useState<string | null>(null);
   const [callsign, setCallsign] = useState('');
   const [touched, setTouched] = useState(false);
@@ -175,6 +179,7 @@ function BookingDialog({ airline, route, onClose }: { airline: Airline; route: R
       }
     >
       <div className="space-y-5">
+        <TourLegNotice legs={tourLegs} />
         {isPendingRoute(route) ? (
           <Alert>
             Ruta pendiente{route.registrant ? `, registrada por ${route.registrant.display_name}` : ''}. Queda activa en {airline.name} con el
@@ -465,6 +470,7 @@ function DirectFlightDialog({
   const settings = useAirlineSettings(airline.id);
   const controlled = settings.data?.control_fleet_availability ?? true;
   const book = useBookDirectFlight();
+  const myTourLegs = useMyTourLegs();
   const profile = useProfile();
   const hasSimbriefUser = Boolean(profile.data?.simbrief_username?.trim());
 
@@ -642,6 +648,7 @@ function DirectFlightDialog({
           <Field id="df-destination" label="Destino" error={show(errors.destination)}>
             <AirportPicker id="df-destination" value={destinationId} onChange={setDestinationId} invalid={Boolean(show(errors.destination))} />
           </Field>
+          <TourLegNotice legs={matchingTourLegs(myTourLegs.data, originId, destinationId)} className="sm:col-span-2" />
           <Field id="df-number" label="Número de vuelo" error={show(errors.number)} hint={numberHint}>
             <Input
               className="font-mono uppercase"
@@ -737,6 +744,7 @@ function RouteSearch({ airline, canBook, atLimit }: { airline: Airline; canBook:
   const settings = useAirlineSettings(airline.id);
   const usage = useRouteTypeUsage(airline.id);
   const remove = useDeleteRoute();
+  const myTourLegs = useMyTourLegs();
   const { user } = useAuth();
   const [registering, setRegistering] = useState(false);
   const [directing, setDirecting] = useState(false);
@@ -891,6 +899,7 @@ function RouteSearch({ airline, canBook, atLimit }: { airline: Airline; canBook:
                         {r.flight_number}
                         {pending ? <Badge tone="info">Pendiente</Badge> : null}
                       </p>
+                      <TourLegBadge legs={matchingTourLegs(myTourLegs.data, r.origin?.icao_code, r.destination?.icao_code)} />
                       <p className="text-xs text-muted">{operationTypeLabel(r.operation_type)}</p>
                     </Td>
                     <Td>

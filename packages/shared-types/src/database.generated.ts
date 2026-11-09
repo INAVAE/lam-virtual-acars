@@ -2605,6 +2605,7 @@ export type Database = {
       }
       get_tours: { Args: never; Returns: Json }
       get_tour: { Args: { p_tour_id: string }; Returns: Json }
+      get_my_tour_legs: { Args: never; Returns: Json }
       get_pilot_badges: { Args: { p_user_id?: string }; Returns: Json }
       save_event: { Args: { p_event: Json; p_event_id: string | null }; Returns: string }
       submit_event: { Args: { p_event_id: string }; Returns: Database["public"]["Enums"]["event_status"] }

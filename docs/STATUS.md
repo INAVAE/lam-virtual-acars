@@ -1,6 +1,12 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-08 (tours: edición completa del administrador)
+Última actualización: 2026-11-08 (tours: reservar cada leg desde el tour)
+
+## Tours: reservar cada leg desde el tour (2026-11-08)
+
+- La tabla de legs del tour siempre muestra la columna **Reservar** cuando el tour está publicado: «Reservar leg N» si estás inscrito y aprobado (con las reglas de orden y revisión), «Ver en My Flights» si ya está reservado, «Inscríbete para reservar» (lleva a la inscripción) si no estás inscrito y el motivo en los demás casos.
+- Solo cuenta para el tour el vuelo reservado con `book_tour_leg` (fija `flights.tour_leg_id` y `tour_enrollment_id`). Un vuelo normal con la misma ruta, reservado en Flight Booking, no cuenta (prueba 027).
+- `get_my_tour_legs()` devuelve los legs que le faltan al piloto en sus tours vigentes; Flight Booking marca la ruta con «Leg N de CÓDIGO» y avisa en la reserva normal y en el vuelo directo que así no cuenta para el tour, con enlace al tour. Migración `my_tour_legs`, prueba 027 (8). Captura 73.
 
 ## Tours: el administrador los modifica por completo (2026-11-08)
 
