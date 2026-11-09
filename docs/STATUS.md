@@ -4,6 +4,8 @@
 
 ## Conector: buscar e instalar actualizaciones (2026-11-08)
 
+- **Siempre visible** (0.1.40): botón bajo «Buscar actualización» y opción en el menú de la bandeja; `Topmost` de la ventana, guardado en `settings.json` (`AlwaysOnTop`). Con MSFS en ventana o pantalla completa sin bordes.
+
 - Botón **Buscar actualización** en el encabezado del conector (además de la búsqueda automática cada 6 h): dice si hay versión nueva o si ya se tiene la más reciente.
 - **Descargar e instalar**: descarga el zip de la publicación, compara su SHA-256 con el `.sha256` publicado, lo descomprime en `%LOCALAPPDATA%\LamAcars\updates\<versión>` y un script de PowerShell espera a que el conector se cierre, copia los archivos sobre la carpeta actual y lo vuelve a abrir (bitácora en `logs\actualizacion.log`). Si la carpeta no admite escritura, abre la carpeta nueva para copiarla a mano.
 - Con un vuelo en curso el botón queda desactivado y el aviso pide terminarlo o abandonarlo; al cerrarse el vuelo se habilita. Lógica en `LamAcars.Core.Updates.UpdatePackage` (pruebas en `UpdateCheckerTests`). Desde 0.1.36; las versiones anteriores solo abren la página de descarga.

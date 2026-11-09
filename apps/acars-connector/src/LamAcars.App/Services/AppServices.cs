@@ -25,11 +25,26 @@ public static class AppPaths
         ?? "0.0.0";
 }
 
-/// <summary>Ajustes locales (por ahora solo la URL de la API, para pruebas).</summary>
+/// <summary>Ajustes locales: URL de la API (para pruebas), grabación de lecturas y ventana siempre visible.</summary>
 public sealed class AppSettings
 {
     public string ApiBaseUrl { get; set; } = AcarsApiClient.DefaultBaseUrl;
     public bool RecordSamples { get; set; } = true;
+
+    /// <summary>La ventana del conector queda por encima del simulador y de las demás ventanas.</summary>
+    public bool AlwaysOnTop { get; set; }
+
+    public void Save()
+    {
+        try
+        {
+            File.WriteAllText(AppPaths.Settings, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // Si no se puede guardar, el ajuste dura hasta cerrar el conector.
+        }
+    }
 
     public static AppSettings Load()
     {

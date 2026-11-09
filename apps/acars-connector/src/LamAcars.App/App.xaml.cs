@@ -50,6 +50,19 @@ public partial class App : Application
             ContextMenuStrip = new Forms.ContextMenuStrip(),
         };
         _tray.ContextMenuStrip.Items.Add("Abrir LAM ACARS", null, (_, _) => ShowWindow());
+        var onTop = new Forms.ToolStripMenuItem("Siempre visible") { CheckOnClick = true, Checked = _controller?.AlwaysOnTop ?? false };
+        onTop.CheckedChanged += (_, _) =>
+        {
+            if (_controller is null) return;
+            _controller.AlwaysOnTop = onTop.Checked;
+            if (onTop.Checked) ShowWindow();
+        };
+        _controller!.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(AcarsController.AlwaysOnTop) && onTop.Checked != _controller.AlwaysOnTop)
+                onTop.Checked = _controller.AlwaysOnTop;
+        };
+        _tray.ContextMenuStrip.Items.Add(onTop);
         _tray.ContextMenuStrip.Items.Add("Salir", null, (_, _) => Quit());
         _tray.DoubleClick += (_, _) => ShowWindow();
     }

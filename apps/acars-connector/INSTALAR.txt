@@ -31,6 +31,10 @@ PMDG publica sus datos (SDK). Si ves el aviso "PMDG: falta activar los datos del
 SDK", pulsa "Activar" y vuelve a cargar el avión en MSFS. Sin ese ajuste el
 conector funciona igual con las variables estándar.
 
+Siempre visible
+El botón "Siempre visible" deja el conector encima del simulador. Funciona con
+MSFS en ventana o en pantalla completa sin bordes (no en pantalla completa exclusiva).
+
 Actualizar
 El conector busca versiones nuevas solo y con el botón "Buscar actualización".
 Si hay una, pulsa "Descargar e instalar": la descarga, comprueba su SHA-256,

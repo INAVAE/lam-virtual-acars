@@ -42,6 +42,8 @@ public partial class MainWindow : Window
 
     private async void CheckUpdate_Click(object sender, RoutedEventArgs e) => await _controller.CheckUpdateAsync();
 
+    private void AlwaysOnTop_Click(object sender, RoutedEventArgs e) => _controller.AlwaysOnTop = !_controller.AlwaysOnTop;
+
     private async void InstallUpdate_Click(object sender, RoutedEventArgs e)
     {
         if (_controller.InFlight)

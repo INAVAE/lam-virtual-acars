@@ -121,6 +121,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Descomprime y abre', 'Descomprime la carpeta donde quieras y abre LamAcars.exe. Si Windows muestra «Windows protegió su PC», elige «Más información» → «Ejecutar de todas formas»: el ejecutable no está firmado.'],
       ['Vincula el equipo (una sola vez)', 'En el conector pulsa «Vincular este equipo» y aparece un código de 8 caracteres. En la web, Settings → Dispositivos ACARS, escríbelo y pulsa «Vincular equipo». En unos segundos el conector muestra tu nombre.'],
       ['Actualizaciones', 'El conector busca versiones nuevas solo cada 6 horas y con el botón «Buscar actualización» (arriba a la derecha). Si hay una, «Descargar e instalar» la descarga, comprueba su suma SHA-256, cierra el conector y lo abre ya actualizado; tu vinculación, tus vuelos pendientes y la bitácora se conservan. Con un vuelo en curso el botón se desactiva: termina o abandona el vuelo y después instala. Desde la versión 0.1.36; si tienes una anterior, descarga la 0.1.36 a mano una última vez.'],
+      ['Siempre visible', 'El botón «Siempre visible» (debajo de «Buscar actualización», o en el menú del icono junto al reloj) deja la ventana del conector encima del simulador aunque estés usando MSFS. Funciona con MSFS en ventana o en pantalla completa sin bordes; en pantalla completa exclusiva Windows no deja dibujar ventanas encima. Para quitarlo pulsa «Quitar del frente». Se recuerda al volver a abrir el conector.'],
       ['Revocar', 'Si cambias de computadora o pierdes el equipo, revócalo en Settings → Dispositivos ACARS. Deja de enviar datos en su siguiente intento.'],
     ],
     note: 'PMDG 737 y 777: si el conector muestra «PMDG: falta activar los datos del SDK», pulsa «Activar» y vuelve a cargar el avión. Sin ese ajuste funciona igual, con las variables estándar del simulador.',
@@ -484,6 +485,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-08', 'Conector 0.1.40: botón «Siempre visible» para dejar la ventana encima del simulador.'],
   ['2026-11-08', 'Conector 0.1.36: botón «Buscar actualización» e instalación de la versión nueva desde el conector (después de terminar o abandonar el vuelo en curso).'],
   ['2026-11-08', 'Conector 0.1.34: la APU del Fenix A320 se detecta por su panel (MASTER SW y luz AVAIL).'],
   ['2026-11-08', 'Live Flights y My Flights: hoja completa del plan de SimBrief (información del vuelo, resumen del plan y hoja de carga); antes de despegar, distancia, tiempo y llegada salen del plan.'],

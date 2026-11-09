@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:LamAcars.App"
         Title="LAM ACARS" Width="560" Height="720" MinWidth="480" MinHeight="560"
-        Background="{StaticResource Bg}" Icon="Assets/lam.ico" WindowStartupLocation="CenterScreen">
+        Background="{StaticResource Bg}" Icon="Assets/lam.ico" WindowStartupLocation="CenterScreen"
+        Topmost="{Binding AlwaysOnTop, Mode=OneWay}">
   <Window.Resources>
     <local:BoolToVisibility x:Key="Show" />
     <local:BoolToVisibility x:Key="Hide" Invert="True" />
@@ -24,9 +25,24 @@
       <Border Width="44" Height="44" CornerRadius="8" Background="White" Margin="0,0,12,0">
         <Image Source="Assets/lam-128.png" Margin="4" />
       </Border>
-      <Button DockPanel.Dock="Right" Style="{StaticResource Secondary}" Content="Buscar actualización" Padding="10,4" Margin="8,0,0,0"
-              VerticalAlignment="Center" IsEnabled="{Binding CanCheckUpdate}" Click="CheckUpdate_Click"
-              ToolTip="Busca en GitHub si hay una versión nueva del conector" />
+      <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="8,0,0,0">
+        <Button Style="{StaticResource Secondary}" Content="Buscar actualización" Padding="10,4"
+                IsEnabled="{Binding CanCheckUpdate}" Click="CheckUpdate_Click"
+                ToolTip="Busca en GitHub si hay una versión nueva del conector" />
+        <Button Content="{Binding AlwaysOnTopLabel}" Padding="10,4" Margin="0,6,0,0" Click="AlwaysOnTop_Click"
+                ToolTip="Mantiene el conector por encima del simulador aunque uses MSFS (con MSFS en ventana o en pantalla completa sin bordes)">
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource Secondary}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding AlwaysOnTop}" Value="True">
+                  <Setter Property="Background" Value="{StaticResource Accent}" />
+                  <Setter Property="Foreground" Value="White" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Button.Style>
+        </Button>
+      </StackPanel>
       <StackPanel VerticalAlignment="Center">
         <TextBlock Text="LAM ACARS" FontSize="20" FontWeight="SemiBold" />
         <TextBlock Foreground="{StaticResource Muted}" TextWrapping="Wrap">

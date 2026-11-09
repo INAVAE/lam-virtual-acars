@@ -79,6 +79,23 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
     public bool InFlight => ActiveFlight is not null;
     public string Version => AppPaths.Version;
 
+    /// <summary>Ventana siempre visible, por encima del simulador (se recuerda en settings.json).</summary>
+    public bool AlwaysOnTop
+    {
+        get => _settings.AlwaysOnTop;
+        set
+        {
+            if (_settings.AlwaysOnTop == value) return;
+            _settings.AlwaysOnTop = value;
+            _settings.Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(AlwaysOnTopLabel));
+            _log.Write(value ? "Ventana siempre visible: activada" : "Ventana siempre visible: desactivada");
+        }
+    }
+
+    public string AlwaysOnTopLabel => AlwaysOnTop ? "Quitar del frente" : "Siempre visible";
+
     // ------------------------------------------------------------------------
     // Arranque
     // ------------------------------------------------------------------------
