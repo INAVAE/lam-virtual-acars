@@ -489,6 +489,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-09', 'Tours: en el mapa del tour, los legs con PIREP aceptado se pintan en verde (encima de los demás) y los de ida y regreso se separan para que se vea tu avance; abajo, el resumen de completados, en revisión y por volar.'],
   ['2026-11-09', 'PIREP: muestra la ruta del plan de SimBrief en el mapa, la hoja del plan (información, resumen y hoja de carga) y el METAR de salida y de llegada guardados con el vuelo.'],
   ['2026-11-09', 'PIREP: el piloto y el staff pueden comentar en cualquier momento, aunque el PIREP ya esté aceptado o rechazado (sección Comentarios de la revisión).'],
   ['2026-11-09', 'Liga de invitación en tours, eventos y entrenamientos: «Copiar liga de invitación» copia la dirección para compartirla; solo la abren pilotos con cuenta activa (sin sesión, piden entrar y después llegan a la página).'],

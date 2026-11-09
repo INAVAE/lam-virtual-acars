@@ -3,6 +3,8 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "Tu avance en el mapa": "Your progress on the map",
+    "Tours: en el mapa del tour, los legs con PIREP aceptado se pintan en verde (encima de los demás) y los de ida y regreso se separan para que se vea tu avance; abajo, el resumen de completados, en revisión y por volar.": "Tours: on the tour map, legs with an accepted PIREP are painted green (on top of the others) and outbound and return legs are separated so your progress is visible; below, the summary of completed, in review and to fly.",
     "El plan que se importó para este vuelo: información, resumen y hoja de carga.": "The plan imported for this flight: info, summary and load sheet.",
     "Clima de salida y llegada": "Departure and arrival weather",
     "METAR de NOAA más cercano a los calzos fuera y a los calzos puestos, guardado con el vuelo.": "NOAA METAR closest to block-off and block-on, saved with the flight.",
@@ -2169,6 +2171,10 @@ export const EN: Dictionary = {
     "Callsign, piloto, aeropuerto, evento, tour…": "Callsign, pilot, airport, event, tour…"
   },
   patterns: [
+    ["Completados (PIREP aceptado): {0} de {1}", "Completed (PIREP accepted): {0} of {1}"],
+    ["Reservados o en revisión: {0}", "Booked or in review: {0}"],
+    ["Por repetir: {0}", "To repeat: {0}"],
+    ["Por volar: {0}", "To fly: {0}"],
     ["observado {0}", "observed {0}"],
     ["Liga de invitación al {0} copiada. Solo la abren pilotos con cuenta activa en LAM.", "Invitation link to the {0} copied. Only pilots with an active LAM account can open it."],
     ["Tour {0}", "Tour {0}"],
