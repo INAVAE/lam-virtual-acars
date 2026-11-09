@@ -3,6 +3,10 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "El conector busca versiones nuevas solo cada 6 horas y con el botón «Buscar actualización» (arriba a la derecha). Si hay una, «Descargar e instalar» la descarga, comprueba su suma SHA-256, cierra el conector y lo abre ya actualizado; tu vinculación, tus vuelos pendientes y la bitácora se conservan. Con un vuelo en curso el botón se desactiva: termina o abandona el vuelo y después instala. Desde la versión 0.1.36; si tienes una anterior, descarga la 0.1.36 a mano una última vez.": "The connector looks for new versions by itself every 6 hours and with the “Check for update” button (top right). If there is one, “Download and install” downloads it, checks its SHA-256, closes the connector and reopens it already updated; your link, pending flights and log are kept. With a flight in progress the button is disabled: finish or abandon the flight and then install. Since version 0.1.36; if you have an older one, download 0.1.36 manually one last time.",
+    "¿Cómo actualizo el conector?": "How do I update the connector?",
+    "Pulsa «Buscar actualización» en el conector. Si hay una versión nueva y no tienes un vuelo en curso, «Descargar e instalar» lo actualiza solo. Si tienes un vuelo en curso, termínalo o abandónalo primero.": "Press “Check for update” in the connector. If there is a new version and you have no flight in progress, “Download and install” updates it by itself. If you have a flight in progress, finish or abandon it first.",
+    "Conector 0.1.36: botón «Buscar actualización» e instalación de la versión nueva desde el conector (después de terminar o abandonar el vuelo en curso).": "Connector 0.1.36: “Check for update” button and installing the new version from the connector (after finishing or abandoning the flight in progress).",
     "Conector 0.1.34: la APU del Fenix A320 se detecta por su panel (MASTER SW y luz AVAIL).": "Connector 0.1.34: the Fenix A320 APU is detected from its panel (MASTER SW and AVAIL light).",
     "Información del vuelo": "Flight info",
     "Callsign": "Callsign",

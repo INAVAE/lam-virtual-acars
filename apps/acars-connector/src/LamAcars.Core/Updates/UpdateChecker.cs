@@ -4,11 +4,12 @@ using System.Text.Json;
 namespace LamAcars.Core.Updates;
 
 /// <summary>Versión publicada del conector.</summary>
-public sealed record ReleaseInfo(Version Version, string Tag, string PageUrl, string? DownloadUrl, string? Notes, DateTimeOffset? PublishedAt);
+public sealed record ReleaseInfo(Version Version, string Tag, string PageUrl, string? DownloadUrl, string? Notes, DateTimeOffset? PublishedAt, string? Sha256Url = null);
 
 /// <summary>
 /// Busca en las publicaciones de GitHub la versión más nueva del conector
-/// (etiquetas connector-vX.Y.Z, sin borradores). Solo avisa: no descarga nada.
+/// (etiquetas connector-vX.Y.Z, sin borradores). Solo consulta; la descarga e
+/// instalación las hace <see cref="UpdatePackage"/> cuando el piloto lo pide.
 /// </summary>
 public sealed class UpdateChecker
 {
@@ -46,16 +47,16 @@ public sealed class UpdateChecker
             if (best is not null && version <= best.Version) continue;
 
             string? download = null;
+            string? sha = null;
             if (r.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
             {
                 foreach (var a in assets.EnumerateArray())
                 {
                     var name = a.TryGetProperty("name", out var n) ? n.GetString() : null;
-                    if (name is not null && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-                    {
-                        download = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null;
-                        break;
-                    }
+                    var url = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null;
+                    if (name is null || url is null) continue;
+                    if (download is null && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) download = url;
+                    else if (sha is null && name.EndsWith(".zip.sha256", StringComparison.OrdinalIgnoreCase)) sha = url;
                 }
             }
             DateTimeOffset? published = r.TryGetProperty("published_at", out var p) && p.ValueKind == JsonValueKind.String
@@ -64,7 +65,8 @@ public sealed class UpdateChecker
                 r.TryGetProperty("html_url", out var html) ? html.GetString() ?? string.Empty : string.Empty,
                 download,
                 r.TryGetProperty("body", out var body) ? body.GetString() : null,
-                published);
+                published,
+                sha);
         }
         return best;
     }

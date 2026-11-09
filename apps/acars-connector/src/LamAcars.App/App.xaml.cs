@@ -32,6 +32,7 @@ public partial class App : Application
         };
 
         _controller = new AcarsController(_log);
+        _controller.QuitForUpdate += () => Dispatcher.Invoke(() => Quit(force: true));
         _window = new MainWindow(_controller, _log);
         _window.Show();
         CreateTray();
@@ -61,9 +62,9 @@ public partial class App : Application
         _window.Activate();
     }
 
-    public void Quit()
+    public void Quit(bool force = false)
     {
-        if (_controller?.InFlight == true &&
+        if (!force && _controller?.InFlight == true &&
             MessageBox.Show("Hay un vuelo en curso. Si sales, ACARS deja de registrarlo hasta que vuelvas a abrir el conector (el vuelo se reanuda). ¿Salir?",
                 "LAM ACARS", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;

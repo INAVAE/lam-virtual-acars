@@ -40,6 +40,24 @@ public partial class MainWindow : Window
 
     private void Update_Click(object sender, RoutedEventArgs e) => _controller.OpenUpdatePage();
 
+    private async void CheckUpdate_Click(object sender, RoutedEventArgs e) => await _controller.CheckUpdateAsync();
+
+    private async void InstallUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        if (_controller.InFlight)
+        {
+            MessageBox.Show("Hay un vuelo en curso. Termínalo o abandónalo antes de actualizar el conector.",
+                "LAM ACARS", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var pending = _controller.Pending > 0
+            ? $"\n\nHay {_controller.Pending} dato(s) pendientes de enviar: se guardan y la versión nueva los envía al abrirse."
+            : string.Empty;
+        if (MessageBox.Show($"Se descargará la versión {_controller.Update?.Version}, LAM ACARS se cerrará y se abrirá ya actualizado.{pending}\n\n¿Continuar?",
+                "Actualizar LAM ACARS", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            await _controller.InstallUpdateAsync();
+    }
+
     private void EnablePmdg_Click(object sender, RoutedEventArgs e)
     {
         if (MessageBox.Show("Se agregará [SDK] EnableDataBroadcast=1 a las opciones de tus aviones PMDG (se guarda una copia .lam-backup). " +

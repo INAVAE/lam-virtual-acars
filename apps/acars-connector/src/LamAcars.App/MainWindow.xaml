@@ -24,23 +24,42 @@
       <Border Width="44" Height="44" CornerRadius="8" Background="White" Margin="0,0,12,0">
         <Image Source="Assets/lam-128.png" Margin="4" />
       </Border>
+      <Button DockPanel.Dock="Right" Style="{StaticResource Secondary}" Content="Buscar actualización" Padding="10,4" Margin="8,0,0,0"
+              VerticalAlignment="Center" IsEnabled="{Binding CanCheckUpdate}" Click="CheckUpdate_Click"
+              ToolTip="Busca en GitHub si hay una versión nueva del conector" />
       <StackPanel VerticalAlignment="Center">
         <TextBlock Text="LAM ACARS" FontSize="20" FontWeight="SemiBold" />
-        <TextBlock Foreground="{StaticResource Muted}">
+        <TextBlock Foreground="{StaticResource Muted}" TextWrapping="Wrap">
           <Run Text="Líneas Aéreas Mexicanas · conector para MSFS 2024 · v" /><Run Text="{Binding Version, Mode=OneWay}" />
         </TextBlock>
       </StackPanel>
     </DockPanel>
 
-    <!-- Versión nueva -->
-    <Border Grid.Row="1" Background="#1A2A3D" BorderBrush="{StaticResource Gold}" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
-            VerticalAlignment="Top" Visibility="{Binding UpdateAvailable, Converter={StaticResource Show}}">
-      <DockPanel>
-        <Button DockPanel.Dock="Right" Style="{StaticResource Secondary}" Content="Descargar" Padding="10,4" Margin="8,0,0,0"
-                VerticalAlignment="Center" Click="Update_Click" />
-        <TextBlock Text="{Binding UpdateText}" TextWrapping="Wrap" Foreground="{StaticResource Gold}" FontSize="12" VerticalAlignment="Center" />
-      </DockPanel>
-    </Border>
+    <!-- Versión nueva y resultado de «Buscar actualización» -->
+    <StackPanel Grid.Row="1">
+      <Border Background="#1A2A3D" BorderBrush="{StaticResource Gold}" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
+              Visibility="{Binding UpdateAvailable, Converter={StaticResource Show}}">
+        <StackPanel>
+          <TextBlock Text="{Binding UpdateText}" TextWrapping="Wrap" Foreground="{StaticResource Gold}" FontSize="12" />
+          <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+            <Button Style="{StaticResource Primary}" Content="Descargar e instalar" Padding="10,4" Margin="0,0,8,0"
+                    IsEnabled="{Binding CanInstallUpdate}" Click="InstallUpdate_Click" />
+            <Button Style="{StaticResource Secondary}" Content="Ver novedades" Padding="10,4" Click="Update_Click" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+      <TextBlock Text="{Binding UpdateStatus}" TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,-4,0,12">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Style.Triggers>
+              <Trigger Property="Text" Value="">
+                <Setter Property="Visibility" Value="Collapsed" />
+              </Trigger>
+            </Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
+    </StackPanel>
 
     <!-- Estado -->
     <UniformGrid Grid.Row="2" Columns="2" Margin="0,0,0,16">

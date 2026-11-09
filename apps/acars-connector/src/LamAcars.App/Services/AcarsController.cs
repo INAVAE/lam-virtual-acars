@@ -110,34 +110,36 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
     }
 
     // ------------------------------------------------------------------------
-    // Nuevas versiones (solo aviso; la descarga la hace el piloto)
+    // Nuevas versiones: se buscan solas cada 6 h o con «Buscar actualización».
+    // Con un vuelo en curso no se instala: primero se termina o se abandona.
     // ------------------------------------------------------------------------
+    private readonly HttpClient _updateHttp = new() { Timeout = TimeSpan.FromMinutes(5) };
+    private readonly SemaphoreSlim _updateGate = new(1, 1);
+
     public ReleaseInfo? Update { get; private set; }
     public bool UpdateAvailable => Update is not null;
-    public string UpdateText => Update is { } u
-        ? $"Hay una versión nueva: {u.Version}. Descárgala cuando termines el vuelo; tu vuelo en curso no se interrumpe."
-        : string.Empty;
+    public bool CheckingUpdate { get; private set; }
+    public bool InstallingUpdate { get; private set; }
+    public bool CanCheckUpdate => !CheckingUpdate && !InstallingUpdate;
+    public bool CanInstallUpdate => Update is not null && !InFlight && !InstallingUpdate;
+
+    /// <summary>Resultado de la última búsqueda manual o el avance de la descarga.</summary>
+    public string UpdateStatus { get; private set; } = string.Empty;
+
+    public string UpdateText => Update is not { } u
+        ? string.Empty
+        : InFlight
+            ? $"Hay una versión nueva: {u.Version}. Termina o abandona el vuelo en curso para actualizar; tu vuelo no se interrumpe."
+            : $"Hay una versión nueva: {u.Version}. «Descargar e instalar» la descarga, cierra el conector y lo abre ya actualizado.";
+
+    /// <summary>El conector debe cerrarse para que el script instale la versión nueva.</summary>
+    public event Action? QuitForUpdate;
 
     private async Task UpdateLoop()
     {
-        var checker = new UpdateChecker(new HttpClient { Timeout = TimeSpan.FromSeconds(20) });
         while (!_cts.IsCancellationRequested)
         {
-            try
-            {
-                var found = await checker.CheckAsync(AppPaths.Version, _cts.Token);
-                if (found is not null && found.Version != Update?.Version)
-                {
-                    Set(nameof(Update), () => Update = found);
-                    OnPropertyChanged(nameof(UpdateAvailable));
-                    OnPropertyChanged(nameof(UpdateText));
-                    _log.Write($"Versión nueva disponible: {found.Version} ({found.PageUrl})");
-                }
-            }
-            catch (Exception e) when (e is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
-            {
-                // Sin internet o GitHub no responde: se intenta en la siguiente vuelta.
-            }
+            await CheckUpdateAsync(manual: false);
             try
             {
                 await Task.Delay(TimeSpan.FromHours(6), _cts.Token);
@@ -147,6 +149,148 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
                 break;
             }
         }
+    }
+
+    /// <summary>Busca una versión nueva en las publicaciones de GitHub.</summary>
+    public async Task CheckUpdateAsync(bool manual = true)
+    {
+        if (!await _updateGate.WaitAsync(0)) return;
+        try
+        {
+            SetUpdateFlags(checking: true);
+            if (manual) SetUpdateStatus("Buscando una versión nueva…");
+            var checker = new UpdateChecker(new HttpClient { Timeout = TimeSpan.FromSeconds(20) });
+            var found = await checker.CheckAsync(AppPaths.Version, _cts.Token);
+            if (found is not null)
+            {
+                if (found.Version != Update?.Version) _log.Write($"Versión nueva disponible: {found.Version} ({found.PageUrl})");
+                Set(nameof(Update), () => Update = found);
+                if (manual) SetUpdateStatus(InFlight ? $"Versión {found.Version} disponible: termina o abandona el vuelo para instalarla." : $"Versión {found.Version} disponible.");
+            }
+            else if (manual)
+            {
+                SetUpdateStatus($"Tienes la versión más nueva (v{AppPaths.Version}).");
+            }
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        {
+            // Sin internet o GitHub no responde: se intenta en la siguiente vuelta.
+            if (manual) SetUpdateStatus("No se pudo consultar GitHub. Revisa tu conexión e inténtalo de nuevo.");
+        }
+        finally
+        {
+            SetUpdateFlags(checking: false);
+            _updateGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Descarga la versión nueva, verifica su SHA-256, la descomprime y deja un
+    /// script que la instala cuando el conector se cierra; después pide cerrarlo.
+    /// </summary>
+    public async Task InstallUpdateAsync()
+    {
+        if (Update is not { } release) return;
+        if (InFlight)
+        {
+            SetUpdateStatus("Termina o abandona el vuelo en curso antes de actualizar.");
+            return;
+        }
+        if (release.DownloadUrl is null)
+        {
+            OpenUpdatePage();
+            return;
+        }
+        if (!await _updateGate.WaitAsync(0)) return;
+        try
+        {
+            SetUpdateFlags(installing: true);
+            var work = Directory.CreateDirectory(Path.Combine(AppPaths.Root, "updates")).FullName;
+            var zip = Path.Combine(work, $"LamAcars-{release.Version}-win-x64.zip");
+            await DownloadAsync(release.DownloadUrl, zip, release.Version);
+
+            if (release.Sha256Url is { } shaUrl)
+            {
+                SetUpdateStatus("Verificando el paquete…");
+                var expected = UpdatePackage.ParseSha256(await _updateHttp.GetStringAsync(shaUrl, _cts.Token));
+                var actual = UpdatePackage.ComputeSha256(zip);
+                if (expected is null || expected != actual)
+                {
+                    File.Delete(zip);
+                    throw new InvalidDataException("la suma SHA-256 del paquete no coincide con la publicada");
+                }
+            }
+
+            SetUpdateStatus("Preparando la instalación…");
+            var source = UpdatePackage.Extract(zip, Path.Combine(work, release.Version.ToString()));
+            var target = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (!UpdatePackage.CanWrite(target))
+            {
+                _log.Write($"No se puede escribir en {target}: copia a mano la versión {release.Version} desde {source}");
+                SetUpdateStatus($"No hay permiso para escribir en la carpeta del conector. Cierra LAM ACARS y copia la carpeta que se abrió sobre {target}.");
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{source}\"") { UseShellExecute = true });
+                return;
+            }
+
+            var script = Path.Combine(work, "instalar.ps1");
+            File.WriteAllText(script, UpdatePackage.BuildSwapScript(Environment.ProcessId, source, target, Path.Combine(AppPaths.Logs, "actualizacion.log")),
+                new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("powershell.exe",
+                $"-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{script}\"")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            });
+            _log.Write($"Instalando la versión {release.Version}: el conector se cierra y se vuelve a abrir");
+            SetUpdateStatus($"Instalando la versión {release.Version}… LAM ACARS se cerrará y se abrirá solo.");
+            await Task.Delay(1200);
+            QuitForUpdate?.Invoke();
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or IOException or InvalidDataException
+                                       or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            _log.Write($"No se pudo actualizar: {e.Message}");
+            SetUpdateStatus($"No se pudo actualizar: {e.Message}. Puedes descargarla desde la página de la versión.");
+        }
+        finally
+        {
+            SetUpdateFlags(installing: false);
+            _updateGate.Release();
+        }
+    }
+
+    private async Task DownloadAsync(string url, string path, Version version)
+    {
+        using var response = await _updateHttp.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, _cts.Token);
+        response.EnsureSuccessStatusCode();
+        var total = response.Content.Headers.ContentLength;
+        await using var input = await response.Content.ReadAsStreamAsync(_cts.Token);
+        await using var output = File.Create(path);
+        var buffer = new byte[81920];
+        long done = 0;
+        var lastPct = -1;
+        int read;
+        while ((read = await input.ReadAsync(buffer, _cts.Token)) > 0)
+        {
+            await output.WriteAsync(buffer.AsMemory(0, read), _cts.Token);
+            done += read;
+            var pct = total is > 0 ? (int)(done * 100 / total.Value) : -1;
+            if (pct != lastPct && (pct < 0 || pct % 5 == 0))
+            {
+                lastPct = pct;
+                SetUpdateStatus(pct >= 0 ? $"Descargando la versión {version}… {pct} %" : $"Descargando la versión {version}… {done / 1_048_576.0:0.0} MB");
+            }
+        }
+    }
+
+    private void SetUpdateStatus(string text) => Set(nameof(UpdateStatus), () => UpdateStatus = text);
+
+    private void SetUpdateFlags(bool? checking = null, bool? installing = null)
+    {
+        if (checking is { } c) Set(nameof(CheckingUpdate), () => CheckingUpdate = c);
+        if (installing is { } i) Set(nameof(InstallingUpdate), () => InstallingUpdate = i);
+        OnPropertyChanged(nameof(CanCheckUpdate));
+        OnPropertyChanged(nameof(CanInstallUpdate));
     }
 
     /// <summary>Abre la página de la versión nueva en el navegador.</summary>
@@ -542,12 +686,24 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(property);
     }
 
-    private void OnPropertyChanged([CallerMemberName] string? name = null) =>
+    private void OnPropertyChanged([CallerMemberName] string? name = null)
+    {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        // Lo que depende del vuelo en curso o de la versión nueva.
+        if (name is nameof(InFlight) or nameof(Update))
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(UpdateAvailable)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(UpdateText)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanInstallUpdate)));
+        }
+        if (name == nameof(InFlight) && !InFlight && Update is { } u)
+            _log.Write($"Ya puedes instalar la versión {u.Version}");
+    }
 
     public void Dispose()
     {
         _cts.Cancel();
+        _updateHttp.Dispose();
         _sim.Dispose();
         lock (_flightGate) _samples?.Dispose();
         _outbox.Dispose();

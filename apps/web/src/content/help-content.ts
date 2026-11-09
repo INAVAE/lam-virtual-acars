@@ -120,7 +120,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Descárgalo', 'De la página de versiones del proyecto (github.com/INAVAE/lam-virtual-acars/releases): el archivo LamAcars-<versión>-win-x64.zip de la versión más reciente. Junto a él se publica su suma SHA-256 para comprobar la descarga.'],
       ['Descomprime y abre', 'Descomprime la carpeta donde quieras y abre LamAcars.exe. Si Windows muestra «Windows protegió su PC», elige «Más información» → «Ejecutar de todas formas»: el ejecutable no está firmado.'],
       ['Vincula el equipo (una sola vez)', 'En el conector pulsa «Vincular este equipo» y aparece un código de 8 caracteres. En la web, Settings → Dispositivos ACARS, escríbelo y pulsa «Vincular equipo». En unos segundos el conector muestra tu nombre.'],
-      ['Actualizaciones', 'El conector avisa cuando hay una versión nueva con el botón «Descargar». Conviene usar siempre la más reciente: cada versión corrige la lectura de aviones específicos.'],
+      ['Actualizaciones', 'El conector busca versiones nuevas solo cada 6 horas y con el botón «Buscar actualización» (arriba a la derecha). Si hay una, «Descargar e instalar» la descarga, comprueba su suma SHA-256, cierra el conector y lo abre ya actualizado; tu vinculación, tus vuelos pendientes y la bitácora se conservan. Con un vuelo en curso el botón se desactiva: termina o abandona el vuelo y después instala. Desde la versión 0.1.36; si tienes una anterior, descarga la 0.1.36 a mano una última vez.'],
       ['Revocar', 'Si cambias de computadora o pierdes el equipo, revócalo en Settings → Dispositivos ACARS. Deja de enviar datos en su siguiente intento.'],
     ],
     note: 'PMDG 737 y 777: si el conector muestra «PMDG: falta activar los datos del SDK», pulsa «Activar» y vuelve a cargar el avión. Sin ese ajuste funciona igual, con las variables estándar del simulador.',
@@ -408,6 +408,7 @@ export const HELP_FAQ: [question: string, answer: string][] = [
   ['¿Por qué mi PIREP está «pendiente»?', 'La aerolínea no aprueba automáticamente, el puntaje quedó bajo el mínimo o tiene faltas graves. Lo revisa el staff; mientras tanto puedes dejar un comentario.'],
   ['Volé la ruta de un leg y no me contó para el tour.', 'Solo cuentan los vuelos reservados desde el tour con «Reservar leg». Un vuelo reservado en Flight Booking con la misma ruta es un vuelo normal de tu aerolínea. Abre el tour y reserva ese leg desde ahí.'],
   ['Cambiaron los legs de un tour en el que voy a la mitad.', 'El administrador de la aerolínea puede ajustarlo en cualquier momento. Lo que ya volaste en los legs que siguen te cuenta; vuela los que falten. Si quitaron los que te faltaban, el tour queda terminado y ganas la insignia.'],
+  ['¿Cómo actualizo el conector?', 'Pulsa «Buscar actualización» en el conector. Si hay una versión nueva y no tienes un vuelo en curso, «Descargar e instalar» lo actualiza solo. Si tienes un vuelo en curso, termínalo o abandónalo primero.'],
   ['¿Cómo me inscribo a un tour o evento?', 'En Tours o Events abre el que te interese y pulsa inscribirte o registrarte. Algunos requieren la aprobación de su creador.'],
   ['No veo la ruta del plan en el mapa.', 'Aparece para planes importados desde el 5 de noviembre de 2026. Si tu reserva es anterior, vuelve a importar el plan en My Flights.'],
   ['El control de IVAO tarda en aparecer.', 'Si nadie había abierto el mapa en un rato, la primera carga puede tardar hasta un minuto.'],
@@ -483,6 +484,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-08', 'Conector 0.1.36: botón «Buscar actualización» e instalación de la versión nueva desde el conector (después de terminar o abandonar el vuelo en curso).'],
   ['2026-11-08', 'Conector 0.1.34: la APU del Fenix A320 se detecta por su panel (MASTER SW y luz AVAIL).'],
   ['2026-11-08', 'Live Flights y My Flights: hoja completa del plan de SimBrief (información del vuelo, resumen del plan y hoja de carga); antes de despegar, distancia, tiempo y llegada salen del plan.'],
   ['2026-11-08', 'Tours: botón «Reservar leg» en cada leg. Solo el vuelo reservado desde el tour cuenta para el tour; Flight Booking avisa cuando una ruta es un leg que te falta.'],

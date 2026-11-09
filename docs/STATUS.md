@@ -2,6 +2,13 @@
 
 Última actualización: 2026-11-08 (hoja del plan de SimBrief en Live Flights)
 
+## Conector: buscar e instalar actualizaciones (2026-11-08)
+
+- Botón **Buscar actualización** en el encabezado del conector (además de la búsqueda automática cada 6 h): dice si hay versión nueva o si ya se tiene la más reciente.
+- **Descargar e instalar**: descarga el zip de la publicación, compara su SHA-256 con el `.sha256` publicado, lo descomprime en `%LOCALAPPDATA%\LamAcars\updates\<versión>` y un script de PowerShell espera a que el conector se cierre, copia los archivos sobre la carpeta actual y lo vuelve a abrir (bitácora en `logs\actualizacion.log`). Si la carpeta no admite escritura, abre la carpeta nueva para copiarla a mano.
+- Con un vuelo en curso el botón queda desactivado y el aviso pide terminarlo o abandonarlo; al cerrarse el vuelo se habilita. Lógica en `LamAcars.Core.Updates.UpdatePackage` (pruebas en `UpdateCheckerTests`). Desde 0.1.36; las versiones anteriores solo abren la página de descarga.
+- APU del Fenix A32x: MASTER SW (`L:S_OH_ELEC_APU_MASTER`) y AVAIL (`L:I_OH_ELEC_APU_START_U`), confirmado con la bitácora de un vuelo (0.1.34).
+
 ## Hoja del plan de SimBrief en Live Flights (2026-11-08)
 
 - El detalle del vuelo en Live Flights muestra, debajo de la ruta, la hoja del plan como SimBrief: **Información del vuelo** (número, callsign, salida, llegada, alterno, aeronave, fecha y horas programadas de salida y llegada, tiempo en el aire y de bloque, matrícula), **Resumen del plan** (altitud inicial, índice de costo, distancia de la ruta, viento medio y componente, desviación ISA, release, AIRAC, unidades, reserva, PDF) y **Hoja de carga** (consumo en ruta, pasajeros, peso vacío, ZFW/TOW/LW estimados y máximos —en rojo si se pasan—, combustible de bloque, equipaje y carga, carga de pago). My Flights usa la misma hoja.
