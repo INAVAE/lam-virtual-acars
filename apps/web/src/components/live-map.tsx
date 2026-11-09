@@ -200,7 +200,16 @@ export function LiveMap({
     metarRef.current = L.layerGroup().addTo(map);
     map.on('dragstart', () => handlers.current.onUserMove());
     map.on('zoomend', () => setZoom(map.getZoom()));
-    const observer = new ResizeObserver(() => map.invalidateSize());
+    // Sin animación y en el siguiente cuadro: si el contenedor cambia de tamaño durante el
+    // encuadre animado (por ejemplo, al aparecer la barra de desplazamiento cuando carga el
+    // detalle del vuelo), Leaflet fallaba con «_leaflet_pos» de undefined.
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (mapRef.current === map) map.invalidateSize({ pan: false, animate: false });
+      });
+    });
     observer.observe(containerRef.current);
     const planes = planesRef.current;
     const layers = traceLayers.current;
@@ -208,6 +217,8 @@ export function LiveMap({
     const routeGroups = routeLayers.current;
     return () => {
       observer.disconnect();
+      cancelAnimationFrame(frame);
+      map.stop();
       map.remove();
       planes.clear();
       layers.clear();
@@ -284,8 +295,8 @@ export function LiveMap({
     if (positions.length === 0) return;
     if (fittedRef.current && fitNonce === 0) return;
     fittedRef.current = true;
-    if (positions.length === 1) map.setView(positions[0]!, 7);
-    else map.fitBounds(L.latLngBounds(positions), { padding: [48, 48], maxZoom: 8 });
+    if (positions.length === 1) map.setView(positions[0]!, 7, { animate: false });
+    else map.fitBounds(L.latLngBounds(positions), { padding: [48, 48], maxZoom: 8, animate: false });
     // fitNonce pide un nuevo encuadre; flights solo cuenta la primera vez.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitNonce, flights.length > 0]);
