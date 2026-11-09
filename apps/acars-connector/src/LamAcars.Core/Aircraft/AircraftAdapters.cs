@@ -96,6 +96,7 @@ public class GenericAdapter : IAircraftAdapter
         new("BRAKE PARKING POSITION", "position"),
         new("GEAR HANDLE POSITION", "bool"),
         new("FLAPS HANDLE PERCENT", "percent over 100"),
+        new("FLAPS HANDLE INDEX", "number"),
         new("TRAILING EDGE FLAPS LEFT ANGLE", "degrees"),
         new("FUEL TOTAL QUANTITY WEIGHT", "pounds"),
         new("G FORCE", "GForce"),
@@ -203,6 +204,13 @@ public sealed class FenixAdapter : GenericAdapter
     public const string ApuAvailLight = "L:I_OH_ELEC_APU_START_U";
     public const string ApuBleed = "L:S_OH_PNEUMATIC_APU_BLEED";
 
+    /// <summary>Palanca de flaps del Fenix: 0, 1, 2, 3 y FULL (0 a 4).</summary>
+    public const string FlapsLever = "L:S_FC_FLAPS";
+
+    /// <summary>Grados de los flaps del A320 en cada retén (1+F = 10°; en vuelo, «1» sin flaps).</summary>
+    private static readonly double[] FlapDetentsDeg = { 0, 10, 15, 20, 40 };
+    private static readonly string[] FlapDetentNames = { "0", "1+F", "2", "3", "FULL" };
+
     private static readonly SimVar[] Extra =
     {
         new(ParkingBrakeLever, "number"),
@@ -214,6 +222,7 @@ public sealed class FenixAdapter : GenericAdapter
         new(ApuAvailLight, "number"),
         new(ApuStartOnLight, "number"),
         new(ApuBleed, "number"),
+        new(FlapsLever, "number"),
     };
 
     public override string Name => "Fenix A32x";
@@ -225,7 +234,8 @@ public sealed class FenixAdapter : GenericAdapter
     public override IReadOnlyList<SimVar> Variables { get; } = new GenericAdapter().Variables.Concat(Extra).ToArray();
 
     public override IReadOnlyList<string> Diagnostics { get; } =
-        new[] { ParkingBrakeLever, Chocks, "BRAKE PARKING POSITION", ApuMaster, ApuStart, ApuMasterFaultLight, ApuMasterOnLight, ApuStartOnLight, ApuAvailLight, ApuBleed }
+        new[] { ParkingBrakeLever, Chocks, "BRAKE PARKING POSITION", ApuMaster, ApuStart, ApuMasterFaultLight, ApuMasterOnLight, ApuStartOnLight, ApuAvailLight, ApuBleed,
+              FlapsLever, "FLAPS HANDLE INDEX", "FLAPS HANDLE PERCENT", "TRAILING EDGE FLAPS LEFT ANGLE" }
             .Concat(ApuDiagnostics).ToArray();
 
     public override SimSample Map(IReadOnlyDictionary<string, double> values, DateTimeOffset time, bool paused)
@@ -239,7 +249,27 @@ public sealed class FenixAdapter : GenericAdapter
         bool? apu = values.ContainsKey(ApuMaster) || values.ContainsKey(ApuAvailLight)
             ? (On(ApuMaster) && On(ApuAvailLight)) || sample.ApuRunning == true
             : sample.ApuRunning;
-        return sample with { ParkingBrake = sample.ParkingBrake || lever || chocks, ApuRunning = apu };
+        return MapFlaps(values, sample) with { ParkingBrake = sample.ParkingBrake || lever || chocks, ApuRunning = apu };
+    }
+
+    /// <summary>
+    /// Flaps por la palanca del Fenix (0–4). Los grados son los de la superficie si el
+    /// simulador los informa; si no, los del retén. Con la palanca en 1: «1+F» en tierra
+    /// o con flaps extendidos, «1» en vuelo sin flaps (se retraen solos a 210 kt).
+    /// Si la variable del Fenix no se mueve, quedan las estándar.
+    /// </summary>
+    internal static SimSample MapFlaps(IReadOnlyDictionary<string, double> values, SimSample sample)
+    {
+        if (!values.TryGetValue(FlapsLever, out var raw) || !double.IsFinite(raw)) return sample;
+        var detent = (int)Math.Round(raw);
+        if (detent is < 0 or > 4) return sample;
+        // Palanca del Fenix en 0 pero las estándar marcan flaps: se confía en las estándar.
+        if (detent == 0 && sample.FlapsRatio is > 0.05) return sample;
+        var surface = sample.FlapsDeg is > 0.5 ? sample.FlapsDeg : null;
+        var name = FlapDetentNames[detent];
+        if (detent == 1 && surface is null && !sample.OnGround) name = "1";
+        var deg = surface ?? (name == "1" ? 0 : FlapDetentsDeg[detent]);
+        return sample with { FlapsLabel = name, FlapsDeg = Math.Round(deg, 1), FlapsRatio = detent / 4.0 };
     }
 }
 

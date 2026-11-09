@@ -6,6 +6,8 @@ import {
   attitudeNote,
   cumulativeDistance,
   eventMarkers,
+  flapsNote,
+  flapsText,
   flightExtremes,
   formatAngle,
   formatElapsed,
@@ -314,5 +316,15 @@ describe('viento', () => {
     expect(idx.length).toBeGreaterThanOrEqual(9);
     expect(idx.length).toBeLessThanOrEqual(10);
     expect(windSampleIndices(track.map((p) => ({ ...p, wind_kt: null })), cumulativeDistance(track), 10)).toEqual([]);
+  });
+});
+
+describe('flaps', () => {
+  it('nota de cambio de flaps con el retén del avión', () => {
+    expect(flapsNote({ kind: 'flaps', from: '0', to: '1+F', ias_kt: 0, on_ground: true })).toEqual({ label: 'Flaps 1+F', detail: 'de 0 · 0 kt · en tierra' });
+    expect(flapsNote({ kind: 'apu' })).toBeNull();
+    expect(flapsText({ flaps: 'FULL', flaps_deg: 40 })).toBe('flaps FULL');
+    expect(flapsText({ flaps_deg: 15 })).toBe('flaps 15°');
+    expect(flapsText({})).toBeNull();
   });
 });

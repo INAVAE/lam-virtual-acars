@@ -1,5 +1,7 @@
 using System.Buffers.Binary;
 using LamAcars.Core.Aircraft;
+using LamAcars.Core.Engine;
+using LamAcars.Core.Models;
 using Xunit;
 
 namespace LamAcars.Core.Tests;
@@ -200,5 +202,57 @@ public class AdapterTests
         var values = new Dictionary<string, double>();
         new Pmdg737Adapter().Read(new byte[100], values);
         Assert.Empty(values);
+    }
+}
+
+public class FenixFlapsTests
+{
+    private static readonly DateTimeOffset T = Samples.T0;
+
+    [Theory]
+    [InlineData(0, true, "0", 0)]
+    [InlineData(1, true, "1+F", 10)]
+    [InlineData(1, false, "1", 0)]       // en vuelo, sin flaps: «1»
+    [InlineData(2, false, "2", 15)]
+    [InlineData(3, false, "3", 20)]
+    [InlineData(4, false, "FULL", 40)]
+    public void Fenix_lee_la_palanca_de_flaps(double lever, bool ground, string label, double deg)
+    {
+        var values = new Dictionary<string, double> { ["SIM ON GROUND"] = ground ? 1 : 0, [FenixAdapter.FlapsLever] = lever };
+        var s = new FenixAdapter().Map(values, T, false);
+        Assert.Equal(label, s.FlapsLabel);
+        Assert.Equal(deg, s.FlapsDeg);
+    }
+
+    [Fact]
+    public void Con_la_superficie_informada_usa_sus_grados()
+    {
+        var values = new Dictionary<string, double>
+        {
+            ["SIM ON GROUND"] = 0, [FenixAdapter.FlapsLever] = 1, ["TRAILING EDGE FLAPS LEFT ANGLE"] = 9.6,
+        };
+        var s = new FenixAdapter().Map(values, T, false);
+        Assert.Equal("1+F", s.FlapsLabel);
+        Assert.Equal(9.6, s.FlapsDeg);
+    }
+
+    [Fact]
+    public void El_registrador_anota_cada_cambio_de_flaps()
+    {
+        var sink = new ListSink();
+        var recorder = new FlightRecorder(sink);
+        SimSample At(int t, string label) => Samples.Ground(t, engines: 2) with { FlapsLabel = label, FlapsDeg = label == "0" ? 0 : 10 };
+        recorder.Process(At(0, "0"));
+        recorder.Process(At(1, "0"));
+        recorder.Process(At(2, "1+F"));
+        recorder.Process(At(3, "0"));   // se movió y regresó: no cuenta
+        recorder.Process(At(4, "1+F"));
+        recorder.Process(At(5, "1+F"));
+        recorder.Process(At(7, "1+F"));
+        var notes = sink.Events.Where(e => e.Type == FlightEventTypes.Note && Equals(e.Data["kind"], "flaps")).ToList();
+        var note = Assert.Single(notes);
+        Assert.Equal("0", note.Data["from"]);
+        Assert.Equal("1+F", note.Data["to"]);
+        Assert.Equal(Samples.T0.AddSeconds(4), note.OccurredAt);
     }
 }

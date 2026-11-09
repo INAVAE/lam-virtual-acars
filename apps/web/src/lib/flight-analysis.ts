@@ -310,7 +310,7 @@ export function attitudeNote(data: unknown): { label: string; detail: string } |
 export interface EventMarker {
   id: string;
   time: number;
-  kind: 'block_off' | 'takeoff' | 'touchdown' | 'block_on' | 'engine' | 'apu' | 'pause' | 'warning' | 'go_around' | 'attitude' | 'shear';
+  kind: 'block_off' | 'takeoff' | 'touchdown' | 'block_on' | 'engine' | 'apu' | 'flaps' | 'pause' | 'warning' | 'go_around' | 'attitude' | 'shear';
   label: string;
   detail: string | null;
   /** Letra o símbolo corto que se dibuja en el marcador. */
@@ -323,6 +323,24 @@ export interface EventMarker {
 function num(data: Record<string, unknown>, key: string): number | null {
   const v = data[key];
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+/** Texto de los flaps de un evento: el retén del avión («1+F») o los grados. */
+export function flapsText(d: Record<string, unknown>): string | null {
+  if (typeof d.flaps === 'string' && d.flaps) return `flaps ${d.flaps}`;
+  return num(d, 'flaps_deg') !== null ? `flaps ${num(d, 'flaps_deg')}°` : null;
+}
+
+/** Nota de cambio de flaps: «Flaps 1+F» con la velocidad y la altitud de ese momento. */
+export function flapsNote(data: unknown): { label: string; detail: string } | null {
+  const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  if (d.kind !== 'flaps' || typeof d.to !== 'string') return null;
+  const parts = [
+    typeof d.from === 'string' ? `de ${d.from}` : '',
+    num(d, 'ias_kt') !== null ? `${num(d, 'ias_kt')} kt` : '',
+    d.on_ground === true ? 'en tierra' : num(d, 'altitude_ft') !== null ? `${num(d, 'altitude_ft')!.toLocaleString('es-MX')} ft` : '',
+  ];
+  return { label: `Flaps ${d.to}`, detail: parts.filter(Boolean).join(' · ') };
 }
 
 const APU_LABELS: Record<string, string> = { start: 'APU encendida', stop: 'APU apagada', running: 'APU ya en marcha al iniciar ACARS' };
@@ -339,13 +357,13 @@ export function eventMarkers(events: readonly AnalysisEvent[]): EventMarker[] {
         out.push({ ...base, kind: 'block_off', label: 'Calzos fuera', detail: num(d, 'fuel_kg') !== null ? `${num(d, 'fuel_kg')} kg` : null, glyph: 'B', color: '#94a3b8' });
         break;
       case 'takeoff': {
-        const parts = [num(d, 'ias_kt') !== null ? `${num(d, 'ias_kt')} kt` : '', num(d, 'pitch_deg') !== null ? `cabeceo ${num(d, 'pitch_deg')}°` : '', num(d, 'flaps_deg') !== null ? `flaps ${num(d, 'flaps_deg')}°` : ''];
+        const parts = [num(d, 'ias_kt') !== null ? `${num(d, 'ias_kt')} kt` : '', num(d, 'pitch_deg') !== null ? `cabeceo ${num(d, 'pitch_deg')}°` : '', flapsText(d) ?? ''];
         out.push({ ...base, kind: 'takeoff', label: 'Despegue', detail: parts.filter(Boolean).join(' · ') || null, glyph: '↗', color: '#f97316' });
         break;
       }
       case 'touchdown': {
         const vs = num(d, 'vs_fpm');
-        const parts = [vs !== null ? `${Math.round(vs)} fpm` : '', num(d, 'g_force') !== null ? `${num(d, 'g_force')} G` : '', num(d, 'flaps_deg') !== null ? `flaps ${num(d, 'flaps_deg')}°` : ''];
+        const parts = [vs !== null ? `${Math.round(vs)} fpm` : '', num(d, 'g_force') !== null ? `${num(d, 'g_force')} G` : '', flapsText(d) ?? ''];
         out.push({ ...base, kind: 'touchdown', label: 'Contacto con pista', detail: parts.filter(Boolean).join(' · ') || null, glyph: '↘', color: '#ef4444' });
         break;
       }
@@ -387,6 +405,8 @@ export function eventMarkers(events: readonly AnalysisEvent[]): EventMarker[] {
         {
           const att = attitudeNote(d);
           if (att) out.push({ ...base, kind: 'attitude', label: att.label, detail: att.detail || null, glyph: '∠', color: '#e11d48' });
+          const flaps = flapsNote(d);
+          if (flaps) out.push({ ...base, kind: 'flaps', label: flaps.label, detail: flaps.detail || null, glyph: 'F', color: '#8b5cf6' });
         }
         break;
       case 'phase_change':

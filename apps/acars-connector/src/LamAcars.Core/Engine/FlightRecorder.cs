@@ -40,6 +40,8 @@ public sealed class FlightRecorder
     private SimSample? _liftoff;
     private bool? _apuState;
     private (bool State, DateTimeOffset Since)? _apuPending;
+    private string? _flapsState;
+    private (string State, DateTimeOffset Since)? _flapsPending;
     private readonly Dictionary<string, AttitudeExcursion> _attitude = new();
     private readonly EngineCountFilter _engines = new();
     private readonly EventFloodGuard _flood = new();
@@ -87,6 +89,7 @@ public sealed class FlightRecorder
         var prev = _previous;
         DetectSimEvents(prev, s);
         TrackApu(s);
+        TrackFlaps(s);
         TrackAttitude(s);
         if (prev is { OnGround: true } && !s.OnGround) _liftoff = s;
 
@@ -105,6 +108,7 @@ public sealed class FlightRecorder
                     ["ias_kt"] = Round(lo.IasKt), ["gs_kt"] = Math.Round(lo.GsKt), ["pitch_deg"] = Round(lo.PitchDeg, 1), ["heading_deg"] = Round(lo.HeadingDeg),
                     ["fuel_kg"] = Round(lo.FuelTotalKg), ["flaps_deg"] = Round(lo.FlapsDeg, 1),
                 };
+                if (lo.FlapsLabel is { } fl) takeoff["flaps"] = fl;
                 WindMath.AddTo(takeoff, lo);
                 Emit(FlightEventTypes.Takeoff, tr.To, lo, takeoff);
             }
@@ -125,6 +129,7 @@ public sealed class FlightRecorder
         if (metrics is not null)
         {
             var touchdown = new Dictionary<string, object?>(metrics.ToData(_landing.Bounces));
+            if (s.FlapsLabel is { } tdFlaps) touchdown["flaps"] = tdFlaps;
             WindMath.AddTo(touchdown, s);
             Emit(FlightEventTypes.Touchdown, FlightPhase.Landing, s, touchdown,
                 metrics.TouchdownAt, metrics.Latitude, metrics.Longitude, metrics.AltitudeFt);
@@ -221,6 +226,48 @@ public sealed class FlightRecorder
         _apuState = running;
         _apuPending = null;
         EmitApu(running ? "start" : "stop", s, pending.Since);
+    }
+
+    /// <summary>Texto de la posición de flaps: el nombre del retén o los grados.</summary>
+    public static string? FlapsText(SimSample s) =>
+        s.FlapsLabel ?? (s.FlapsDeg is { } d ? $"{Math.Round(d)}°" : null);
+
+    /// <summary>
+    /// Flaps: una nota cada vez que cambia la posición y se mantiene 2 s (con la
+    /// velocidad y la altitud de ese momento). La posición al iniciar ACARS no se anota.
+    /// </summary>
+    private void TrackFlaps(SimSample s)
+    {
+        if (s.Paused || FlapsText(s) is not { } state) return;
+        if (_flapsState is null)
+        {
+            _flapsState = state;
+            return;
+        }
+        if (state == _flapsState)
+        {
+            _flapsPending = null;
+            return;
+        }
+        if (_flapsPending is not { } pending || pending.State != state)
+        {
+            _flapsPending = (state, s.Time);
+            return;
+        }
+        if ((s.Time - pending.Since).TotalSeconds < 2) return;
+        var from = _flapsState;
+        _flapsState = state;
+        _flapsPending = null;
+        Emit(FlightEventTypes.Note, _machine.Phase, s, new Dictionary<string, object?>
+        {
+            ["kind"] = "flaps",
+            ["from"] = from,
+            ["to"] = state,
+            ["flaps_deg"] = Round(s.FlapsDeg, 1),
+            ["ias_kt"] = Round(s.IasKt),
+            ["altitude_ft"] = Math.Round(s.AltitudeFt),
+            ["on_ground"] = s.OnGround,
+        }, pending.Since);
     }
 
     private void EmitApu(string state, SimSample s, DateTimeOffset at) =>

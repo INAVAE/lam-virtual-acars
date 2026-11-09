@@ -485,6 +485,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-08', 'Conector 0.1.42: registra cada cambio de flaps (en el Fenix A320 con el nombre del retén, por ejemplo 1+F) y los muestra en la gráfica del vuelo y en la bitácora del PIREP.'],
   ['2026-11-08', 'Conector 0.1.40: botón «Siempre visible» para dejar la ventana encima del simulador.'],
   ['2026-11-08', 'Conector 0.1.36: botón «Buscar actualización» e instalación de la versión nueva desde el conector (después de terminar o abandonar el vuelo en curso).'],
   ['2026-11-08', 'Conector 0.1.34: la APU del Fenix A320 se detecta por su panel (MASTER SW y luz AVAIL).'],

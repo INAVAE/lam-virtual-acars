@@ -4,6 +4,8 @@
 
 ## Conector: buscar e instalar actualizaciones (2026-11-08)
 
+- **Flaps** (0.1.42): nota `kind: flaps` (from, to, flaps_deg, ias_kt, altitude_ft, on_ground) en cada cambio estable 2 s; despegue y contacto llevan `flaps` (retén). Fenix por `L:S_FC_FLAPS` (confirmado por el usuario). La ventana del conector muestra «flaps 1+F»; la web marca «F» en la gráfica y en la bitácora del PIREP.
+
 - **Siempre visible** (0.1.40): botón bajo «Buscar actualización» y opción en el menú de la bandeja; `Topmost` de la ventana, guardado en `settings.json` (`AlwaysOnTop`). Con MSFS en ventana o pantalla completa sin bordes.
 
 - Botón **Buscar actualización** en el encabezado del conector (además de la búsqueda automática cada 6 h): dice si hay versión nueva o si ya se tiene la más reciente.

@@ -28,6 +28,8 @@ public sealed record SimSample
     public double? FlapsRatio { get; init; }
     /// <summary>Flaps de borde de salida en grados (posición real, o el retén de la palanca si la aeronave solo da eso).</summary>
     public double? FlapsDeg { get; init; }
+    /// <summary>Posición de la palanca como la llama el avión (por ejemplo «1+F», «2», «FULL»); null si solo se conocen los grados.</summary>
+    public string? FlapsLabel { get; init; }
     public double? FuelTotalKg { get; init; }
     /// <summary>APU en marcha (null si la aeronave no lo informa).</summary>
     public bool? ApuRunning { get; init; }

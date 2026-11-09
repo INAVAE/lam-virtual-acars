@@ -3,6 +3,7 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "Conector 0.1.42: registra cada cambio de flaps (en el Fenix A320 con el nombre del retén, por ejemplo 1+F) y los muestra en la gráfica del vuelo y en la bitácora del PIREP.": "Connector 0.1.42: records every flap change (on the Fenix A320 with the detent name, for example 1+F) and shows them on the flight chart and in the PIREP log.",
     "Siempre visible": "Always on top",
     "El botón «Siempre visible» (debajo de «Buscar actualización», o en el menú del icono junto al reloj) deja la ventana del conector encima del simulador aunque estés usando MSFS. Funciona con MSFS en ventana o en pantalla completa sin bordes; en pantalla completa exclusiva Windows no deja dibujar ventanas encima. Para quitarlo pulsa «Quitar del frente». Se recuerda al volver a abrir el conector.": "The “Always on top” button (below “Check for update”, or in the menu of the icon next to the clock) keeps the connector window above the simulator even while you use MSFS. It works with MSFS windowed or in borderless full screen; in exclusive full screen Windows does not allow windows on top. To turn it off press “Remove from top”. It is remembered when you reopen the connector.",
     "Conector 0.1.40: botón «Siempre visible» para dejar la ventana encima del simulador.": "Connector 0.1.40: “Always on top” button to keep the window above the simulator.",
@@ -2072,6 +2073,8 @@ export const EN: Dictionary = {
     "Callsign, piloto, aeropuerto, evento, tour…": "Callsign, pilot, airport, event, tour…"
   },
   patterns: [
+    ["Flaps {0}", "Flaps {0}"],
+    ["de {0} · {1} kt · en tierra", "from {0} · {1} kt · on ground"],
     ["SimBrief · FL{0}", "SimBrief · FL{0}"],
     ["Importado {0}", "Imported {0}"],
     ["Reservar leg {0}", "Book leg {0}"],

@@ -27,7 +27,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
-import { attitudeNote, formatWind, formatWindComponents, windComponents } from '@/lib/flight-analysis';
+import { attitudeNote, flapsNote, flapsText, formatWind, formatWindComponents, windComponents } from '@/lib/flight-analysis';
 import { formatLocalDateTime, formatNumber, formatPilotNumber } from '@/lib/format';
 import { useAirlinePermissions } from '@/lib/permissions';
 import { phaseLabel } from '@/lib/phases';
@@ -94,11 +94,11 @@ function eventDetail(e: FlightEvent): string {
     case 'block_on':
       return typeof d.fuel_kg === 'number' ? `${formatNumber(d.fuel_kg)} kg de combustible` : '';
     case 'takeoff':
-      return [typeof d.ias_kt === 'number' ? `${d.ias_kt} kt` : '', typeof d.flaps_deg === 'number' ? `flaps ${d.flaps_deg}°` : '']
+      return [typeof d.ias_kt === 'number' ? `${d.ias_kt} kt` : '', flapsText(d) ?? '']
         .filter(Boolean)
         .join(' · ');
     case 'touchdown':
-      return [typeof d.vs_fpm === 'number' ? formatVs(d.vs_fpm) : '', typeof d.g_force === 'number' ? `${d.g_force} G` : '']
+      return [typeof d.vs_fpm === 'number' ? formatVs(d.vs_fpm) : '', typeof d.g_force === 'number' ? `${d.g_force} G` : '', flapsText(d) ?? '']
         .filter(Boolean)
         .join(' · ');
     case 'engine_start':
@@ -113,6 +113,8 @@ function eventDetail(e: FlightEvent): string {
       {
         const att = attitudeNote(d);
         if (att) return att.detail;
+        const flaps = flapsNote(d);
+        if (flaps) return `${flaps.label}${flaps.detail ? ` · ${flaps.detail}` : ''}`;
       }
       return d.kind === 'adapter' ? `Adaptador ${String(d.adapter ?? '')}${d.sdk ? ' con SDK' : ''}` : String(d.kind ?? '');
     case 'aircraft_changed':
@@ -126,7 +128,7 @@ function EventsPanel({ events, loading }: { events: FlightEvent[]; loading: bool
   const [showAll, setShowAll] = useState(false);
   const isApu = (e: FlightEvent) => e.type === 'note' && (e.data as Record<string, unknown> | null)?.kind === 'apu';
   const attitude = (e: FlightEvent) => (e.type === 'note' ? attitudeNote(e.data) : null);
-  const visible = showAll ? events : events.filter((e) => e.type !== 'note' || isApu(e) || attitude(e) !== null);
+  const visible = showAll ? events : events.filter((e) => e.type !== 'note' || isApu(e) || attitude(e) !== null || flapsNote(e.data) !== null);
   return (
     <Panel
       expandable

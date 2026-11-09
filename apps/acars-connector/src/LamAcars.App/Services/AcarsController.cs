@@ -567,8 +567,9 @@ public sealed class AcarsController : INotifyPropertyChanged, IDisposable
         var wind = s.WindKt is { } wk && s.WindDirDeg is { } wd ? $" · viento {wd:000}°/{wk:0} kt" : string.Empty;
         // Motores apagados con la APU encendida: el vuelo no se cierra hasta apagarla.
         var apuHint = phase == FlightPhase.EnginesShutdown && s.ApuRunning == true && apuReported ? "\nApaga la APU para cerrar el vuelo." : string.Empty;
+        var flaps = FlightRecorder.FlapsText(s) is { } ft ? $" · flaps {ft}" : string.Empty;
         Set(nameof(TelemetryText), () => TelemetryText =
-            $"{s.AltitudeFt:N0} ft · GS {s.GsKt:N0} kt · VS {s.VsFpm:+0;-0;0} fpm{wind}{(s.OnGround ? " · en tierra" : string.Empty)}{(s.Paused ? " · PAUSA" : string.Empty)}{apuHint}");
+            $"{s.AltitudeFt:N0} ft · GS {s.GsKt:N0} kt · VS {s.VsFpm:+0;-0;0} fpm{wind}{flaps}{(s.OnGround ? " · en tierra" : string.Empty)}{(s.Paused ? " · PAUSA" : string.Empty)}{apuHint}");
     }
 
     private void OnPhaseChanged(PhaseTransition tr)
