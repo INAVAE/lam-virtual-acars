@@ -9,6 +9,7 @@
 
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.57.4';
 import type { ZodTypeAny, z } from 'zod';
+import { captureFlightMetar, sessionAirports } from './metar.ts';
 import {
   ACARS_ERROR_STATUS,
   eventsRequest,
@@ -62,6 +63,14 @@ function secretKey(): string {
 }
 
 let client: SupabaseClient | null = null;
+
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
+
+/** Trabajo en segundo plano: la respuesta al conector no lo espera. */
+function background(task: () => Promise<unknown>) {
+  const promise = task().catch((error) => console.error('Tarea en segundo plano falló', error));
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(promise);
+}
 function db(): SupabaseClient {
   client ??= createClient(Deno.env.get('SUPABASE_URL') ?? '', secretKey(), {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -201,7 +210,20 @@ const routes: Record<string, Handler> = {
   'POST /events': async (req) => {
     const tokenHash = await deviceTokenHash(req);
     const body = await readBody(req, eventsRequest);
-    return json(await rpc('acars_events', { p_token_hash: tokenHash, p_session_id: body.session_id, p_events: body.events }));
+    const data = await rpc('acars_events', { p_token_hash: tokenHash, p_session_id: body.session_id, p_events: body.events });
+    // Calzos fuera: METAR de salida. Calzos puestos: METAR de llegada (del destino;
+    // al cerrar la sesión se corrige si terminó en otro aeropuerto).
+    const blockOff = body.events.find((e) => e.type === 'block_off');
+    const blockOn = body.events.find((e) => e.type === 'block_on');
+    if (blockOff || blockOn) {
+      background(async () => {
+        const info = await sessionAirports(db(), body.session_id);
+        if (!info) return;
+        if (blockOff) await captureFlightMetar(db(), info.flightId, 'departure', info.origin, new Date(blockOff.occurred_at));
+        if (blockOn) await captureFlightMetar(db(), info.flightId, 'arrival', info.final ?? info.destination, new Date(blockOn.occurred_at));
+      });
+    }
+    return json(data);
   },
 
   'POST /session/end': async (req) => {
@@ -213,6 +235,15 @@ const routes: Record<string, Handler> = {
       p_reason: body.reason,
       p_latitude: body.latitude ?? null,
       p_longitude: body.longitude ?? null,
+    });
+    // METAR del aeropuerto donde terminó (o del destino si no se pudo saber).
+    background(async () => {
+      const info = await sessionAirports(db(), body.session_id);
+      if (!info) return;
+      const icao = info.final ?? info.destination;
+      const { data: saved } = await db().from('flight_weather').select('icao, event_at').eq('flight_id', info.flightId).eq('role', 'arrival').maybeSingle();
+      if (saved && saved.icao === icao) return;
+      await captureFlightMetar(db(), info.flightId, 'arrival', icao, saved?.event_at ? new Date(saved.event_at) : new Date());
     });
     // La posición viva solo existe mientras el vuelo está en curso.
     const { error } = await db().from('flight_positions_live').delete().eq('session_id', body.session_id);

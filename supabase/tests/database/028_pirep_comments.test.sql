@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(9);
+select plan(12);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-000000000bc3', 'c@pc.test', '{"display_name":"Admin C"}'),
@@ -49,8 +49,17 @@ select f.id, s.id, f.airline_id, f.user_id, f.aircraft_type_id, 'XA-PC1', 'QCP90
   from f join s on s.flight_id = f.id;
 update t set pirep = (select id from pireps where callsign = 'QCP900');
 
+-- METAR guardado con el vuelo (lo escribe la Edge Function con la clave secreta).
+insert into flight_weather (flight_id, role, icao, event_at, observed_at, metar)
+select flight_id, 'departure', 'MMMX', now() - interval '1 hour', now() - interval '70 minutes', '{"raw":"MMMX 090400Z 00000KT P6SM SKC 18/05 A3020"}'::jsonb
+  from pireps where callsign = 'QCP900';
+
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000bd4"}';
+select is((select metar ->> 'raw' from flight_weather where role = 'departure' and icao = 'MMMX' and flight_id = (select flight_id from pireps where id = (select pirep from t))),
+  'MMMX 090400Z 00000KT P6SM SKC 18/05 A3020', 'El piloto ve el METAR de salida de su vuelo');
+select throws_ok($$insert into flight_weather (flight_id, role, icao, event_at) select flight_id, 'arrival', 'MMGL', now() from pireps limit 1$$,
+  '42501', null, 'Nadie escribe el METAR desde la web');
 select throws_ok(format($$select comment_pirep(%L, 'Cambio tardío')$$, (select pirep from t)), '55000', null,
   'El comentario inicial solo se edita mientras está pendiente');
 select is(add_pirep_comment((select pirep from t), '  El motor 2 falló por el simulador  ') ->> 'author_role', 'pilot',
@@ -67,6 +76,7 @@ select results_eq(
 
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000be5"}';
 select is((select count(*)::int from pirep_comments where pirep_id = (select pirep from t)), 0, 'Otro piloto no ve la conversación');
+select is((select count(*)::int from flight_weather), 0, 'Ni el METAR de vuelos ajenos');
 select throws_ok(format($$select add_pirep_comment(%L, 'Hola')$$, (select pirep from t)), '42501', null, 'Ni comenta en PIREP ajenos');
 select throws_ok(format($$insert into pirep_comments (pirep_id, author_name, author_role, body) values (%L, 'X', 'staff', 'y')$$, (select pirep from t)),
   '42501', null, 'Nadie escribe directo en la tabla');

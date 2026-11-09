@@ -2,6 +2,11 @@
 
 Última actualización: 2026-11-08 (hoja del plan de SimBrief en Live Flights)
 
+## PIREP con plan de SimBrief, ruta y METAR (2026-11-09)
+
+- El detalle del PIREP muestra la ruta del plan (puntos del navlog) punteada en el mapa del análisis, el panel «Plan de vuelo (SimBrief)» con la misma hoja que Live Flights y «Clima de salida y llegada».
+- Tabla `flight_weather` (flight_id, role departure/arrival, icao, event_at, observed_at, metar, source): la Edge Function `acars` (v4) guarda en segundo plano el METAR de NOAA más cercano a calzos fuera (salida) y a calzos puestos (llegada; al cerrar la sesión se corrige al aeropuerto final si hubo desvío), con la caché `weather_reports` como respaldo. Solo lectura para quien ve el vuelo. Migración `flight_weather`; prueba 028 (+3). Vuelos anteriores no tienen METAR guardado.
+
 ## Comentarios del PIREP en cualquier momento (2026-11-09)
 
 - Tabla `pirep_comments` (solo lectura por RLS para quien ve el PIREP) y `add_pirep_comment` (piloto dueño o staff de la aerolínea; cualquier estado salvo archivado; 30 por hora). La revisión del PIREP muestra la conversación y el cuadro para comentar aunque ya esté aceptado o rechazado. `pilot_comment` sigue siendo el comentario inicial editable mientras está pendiente. Migración `pirep_comments`, prueba 028 (9).

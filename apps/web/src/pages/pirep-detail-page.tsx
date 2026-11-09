@@ -14,6 +14,8 @@ import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  useFlightPlanSheet,
+  useFlightWeather,
   usePirepPrograms,
   useArchivePirep,
   useAddPirepComment,
@@ -25,9 +27,13 @@ import {
   useReviewPirep,
   useWaiveFinding,
   type FlightEvent,
+  type FlightWeather,
   type PirepDetail,
 } from '@/hooks/use-pireps';
 import { ProgramTag } from '@/components/program-tag';
+import { FlightPlanSheetView } from '@/components/flight-plan-sheet';
+import { FlightCategoryBadge } from '@/components/weather';
+import { formatAltimeter, formatTemperature, formatVisibility, formatWind, formatZulu } from '@/lib/weather';
 import { useAuth } from '@/lib/auth';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
@@ -164,6 +170,86 @@ function EventsPanel({ events, loading }: { events: FlightEvent[]; loading: bool
             </li>
           ))}
         </ol>
+      )}
+    </Panel>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Plan de SimBrief y clima de salida y llegada
+// -----------------------------------------------------------------------------
+function PlanPanel({ flightId }: { flightId: string }) {
+  const sheet = useFlightPlanSheet(flightId);
+  if (sheet.isPending) return <Skeleton className="h-40" />;
+  if (!sheet.data) return null;
+  return (
+    <Panel expandable title="Plan de vuelo (SimBrief)" description="El plan que se importó para este vuelo: información, resumen y hoja de carga.">
+      <div className="space-y-4">
+        {sheet.data.route ? (
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted">Ruta</p>
+            <p className="mt-1 break-words rounded-md border border-line bg-bg px-3 py-2 font-mono text-sm leading-relaxed">{sheet.data.route}</p>
+          </div>
+        ) : null}
+        {sheet.data.plan ? <FlightPlanSheetView plan={sheet.data.plan} /> : null}
+      </div>
+    </Panel>
+  );
+}
+
+function MetarCard({ label, weather, fallbackIcao }: { label: string; weather: FlightWeather | undefined; fallbackIcao: string | undefined }) {
+  const metar = weather?.metar ?? null;
+  return (
+    <div className="rounded-md border border-line bg-bg p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs uppercase tracking-wide text-muted">{label}</span>
+        <span className="font-mono font-semibold">{weather?.icao ?? fallbackIcao ?? '—'}</span>
+        {metar ? <FlightCategoryBadge metar={metar} /> : null}
+        {metar?.observed_at ? <span className="text-xs text-muted">{`observado ${formatZulu(metar.observed_at)}`}</span> : null}
+      </div>
+      {metar ? (
+        <>
+          <p className="mt-2 break-words font-mono text-sm">{metar.raw ?? '—'}</p>
+          <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
+            <div>
+              <dt className="text-xs text-muted">Viento</dt>
+              <dd className="font-mono">{formatWind(metar.wind_dir, metar.wind_kt, metar.gust_kt)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Visibilidad</dt>
+              <dd className="font-mono">{formatVisibility(metar.visibility_sm)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Temp./rocío</dt>
+              <dd className="font-mono">{formatTemperature(metar.temp_c, metar.dewpoint_c)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">QNH</dt>
+              <dd className="font-mono">{formatAltimeter(metar.altimeter_hpa)}</dd>
+            </div>
+          </dl>
+        </>
+      ) : (
+        <p className="mt-2 text-sm text-muted">
+          {weather ? 'NOAA no tenía un METAR de ese momento.' : 'Sin METAR guardado: se registra desde el 9 de noviembre de 2026 (calzos fuera y calzos puestos).'}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function WeatherPanel({ flightId, origin, arrival }: { flightId: string; origin: string | undefined; arrival: string | undefined }) {
+  const weather = useFlightWeather(flightId);
+  const rows = weather.data ?? [];
+  return (
+    <Panel title="Clima de salida y llegada" description="METAR de NOAA más cercano a los calzos fuera y a los calzos puestos, guardado con el vuelo.">
+      {weather.isPending ? (
+        <Skeleton className="h-32" />
+      ) : (
+        <div className="grid gap-3 lg:grid-cols-2">
+          <MetarCard label="Salida" weather={rows.find((r) => r.role === 'departure')} fallbackIcao={origin} />
+          <MetarCard label="Llegada" weather={rows.find((r) => r.role === 'arrival')} fallbackIcao={arrival} />
+        </div>
       )}
     </Panel>
   );
@@ -790,6 +876,7 @@ export function PirepDetailPage() {
   const permissions = useAirlinePermissions(pirep.data?.airline_id);
   const restore = useRestorePirep();
   const programs = usePirepPrograms(id ? [id] : []);
+  const planSheet = useFlightPlanSheet(pirep.data?.flight_id);
   const program = id ? programs.data?.[id] : undefined;
   const [archiveOpen, setArchiveOpen] = useState(false);
 
@@ -974,7 +1061,11 @@ export function PirepDetailPage() {
         airports={airports}
         loading={track.isPending}
         reserveKg={metrics.fuel?.plan?.reserve_kg ?? null}
+        route={planSheet.data?.fixes}
       />
+
+      <WeatherPanel flightId={p.flight_id} origin={p.origin?.icao_code} arrival={(p.diverted ? p.arrival : p.destination)?.icao_code} />
+      <PlanPanel flightId={p.flight_id} />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">

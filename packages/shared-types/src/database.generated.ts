@@ -1187,6 +1187,47 @@ export type Database = {
         }
         Relationships: []
       }
+      flight_weather: {
+        Row: {
+          captured_at: string
+          event_at: string
+          flight_id: string
+          icao: string
+          metar: Json | null
+          observed_at: string | null
+          role: string
+          source: string
+        }
+        Insert: {
+          captured_at?: string
+          event_at: string
+          flight_id: string
+          icao: string
+          metar?: Json | null
+          observed_at?: string | null
+          role: string
+          source?: string
+        }
+        Update: {
+          captured_at?: string
+          event_at?: string
+          flight_id?: string
+          icao?: string
+          metar?: Json | null
+          observed_at?: string | null
+          role?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_weather_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: false
+            referencedRelation: "flights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flights: {
         Row: {
           aircraft_id: string | null

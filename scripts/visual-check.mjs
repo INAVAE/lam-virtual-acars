@@ -869,6 +869,19 @@ function rowsFor(url) {
       return ticketRows(url);
     case 'account_requests':
       return eqParam(url, 'status') ? ACCOUNT_REQUESTS.filter((r) => r.status === eqParam(url, 'status')) : ACCOUNT_REQUESTS;
+    case 'simbrief_ofps':
+      return eqParam(url, 'flight_id') === id(1250)
+        ? [{ flight_id: id(1250), ...LIVE_ROUTES[id(1500)].plan, route: LIVE_ROUTES[id(1500)].route, navlog: LIVE_ROUTES[id(1500)].fixes, mismatches: [] }]
+        : [];
+    case 'flight_weather':
+      return eqParam(url, 'flight_id') === id(1250)
+        ? [
+            { role: 'departure', icao: 'MMMX', event_at: minsAgo(26 * 60 + 56), observed_at: minsAgo(26 * 60 + 70), source: 'noaa',
+              metar: { raw: 'MMMX 081944Z 03008KT 7SM FEW030 BKN200 24/07 A3022 RMK HZY', observed_at: minsAgo(26 * 60 + 70), temp_c: 24, dewpoint_c: 7, wind_dir: 30, wind_kt: 8, gust_kt: null, visibility_sm: 7, altimeter_hpa: 1023.4, weather: null, vertical_visibility_ft: null, clouds: [{ cover: 'FEW', base: 3000 }, { cover: 'BKN', base: 20000 }], flight_category: 'VFR' } },
+            { role: 'arrival', icao: 'MMAA', event_at: minsAgo(26 * 60), observed_at: minsAgo(26 * 60 + 10), source: 'noaa',
+              metar: { raw: 'MMAA 082040Z 24012G22KT 4SM -SHRA BKN014 OVC025 27/24 A2988', observed_at: minsAgo(26 * 60 + 10), temp_c: 27, dewpoint_c: 24, wind_dir: 240, wind_kt: 12, gust_kt: 22, visibility_sm: 4, altimeter_hpa: 1011.8, weather: '-SHRA', vertical_visibility_ft: null, clouds: [{ cover: 'BKN', base: 1400 }, { cover: 'OVC', base: 2500 }], flight_category: 'MVFR' } },
+          ]
+        : [];
     case 'pirep_comments':
       return eqParam(url, 'pirep_id') === PIREP_ID
         ? [

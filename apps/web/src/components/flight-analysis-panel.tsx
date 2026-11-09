@@ -28,6 +28,7 @@ import {
 import { formatNumber } from '@/lib/format';
 import { useTheme } from '@/lib/theme';
 import { useTimePrefs } from '@/lib/time-context';
+import type { RouteFix } from '@/lib/map-layers';
 
 interface FlightAnalysisPanelProps {
   points: readonly AnalysisPoint[];
@@ -36,6 +37,8 @@ interface FlightAnalysisPanelProps {
   loading: boolean;
   /** Reserva final del plan de SimBrief (kg), si hay plan. */
   reserveKg?: number | null;
+  /** Puntos de la ruta del plan de SimBrief para dibujarla en el mapa. */
+  route?: readonly RouteFix[];
 }
 
 /**
@@ -43,7 +46,7 @@ interface FlightAnalysisPanelProps {
  * mismo cursor. Pasar el puntero por la ruta o por las gráficas muestra el
  * punto en ambos; un clic lo fija.
  */
-export function FlightAnalysisPanel({ points, events, airports, loading, reserveKg = null }: FlightAnalysisPanelProps) {
+export function FlightAnalysisPanel({ points, events, airports, loading, reserveKg = null, route }: FlightAnalysisPanelProps) {
   const { theme } = useTheme();
   const { dual } = useTimePrefs();
   const [colorMode, setColorMode] = useState<ColorMode>('phase');
@@ -210,6 +213,7 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
             theme={theme}
             focus={focus}
             height={fullscreen ? 'max(320px, calc(100vh - 560px))' : '520px'}
+            route={route}
           />
 
           {/* Leyenda */}
@@ -237,6 +241,12 @@ export function FlightAnalysisPanel({ points, events, airports, loading, reserve
               <span className="size-2.5 rounded-full bg-danger" aria-hidden />
               Destino
             </li>
+            {route && route.length > 1 ? (
+              <li className="flex items-center gap-1.5">
+                <span className="w-5 border-t-2 border-dashed" style={{ borderColor: '#a78bfa' }} aria-hidden />
+                Ruta del plan (SimBrief)
+              </li>
+            ) : null}
           </ul>
 
           {/* Extremos: un clic lleva al punto */}

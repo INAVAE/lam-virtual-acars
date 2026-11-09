@@ -17,6 +17,7 @@ import { formatNumber } from '@/lib/format';
 import { mapTileConfig } from '@/lib/map-tiles';
 import { useTimePrefs } from '@/lib/time-context';
 import { phaseLabel } from '@/lib/phases';
+import { isLabeledFix, type RouteFix } from '@/lib/map-layers';
 
 export interface MapAirport {
   icao: string;
@@ -42,6 +43,8 @@ interface FlightMapProps {
   theme: 'dark' | 'light';
   focus: MapFocus;
   height: string;
+  /** Ruta del plan de SimBrief (línea punteada con sus puntos). */
+  route?: readonly RouteFix[];
 }
 
 // Teselas de OpenStreetMap (ver lib/map-tiles.ts: atribución y política de uso).
@@ -71,7 +74,7 @@ function pointSummary(p: AnalysisPoint, time: TimeFormat): string {
  * Mapa interactivo de la traza (Leaflet): tramos coloreados por fase o por
  * altitud, aeropuertos, eventos y el punto activo sincronizado con las gráficas.
  */
-export function FlightMap({ points, times, markers, airports, windIndices = [], colorMode, activeIndex, onHover, onSelect, theme, focus, height }: FlightMapProps) {
+export function FlightMap({ points, times, markers, airports, windIndices = [], colorMode, activeIndex, onHover, onSelect, theme, focus, height, route }: FlightMapProps) {
   const { dual } = useTimePrefs();
   const timeText = useCallback<TimeFormat>(
     (value) => {
@@ -84,6 +87,7 @@ export function FlightMap({ points, times, markers, airports, windIndices = [], 
   const mapRef = useRef<L.Map | null>(null);
   const tilesRef = useRef<L.TileLayer | null>(null);
   const trackRef = useRef<L.LayerGroup | null>(null);
+  const routeRef = useRef<L.LayerGroup | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
   const windRef = useRef<L.LayerGroup | null>(null);
   const activeRef = useRef<L.Marker | null>(null);
@@ -106,6 +110,7 @@ export function FlightMap({ points, times, markers, airports, windIndices = [], 
     });
     map.setView([19.43, -99.07], 6);
     mapRef.current = map;
+    routeRef.current = L.layerGroup().addTo(map);
     trackRef.current = L.layerGroup().addTo(map);
     windRef.current = L.layerGroup().addTo(map);
     markersRef.current = L.layerGroup().addTo(map);
@@ -135,6 +140,36 @@ export function FlightMap({ points, times, markers, airports, windIndices = [], 
     };
     tilesRef.current = L.tileLayer(TILES.url, options).addTo(map);
   }, [theme]);
+
+  // Ruta del plan de SimBrief, debajo de la traza
+  useEffect(() => {
+    const group = routeRef.current;
+    if (!group) return;
+    group.clearLayers();
+    if (!route || route.length < 2) return;
+    const from = airports.find((a) => a.role === 'origin');
+    const to = airports.find((a) => a.role === 'destination');
+    const latlngs: L.LatLngTuple[] = [
+      ...(from ? [[from.latitude, from.longitude] as L.LatLngTuple] : []),
+      ...route.map((x) => [x.lat, x.lon] as L.LatLngTuple),
+      ...(to ? [[to.latitude, to.longitude] as L.LatLngTuple] : []),
+    ];
+    L.polyline(latlngs, { color: theme === 'dark' ? '#000' : '#fff', weight: 4, opacity: 0.35, interactive: false }).addTo(group);
+    L.polyline(latlngs, { color: '#a78bfa', weight: 2, opacity: 0.95, dashArray: '7 6', interactive: false }).addTo(group);
+    for (const x of route) {
+      if (!isLabeledFix(x) || x.ident === from?.icao || x.ident === to?.icao) continue;
+      L.marker([x.lat, x.lon], {
+        icon: L.divIcon({ className: '', html: `<div class="lam-fix"><span></span>${escapeHtml(x.ident)}</div>`, iconSize: [0, 0] }),
+        keyboard: false,
+      })
+        .bindTooltip(`<strong>${escapeHtml(x.ident)}</strong>${x.via && x.via !== 'DCT' ? ` · vía ${escapeHtml(x.via)}` : ''}<br>Ruta del plan`, {
+          className: 'lam-tip',
+          direction: 'top',
+          offset: [0, -6],
+        })
+        .addTo(group);
+    }
+  }, [route, airports, theme]);
 
   // Traza
   useEffect(() => {

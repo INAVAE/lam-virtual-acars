@@ -1,6 +1,9 @@
 import type { Database, PirepStatus, Tables } from '@lam/shared-types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
+import { parseFlightPlan, type FlightPlanSheet } from '@/lib/flight-plan';
+import { cleanFixes, type RouteFix } from '@/lib/map-layers';
+import type { Metar } from '@/lib/weather';
 import { getSupabase } from '@/lib/supabase';
 
 const PIREP_LIST_SELECT =
@@ -328,5 +331,46 @@ export function useAddPirepComment() {
       if (error) throw error;
     },
     onSettled: (_d, _e, v) => queryClient.invalidateQueries({ queryKey: ['pirep-comments', v.id] }),
+  });
+}
+
+/** Plan de SimBrief importado para el vuelo del PIREP: hoja, ruta en texto y puntos. */
+export function useFlightPlanSheet(flightId: string | undefined) {
+  return useQuery({
+    queryKey: ['flight-plan-sheet', flightId],
+    enabled: Boolean(flightId),
+    staleTime: 10 * 60_000,
+    queryFn: async (): Promise<{ plan: FlightPlanSheet | null; route: string | null; fixes: RouteFix[] } | null> => {
+      const { data, error } = await getSupabase().from('simbrief_ofps').select('*').eq('flight_id', flightId!).maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      return { plan: parseFlightPlan(data), route: data.route, fixes: cleanFixes(data.navlog) };
+    },
+  });
+}
+
+export interface FlightWeather {
+  role: 'departure' | 'arrival';
+  icao: string;
+  event_at: string;
+  observed_at: string | null;
+  metar: Metar | null;
+  source: 'noaa' | 'cache' | 'none';
+}
+
+/** METAR de salida (calzos fuera) y de llegada (calzos puestos) guardados con el vuelo. */
+export function useFlightWeather(flightId: string | undefined) {
+  return useQuery({
+    queryKey: ['flight-weather', flightId],
+    enabled: Boolean(flightId),
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<FlightWeather[]> => {
+      const { data, error } = await getSupabase()
+        .from('flight_weather')
+        .select('role, icao, event_at, observed_at, metar, source')
+        .eq('flight_id', flightId!);
+      if (error) throw error;
+      return (data ?? []) as unknown as FlightWeather[];
+    },
   });
 }

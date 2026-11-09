@@ -3,6 +3,14 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "El plan que se importó para este vuelo: información, resumen y hoja de carga.": "The plan imported for this flight: info, summary and load sheet.",
+    "Clima de salida y llegada": "Departure and arrival weather",
+    "METAR de NOAA más cercano a los calzos fuera y a los calzos puestos, guardado con el vuelo.": "NOAA METAR closest to block-off and block-on, saved with the flight.",
+    "Temp./rocío": "Temp./dew point",
+    "QNH": "QNH",
+    "NOAA no tenía un METAR de ese momento.": "NOAA had no METAR for that time.",
+    "Sin METAR guardado: se registra desde el 9 de noviembre de 2026 (calzos fuera y calzos puestos).": "No METAR saved: recorded since November 9, 2026 (block-off and block-on).",
+    "PIREP: muestra la ruta del plan de SimBrief en el mapa, la hoja del plan (información, resumen y hoja de carga) y el METAR de salida y de llegada guardados con el vuelo.": "PIREP: shows the SimBrief plan route on the map, the plan sheet (info, summary and load sheet) and the departure and arrival METAR saved with the flight.",
     "Comentarios": "Comments",
     "Enviar comentario": "Send comment",
     "Comentario agregado": "Comment added",
@@ -2161,6 +2169,7 @@ export const EN: Dictionary = {
     "Callsign, piloto, aeropuerto, evento, tour…": "Callsign, pilot, airport, event, tour…"
   },
   patterns: [
+    ["observado {0}", "observed {0}"],
     ["Liga de invitación al {0} copiada. Solo la abren pilotos con cuenta activa en LAM.", "Invitation link to the {0} copied. Only pilots with an active LAM account can open it."],
     ["Tour {0}", "Tour {0}"],
     ["· Leg {0}/{1}", "· Leg {0}/{1}"],
