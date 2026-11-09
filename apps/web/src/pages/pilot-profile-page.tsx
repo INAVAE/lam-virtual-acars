@@ -1,4 +1,4 @@
-import { ArrowLeft, Award, GraduationCap, Mail, MessageCircle, Pencil, Plane, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Award, Mail, MessageCircle, Pencil, Plane, ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
 import { AirlineLogo } from '@/components/airline-logo';
@@ -17,7 +17,9 @@ import { countryName, formatLocalDate, formatLocalDateTime, formatNumber, format
 import { formatHours, formatMinutes, formatVs, pirepStatusLabels, pirepStatusTone, scoreTone } from '@/lib/pirep';
 import { monthLabel } from '@/lib/statistics';
 import { DualTimeText } from '@/lib/time-context';
-import { trainingCategories } from '@/lib/training';
+import { trainingCategories, trainingLevels } from '@/lib/training';
+import { trainingMetal } from '@/lib/badge-art';
+import { BadgeArt } from '@/components/badge-art';
 
 const membershipTone = { active: 'ok', pending: 'warn', suspended: 'danger', rejected: 'neutral' } as const;
 
@@ -153,7 +155,11 @@ function Recognitions({ data, trainings }: { data: PilotProfileData; trainings: 
               <ul className="flex flex-wrap gap-2">
                 {trainings.map((t) => (
                   <li key={t.training_id} className="flex items-center gap-2 rounded-md border border-line px-3 py-2">
-                    <GraduationCap className="size-5 text-accent" aria-hidden />
+                    <BadgeArt
+                      spec={{ shape: 'hexagon', emblem: 'headset', metal: trainingMetal(t.level), top: null, ribbon: trainingLevels[t.level] }}
+                      size={56}
+                      title={`Entrenamiento ${trainingLevels[t.level].toLowerCase()}: ${t.title}`}
+                    />
                     <span className="text-sm">
                       <Link to={`/training/${t.training_id}`} className="font-medium underline-offset-4 hover:underline">
                         {t.title}

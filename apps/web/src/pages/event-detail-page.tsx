@@ -55,6 +55,8 @@ import { formatMinutes } from '@/lib/pirep';
 import { useTheme } from '@/lib/theme';
 import { useTimePrefs } from '@/lib/time-context';
 import { enrollmentStatusTone, FLIGHT_NUMBER_PATTERN } from '@/lib/tours';
+import { BadgeArt } from '@/components/badge-art';
+import { podiumMetal } from '@/lib/badge-art';
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -316,8 +318,18 @@ function RankingPanel({ event, now }: { event: EventDetail; now: number }) {
               return (
                 <tr key={r.user_id} className={cn(winner && 'bg-accent/5')}>
                   <Td className="font-mono font-semibold">
-                    {winner ? <Medal className="mr-1 inline size-4" style={{ color: event.color }} aria-label="Lugar con premio" /> : null}
-                    {r.position}
+                    {podiumMetal(r.position) ? (
+                      <BadgeArt
+                        spec={{ shape: 'round', emblem: 'number', metal: podiumMetal(r.position)!, label: String(r.position), top: null, ribbon: null }}
+                        size={34}
+                        title={`${r.position}.º lugar`}
+                      />
+                    ) : (
+                      <>
+                        {winner ? <Medal className="mr-1 inline size-4" style={{ color: event.color }} aria-label="Lugar con premio" /> : null}
+                        {r.position}
+                      </>
+                    )}
                   </Td>
                   <Td>
                     {r.name} <span className="text-xs text-muted">{formatPilotNumber(r.number)}</span>

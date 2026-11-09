@@ -2,6 +2,12 @@
 
 Última actualización: 2026-11-08 (hoja del plan de SimBrief en Live Flights)
 
+## Biblioteca de insignias (2026-11-08)
+
+- `lib/badge-art.ts`: insignias propias en SVG, paramétricas: 8 formas (sello, laureles, escudo, escudo con alas, hexágono, rombo, rosa de los vientos, medalla) × 3 metales (oro, plata, bronce) × 9 emblemas (avión, globo, alas, estrella, brújula, audífonos, trofeo, torre, número), con texto superior y cinta. 13 diseños en la biblioteca. Pruebas en `badge-art.test.ts`.
+- **Tours → Biblioteca de insignias** (`/tours/badges`): galería en los tres metales y **diseñador** (descarga PNG/SVG). En el editor del tour, «Diseñar con la biblioteca» genera el PNG con el código en la cinta y lo sube como insignia (`tour-badges/<tour>/art-*.png`, que `TourBadge` muestra completa sin recorte circular).
+- **Eventos:** medallas de podio (1.º oro, 2.º plata, 3.º bronce) en el ranking. **Entrenamientos:** insignia por nivel en el perfil (básico bronce, intermedio plata, avanzado oro). Se dibujan al vuelo; sin cambios en la base. Capturas 75–76.
+
 ## Conector: buscar e instalar actualizaciones (2026-11-08)
 
 - **Flaps** (0.1.42): nota `kind: flaps` (from, to, flaps_deg, ias_kt, altitude_ft, on_ground) en cada cambio estable 2 s; despegue y contacto llevan `flaps` (retén). Fenix por `L:S_FC_FLAPS` (confirmado por el usuario). La ventana del conector muestra «flaps 1+F»; la web marca «F» en la gráfica y en la bitácora del PIREP.

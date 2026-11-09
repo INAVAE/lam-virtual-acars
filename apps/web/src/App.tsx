@@ -38,6 +38,7 @@ import { StatisticsPage } from '@/pages/statistics-page';
 import { TourDetailPage } from '@/pages/tour-detail-page';
 import { TourEditorPage } from '@/pages/tour-editor-page';
 import { ToursPage } from '@/pages/tours-page';
+import { BadgeLibraryPage } from '@/pages/badge-library-page';
 import { WeatherPage } from '@/pages/weather-page';
 
 export function App() {
@@ -75,6 +76,7 @@ export function App() {
           <Route path="events/:id" element={<EventDetailPage />} />
           <Route path="events/:id/edit" element={<EventEditorPage />} />
           <Route path="tours" element={<ToursPage />} />
+          <Route path="tours/badges" element={<BadgeLibraryPage />} />
           <Route path="tours/new" element={<TourEditorPage />} />
           <Route path="tours/:id" element={<TourDetailPage />} />
           <Route path="tours/:id/edit" element={<TourEditorPage />} />

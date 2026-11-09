@@ -118,7 +118,8 @@ export async function uploadTourBadge(tourId: string, file: File): Promise<strin
   if (!extension) throw new Error('Usa una imagen PNG, JPG o WebP.');
   if (file.size > MAX_BADGE_BYTES) throw new Error('La insignia debe pesar menos de 512 KB.');
   const supabase = getSupabase();
-  const path = `${tourId}/badge-${Date.now()}.${extension}`;
+  // Las insignias de la biblioteca se guardan como «art-»: el tour las muestra completas, sin recorte circular.
+  const path = `${tourId}/${file.name.startsWith('lam-badge') ? 'art' : 'badge'}-${Date.now()}.${extension}`;
   const { error } = await supabase.storage.from('tour-badges').upload(path, file, { contentType: file.type, cacheControl: '31536000', upsert: false });
   if (error) throw error;
   return supabase.storage.from('tour-badges').getPublicUrl(path).data.publicUrl;

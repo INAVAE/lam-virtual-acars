@@ -1662,6 +1662,17 @@ await shoot('73-booking-tour-leg', 'booking', {
     await page.getByRole('dialog').getByText('Esta ruta es un leg de tour.').waitFor();
   },
 });
+await shoot('75-badge-library', 'tours/badges', { waitFor: 'Biblioteca de insignias' });
+await shoot('76-badge-designer', `tours/${id(1600)}/edit`, {
+  waitFor: 'Editar TMX01',
+  fullPage: false,
+  action: async (page) => {
+    await page.getByRole('button', { name: 'Diseñar con la biblioteca' }).click();
+    await page.getByRole('dialog').getByText('Biblioteca').first().waitFor();
+    await page.getByRole('dialog').getByRole('radio', { name: /Plata/ }).click();
+    await page.waitForTimeout(400);
+  },
+});
 await shoot('38-tour-editor', `tours/${id(1600)}/edit`, { waitFor: 'Editar TMX01' });
 await shoot('39-tours-mobile', `tours/${id(1600)}`, { viewport: { width: 390, height: 844 }, waitFor: 'Mi participación' });
 await shoot('40-events', 'events', { waitFor: 'Fly-in Ciudad de México' });

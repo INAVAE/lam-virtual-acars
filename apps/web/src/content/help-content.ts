@@ -259,6 +259,8 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Ranking', 'Cada evento premia un criterio: mejor puntaje, toma más suave, primero en llegar o mayor distancia.'],
       ['Crear uno', 'Cualquier miembro de la aerolínea propone tours y eventos; el administrador de la aerolínea los aprueba antes de publicarse.'],
       ['Modificar un tour', 'Quien lo propuso lo edita mientras es borrador o fue rechazado. Ya enviado, publicado, cerrado o con pilotos inscritos, solo lo modifican el superadministrador y el administrador de su aerolínea: código, legs, orden, aeronaves, fechas, reglas e insignia.'],
+      ['Insignias', 'En Tours → «Biblioteca de insignias» hay diseños propios de LAM en oro, plata y bronce (sello, laureles, escudo, alas, hexágono, rombo, rosa de los vientos y medalla, con avión, globo, alas, estrella, brújula, audífonos, trofeo, torre o número). En el editor del tour, «Diseñar con la biblioteca» la crea con el código del tour en la cinta y la usa como su insignia; también se descarga en PNG o SVG. Recomendación: bronce para tours cortos, plata para regionales y oro para largos o exigentes.'],
+      ['Medallas y reconocimientos', 'En el ranking de un evento, los tres primeros lugares llevan medalla de oro, plata y bronce. Los entrenamientos completados aparecen en el perfil con su insignia: básico bronce, intermedio plata y avanzado oro.'],
       ['Si cambian los legs', 'Los legs que siguen guardan tu avance (vuelos y PIREP ya hechos). Uno que se quita deja tus vuelos como vuelos normales; uno nuevo lo tendrás que volar. Si ya terminaste el tour, conservas la insignia.'],
     ],
   },
@@ -485,6 +487,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-08', 'Biblioteca de insignias en oro, plata y bronce: diseñador para la insignia del tour, medallas del podio en los eventos e insignias de entrenamientos por nivel.'],
   ['2026-11-08', 'Conector 0.1.42: registra cada cambio de flaps (en el Fenix A320 con el nombre del retén, por ejemplo 1+F) y los muestra en la gráfica del vuelo y en la bitácora del PIREP.'],
   ['2026-11-08', 'Conector 0.1.40: botón «Siempre visible» para dejar la ventana encima del simulador.'],
   ['2026-11-08', 'Conector 0.1.36: botón «Buscar actualización» e instalación de la versión nueva desde el conector (después de terminar o abandonar el vuelo en curso).'],

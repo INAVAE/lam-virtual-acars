@@ -1,10 +1,11 @@
-import { ArrowDown, ArrowLeft, ArrowUp, ImagePlus, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, ImagePlus, Paintbrush, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { AirportPicker } from '@/components/airport-picker';
 import { SelectAll } from '@/components/select-all';
 import { TourBadge } from '@/components/tour-badge';
+import { BadgeDesigner } from '@/components/badge-designer';
 import { Alert } from '@/components/ui/alert';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -66,6 +67,7 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
       : [newLeg()],
   );
   const [badgeFile, setBadgeFile] = useState<File | null>(null);
+  const [designing, setDesigning] = useState(false);
   const [badgePath, setBadgePath] = useState(initial?.badge_path ?? null);
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -239,11 +241,21 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
 
       <Panel title="Insignia" description="La ganan los pilotos que terminan el tour con todos sus legs aceptados. PNG, JPG o WebP de hasta 512 KB, de preferencia cuadrada.">
         <div className="flex flex-wrap items-center gap-4">
-          <TourBadge code={normalizedCode || 'TOUR'} color={color} badgePath={preview} size="lg" />
+          <TourBadge
+            code={normalizedCode || 'TOUR'}
+            color={color}
+            badgePath={preview}
+            size="lg"
+            art={badgeFile ? badgeFile.name.startsWith('lam-badge') : undefined}
+          />
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} />
           <Button variant="secondary" onClick={() => fileRef.current?.click()}>
             <ImagePlus className="size-4" aria-hidden />
             {preview ? 'Cambiar imagen' : 'Subir imagen'}
+          </Button>
+          <Button variant="secondary" onClick={() => setDesigning(true)}>
+            <Paintbrush className="size-4" aria-hidden />
+            Diseñar con la biblioteca
           </Button>
           {preview ? (
             <Button
@@ -258,6 +270,16 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
           ) : null}
         </div>
       </Panel>
+
+      {designing ? (
+        <BadgeDesigner
+          open
+          onClose={() => setDesigning(false)}
+          initial={{ ribbon: normalizedCode || null, top: 'LAM', shape: 'seal', emblem: 'plane', metal: 'gold' }}
+          useLabel="Usar en el tour"
+          onUse={(file) => onFile(file)}
+        />
+      ) : null}
 
       <Panel title="Reglas">
         <div className="grid gap-4 md:grid-cols-2">

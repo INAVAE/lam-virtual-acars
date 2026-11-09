@@ -16,6 +16,7 @@ export function TourBadge({
   badgePath,
   size = 'md',
   muted = false,
+  art,
   className,
 }: {
   code: string;
@@ -23,9 +24,18 @@ export function TourBadge({
   badgePath: string | null;
   size?: keyof typeof sizes;
   muted?: boolean;
+  /** Insignia de la biblioteca (fondo transparente): se muestra completa, sin círculo. */
+  art?: boolean;
   className?: string;
 }) {
   const src = badgePath?.startsWith('blob:') ? badgePath : logoUrl(badgePath);
+  if (src && (art ?? /\/art-\d+\.(png|webp)$/.test(src))) {
+    return (
+      <span className={cn('relative inline-grid shrink-0 place-items-center', sizes[size], muted && 'opacity-45 grayscale', className)} title={`Insignia del tour ${code}`}>
+        <img src={src} alt={`Insignia del tour ${code}`} className="size-full object-contain drop-shadow" loading="lazy" />
+      </span>
+    );
+  }
   return (
     <span
       className={cn('relative inline-grid shrink-0 place-items-center overflow-hidden rounded-full border-2', sizes[size], muted && 'opacity-45 grayscale', className)}

@@ -1,4 +1,4 @@
-import { Flag, Plus, Route as RouteIcon, Users } from 'lucide-react';
+import { Award, Flag, Plus, Route as RouteIcon, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { AirlineLogo } from '@/components/airline-logo';
@@ -128,10 +128,16 @@ export function ToursPage() {
         title="Tours"
         description="Recorridos de varios legs a cualquier parte del mundo. Inscríbete con tu aerolínea, vuela cada leg con su flota y gana la insignia al terminarlo con todos los PIREP aceptados."
         actions={
-          <Link to="/tours/new" className={buttonClasses('primary')}>
-            <Plus className="size-4" aria-hidden />
-            Crear tour
-          </Link>
+          <>
+            <Link to="/tours/badges" className={buttonClasses('secondary')}>
+              <Award className="size-4" aria-hidden />
+              Biblioteca de insignias
+            </Link>
+            <Link to="/tours/new" className={buttonClasses('primary')}>
+              <Plus className="size-4" aria-hidden />
+              Crear tour
+            </Link>
+          </>
         }
       />
       {tours.isError ? <Alert tone="danger">{describeError(tours.error)}</Alert> : null}
