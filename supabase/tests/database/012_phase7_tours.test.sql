@@ -101,7 +101,7 @@ select lives_ok(format('select review_tour(%L, true)', (select tour from t)), 'E
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000008a1"}';
 select throws_ok(
   format($$select save_tour(%L, '{"code":"TMX-01","name":"Joyas","aircraft_type_ids":[%s]}'::jsonb, '[]'::jsonb)$$, (select tour from t), (select b738 from t)),
-  'P0001', null, 'Publicado, sus legs ya no cambian'
+  '42501', null, 'Publicado, quien lo propuso ya no lo modifica (solo el administrador)'
 );
 
 -- ---------------------------------------------------------------------------
@@ -126,10 +126,11 @@ select is((select count(*)::int from tour_enrollments where id = (select enr_d f
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000008a1"}';
 select is((get_tour((select tour from t)) ->> 'pending_enrollments')::int, 1, 'El creador ve la inscripción pendiente');
 select lives_ok(format('select review_tour_enrollment(%L, true)', (select enr_d from t)), 'El creador aprueba la inscripción');
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000008c3"}';
 select lives_ok(
   format($$select save_tour(%L, '{"code":"TMX-01","name":"Joyas de México","aircraft_type_ids":[%s],"auto_approve_same_airline":true}'::jsonb)$$,
          (select tour from t), (select b738 from t)),
-  'Publicado, sus opciones de inscripción sí cambian'
+  'Publicado, el administrador cambia sus opciones de inscripción'
 );
 
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000008b2"}';

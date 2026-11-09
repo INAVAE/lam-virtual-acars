@@ -49,6 +49,8 @@ export interface TourSummary {
   participants: number;
   finishers: number;
   can_edit: boolean;
+  /** Puede modificarlo por completo: superadministrador o administrador de la aerolínea; quien lo propuso, solo en borrador o rechazado. */
+  can_modify: boolean;
   can_approve: boolean;
   pending_enrollments: number | null;
   my_enrollment: MyEnrollment | null;

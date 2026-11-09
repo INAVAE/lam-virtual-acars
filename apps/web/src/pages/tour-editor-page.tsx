@@ -24,13 +24,15 @@ import { normalizeTourCode, TOUR_CODE_PATTERN, TOUR_COLORS, type TourDetail } fr
 
 interface LegDraft {
   key: number;
+  /** Id del leg guardado: al conservarlo, los vuelos ya hechos siguen contando para él. */
+  id: string | null;
   origin: number | null;
   destination: number | null;
   notes: string;
 }
 
 let legKey = 0;
-const newLeg = (origin: number | null = null): LegDraft => ({ key: ++legKey, origin, destination: null, notes: '' });
+const newLeg = (origin: number | null = null): LegDraft => ({ key: ++legKey, id: null, origin, destination: null, notes: '' });
 
 function TourEditor({ initial }: { initial: TourDetail | null }) {
   const navigate = useNavigate();
@@ -39,7 +41,7 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
   const airlines = useAirlines();
   const memberships = useMyMemberships();
   const { selected, isOrgAdmin } = useAirlineScope();
-  const locked = initial !== null && (initial.status === 'published' || initial.status === 'closed');
+  const live = initial !== null && (initial.status === 'published' || initial.status === 'closed' || initial.participants > 0);
 
   const myAirlines = useMemo(() => {
     const active = new Set((memberships.data ?? []).filter((m) => m.status === 'active').map((m) => m.airline_id));
@@ -60,7 +62,7 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
   const [typeIds, setTypeIds] = useState<number[]>(initial?.aircraft_type_ids ?? []);
   const [legs, setLegs] = useState<LegDraft[]>(() =>
     initial && initial.legs.length > 0
-      ? initial.legs.map((l) => ({ key: ++legKey, origin: l.origin.id, destination: l.destination.id, notes: l.notes ?? '' }))
+      ? initial.legs.map((l) => ({ key: ++legKey, id: l.id, origin: l.origin.id, destination: l.destination.id, notes: l.notes ?? '' }))
       : [newLeg()],
   );
   const [badgeFile, setBadgeFile] = useState<File | null>(null);
@@ -78,7 +80,7 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
     name: name.trim().length < 3 ? 'Escribe el nombre (3 caracteres o más)' : undefined,
     dates: startsOn && endsOn && endsOn < startsOn ? 'El fin no puede ser antes del inicio' : undefined,
     max: allowUnreviewed && !(Number.isInteger(max) && max >= 1 && max <= 20) ? 'De 1 a 20' : undefined,
-    legs: !locked && (legs.length === 0 || legs.some((l) => !l.origin || !l.destination || l.origin === l.destination))
+    legs: (legs.length === 0 || legs.some((l) => !l.origin || !l.destination || l.origin === l.destination))
       ? 'Cada leg necesita origen y destino distintos'
       : undefined,
   };
@@ -136,9 +138,12 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
       max_unreviewed_legs: allowUnreviewed ? max : 1,
       auto_approve_same_airline: autoApprove,
     };
-    const legInput: LegInput[] | null = locked
-      ? null
-      : legs.map((l) => ({ origin_airport_id: l.origin!, destination_airport_id: l.destination!, notes: l.notes.trim() || null }));
+    const legInput: LegInput[] = legs.map((l) => ({
+      id: l.id,
+      origin_airport_id: l.origin!,
+      destination_airport_id: l.destination!,
+      notes: l.notes.trim() || null,
+    }));
     try {
       const id = await save.mutateAsync({ id: initial?.id ?? null, tour, legs: legInput });
       if (badgeFile) {
@@ -168,7 +173,13 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
         title={initial ? `Editar ${initial.code}` : 'Crear tour'}
         description="Si no administras la aerolínea, el tour se publica cuando su administrador lo aprueba."
       />
-      {locked ? <Alert tone="info">El tour ya está publicado: su código, sus legs y los tipos de aeronave quedan fijos. Puedes cambiar lo demás.</Alert> : null}
+      {live ? (
+        <Alert tone="info">
+          <strong>Este tour ya está en marcha.</strong> Los cambios aplican de inmediato a quienes ya están inscritos. Los legs que conservas guardan los vuelos y PIREP ya hechos; un
+          leg que quitas deja sus vuelos como vuelos normales de la aerolínea, y uno nuevo lo tendrán que volar todos. Quien ya terminó
+          el tour conserva su insignia.
+        </Alert>
+      ) : null}
       {tried && invalid ? <Alert tone="danger">Revisa los campos marcados.</Alert> : null}
 
       <Panel title="Datos del tour">
@@ -186,7 +197,7 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
             </Field>
           )}
           <Field id="tour-code" label="Código" error={show(errors.code)} hint="Único. Aparece en el mapa en vivo.">
-            <Input id="tour-code" className="font-mono uppercase" value={code} disabled={locked} onChange={(e) => setCode(e.target.value)} maxLength={16} />
+            <Input id="tour-code" className="font-mono uppercase" value={code} onChange={(e) => setCode(e.target.value)} maxLength={16} />
           </Field>
           <Field id="tour-name" label="Nombre" error={show(errors.name)}>
             <Input id="tour-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
@@ -255,7 +266,6 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
             label="Los legs se vuelan en orden"
             hint="Sin marcar, el piloto elige el orden."
             checked={ordered}
-            disabled={locked}
             onChange={(e) => setOrdered(e.target.checked)}
           />
           <Checkbox
@@ -283,7 +293,7 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
       <Panel
         title="Aeronaves permitidas"
         description="Sin ninguna marcada, se vuela con cualquier tipo. Cada piloto usa la flota de su propia aerolínea."
-        actions={<SelectAll all={groupedTypes.map((t) => t.id)} selected={typeIds} onChange={setTypeIds} disabled={locked} />}
+        actions={<SelectAll all={groupedTypes.map((t) => t.id)} selected={typeIds} onChange={setTypeIds} />}
       >
         {types.isPending ? (
           <Skeleton className="h-24" />
@@ -299,7 +309,6 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
                   </>
                 }
                 checked={typeIds.includes(t.id)}
-                disabled={locked}
                 onChange={(e) => setTypeIds((cur) => (e.target.checked ? [...cur, t.id] : cur.filter((x) => x !== t.id)))}
               />
             ))}
@@ -309,65 +318,53 @@ function TourEditor({ initial }: { initial: TourDetail | null }) {
 
       <Panel
         title="Legs"
-        description={locked ? 'Publicado: los legs no cambian.' : 'Cada leg es una ruta propia del tour; no tiene que existir en Routes.'}
+        description="Cada leg es una ruta propia del tour; no tiene que existir en Routes."
         actions={
-          locked ? null : (
-            <Button size="sm" variant="secondary" disabled={legs.length >= 60} onClick={() => setLegs((cur) => [...cur, newLeg(cur[cur.length - 1]?.destination ?? null)])}>
-              <Plus className="size-4" aria-hidden />
-              Agregar leg
-            </Button>
-          )
+          <Button size="sm" variant="secondary" disabled={legs.length >= 60} onClick={() => setLegs((cur) => [...cur, newLeg(cur[cur.length - 1]?.destination ?? null)])}>
+            <Plus className="size-4" aria-hidden />
+            Agregar leg
+          </Button>
         }
       >
         {show(errors.legs) ? <Alert tone="danger" className="mb-3">{errors.legs}</Alert> : null}
-        {locked && initial ? (
-          <ol className="space-y-1 text-sm">
-            {initial.legs.map((l) => (
-              <li key={l.id} className="font-mono">
-                {l.leg_number}. {l.origin.icao} → {l.destination.icao}
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <ol className="space-y-3">
-            {legs.map((leg, i) => (
-              <li key={leg.key} className="grid gap-3 rounded-md border border-line bg-bg p-3 md:grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
-                <span className="font-mono text-lg font-semibold md:pb-2">{i + 1}</span>
-                <Field id={`leg-${leg.key}-o`} label="Origen">
-                  <AirportPicker id={`leg-${leg.key}-o`} value={leg.origin} onChange={(v) => updateLeg(i, { origin: v })} invalid={tried && !leg.origin} />
-                </Field>
-                <Field id={`leg-${leg.key}-d`} label="Destino">
-                  <AirportPicker
-                    id={`leg-${leg.key}-d`}
-                    value={leg.destination}
-                    onChange={(v) => updateLeg(i, { destination: v })}
-                    invalid={tried && (!leg.destination || leg.destination === leg.origin)}
-                  />
-                </Field>
-                <Field id={`leg-${leg.key}-n`} label="Notas (opcional)">
-                  <Input id={`leg-${leg.key}-n`} value={leg.notes} onChange={(e) => updateLeg(i, { notes: e.target.value })} maxLength={500} />
-                </Field>
-                <span className="flex gap-1">
-                  <Button size="sm" variant="ghost" aria-label={`Subir leg ${i + 1}`} disabled={i === 0} onClick={() => moveLeg(i, -1)}>
-                    <ArrowUp className="size-4" aria-hidden />
-                  </Button>
-                  <Button size="sm" variant="ghost" aria-label={`Bajar leg ${i + 1}`} disabled={i === legs.length - 1} onClick={() => moveLeg(i, 1)}>
-                    <ArrowDown className="size-4" aria-hidden />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    aria-label={`Quitar leg ${i + 1}`}
-                    disabled={legs.length === 1}
-                    onClick={() => setLegs((cur) => cur.filter((_, n) => n !== i))}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
+        <ol className="space-y-3">
+          {legs.map((leg, i) => (
+            <li key={leg.key} className="grid gap-3 rounded-md border border-line bg-bg p-3 md:grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+              <span className="font-mono text-lg font-semibold md:pb-2">{i + 1}</span>
+              <Field id={`leg-${leg.key}-o`} label="Origen">
+                <AirportPicker id={`leg-${leg.key}-o`} value={leg.origin} onChange={(v) => updateLeg(i, { origin: v })} invalid={tried && !leg.origin} />
+              </Field>
+              <Field id={`leg-${leg.key}-d`} label="Destino">
+                <AirportPicker
+                  id={`leg-${leg.key}-d`}
+                  value={leg.destination}
+                  onChange={(v) => updateLeg(i, { destination: v })}
+                  invalid={tried && (!leg.destination || leg.destination === leg.origin)}
+                />
+              </Field>
+              <Field id={`leg-${leg.key}-n`} label="Notas (opcional)">
+                <Input id={`leg-${leg.key}-n`} value={leg.notes} onChange={(e) => updateLeg(i, { notes: e.target.value })} maxLength={500} />
+              </Field>
+              <span className="flex gap-1">
+                <Button size="sm" variant="ghost" aria-label={`Subir leg ${i + 1}`} disabled={i === 0} onClick={() => moveLeg(i, -1)}>
+                  <ArrowUp className="size-4" aria-hidden />
+                </Button>
+                <Button size="sm" variant="ghost" aria-label={`Bajar leg ${i + 1}`} disabled={i === legs.length - 1} onClick={() => moveLeg(i, 1)}>
+                  <ArrowDown className="size-4" aria-hidden />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`Quitar leg ${i + 1}`}
+                  disabled={legs.length === 1}
+                  onClick={() => setLegs((cur) => cur.filter((_, n) => n !== i))}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              </span>
+            </li>
+          ))}
+        </ol>
       </Panel>
 
       <div className="flex justify-end gap-2">
@@ -388,6 +385,12 @@ export function TourEditorPage() {
   if (!id) return <TourEditor initial={null} />;
   if (tour.isPending) return <Skeleton className="h-96" />;
   if (tour.isError) return <Alert tone="danger">{describeError(tour.error)}</Alert>;
-  if (!tour.data.can_edit) return <Alert tone="danger">Solo el creador del tour o un administrador de su aerolínea lo puede editar.</Alert>;
+  if (!tour.data.can_modify)
+    return (
+      <Alert tone="danger">
+        Solo el superadministrador o el administrador de {tour.data.airline.name} modifican este tour. Quien lo propuso lo edita mientras es
+        borrador o fue rechazado.
+      </Alert>
+    );
   return <TourEditor key={tour.data.id} initial={tour.data} />;
 }

@@ -255,6 +255,8 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Eventos', 'Un vuelo en grupo con fecha y hora (folio EVT-AAAA-NNNN). Te registras, el creador aprueba tu registro y reservas desde 12 horas antes.'],
       ['Ranking', 'Cada evento premia un criterio: mejor puntaje, toma más suave, primero en llegar o mayor distancia.'],
       ['Crear uno', 'Cualquier miembro de la aerolínea propone tours y eventos; el administrador de la aerolínea los aprueba antes de publicarse.'],
+      ['Modificar un tour', 'Quien lo propuso lo edita mientras es borrador o fue rechazado. Ya enviado, publicado, cerrado o con pilotos inscritos, solo lo modifican el superadministrador y el administrador de su aerolínea: código, legs, orden, aeronaves, fechas, reglas e insignia.'],
+      ['Si cambian los legs', 'Los legs que siguen guardan tu avance (vuelos y PIREP ya hechos). Uno que se quita deja tus vuelos como vuelos normales; uno nuevo lo tendrás que volar. Si ya terminaste el tour, conservas la insignia.'],
     ],
   },
   {
@@ -402,6 +404,7 @@ export const HELP_FAQ: [question: string, answer: string][] = [
   ['Cerré el conector por error.', 'Ábrelo de nuevo: el vuelo se reanuda donde iba.'],
   ['El vuelo no se cierra al llegar.', 'Necesita motores y APU apagados y el freno de estacionamiento puesto. Si aun así no cierra, usa «Terminar vuelo».'],
   ['¿Por qué mi PIREP está «pendiente»?', 'La aerolínea no aprueba automáticamente, el puntaje quedó bajo el mínimo o tiene faltas graves. Lo revisa el staff; mientras tanto puedes dejar un comentario.'],
+  ['Cambiaron los legs de un tour en el que voy a la mitad.', 'El administrador de la aerolínea puede ajustarlo en cualquier momento. Lo que ya volaste en los legs que siguen te cuenta; vuela los que falten. Si quitaron los que te faltaban, el tour queda terminado y ganas la insignia.'],
   ['¿Cómo me inscribo a un tour o evento?', 'En Tours o Events abre el que te interese y pulsa inscribirte o registrarte. Algunos requieren la aprobación de su creador.'],
   ['No veo la ruta del plan en el mapa.', 'Aparece para planes importados desde el 5 de noviembre de 2026. Si tu reserva es anterior, vuelve a importar el plan en My Flights.'],
   ['El control de IVAO tarda en aparecer.', 'Si nadie había abierto el mapa en un rato, la primera carga puede tardar hasta un minuto.'],
@@ -477,6 +480,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-08', 'Tours: el superadministrador y el administrador de la aerolínea los modifican por completo aunque estén publicados, cerrados o con pilotos con avance; el avance se conserva.'],
   ['2026-11-07', 'Idioma de lectura: español o inglés desde la barra superior (y en las pantallas de entrada).'],
   ['2026-11-07', 'Training: calendario de entrenamientos con instructor, inscripción con confirmación, horas Zulu y local, archivo .ics y Google Calendar, canal de Discord y reconocimientos en el perfil.'],
   ['2026-11-07', 'Menú de la cuenta con foto, Mi cuenta (datos personales, foto, contraseña y sesiones) y perfil completo del piloto desde Pilots.'],

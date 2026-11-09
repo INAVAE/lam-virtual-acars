@@ -1,6 +1,12 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-06 (cuentas de la plataforma)
+Última actualización: 2026-11-08 (tours: edición completa del administrador)
+
+## Tours: el administrador los modifica por completo (2026-11-08)
+
+- El superadministrador y el administrador de la aerolínea del tour modifican todo (código, legs, orden, aeronaves, fechas, reglas, insignia) y lo cierran en cualquier estado, aunque esté publicado, cerrado o con pilotos inscritos y con avance. Quien lo propuso solo lo edita en borrador o rechazado; el jefe de operaciones no lo modifica.
+- `save_tour` actualiza los legs por id: los que siguen conservan vuelos y PIREP, los quitados dejan sus vuelos sin leg, los nuevos se agregan; se recalculan las inscripciones en curso (quien ya voló todos los que quedan lo termina y gana la insignia) y las terminadas conservan la insignia.
+- La web recibe `can_modify`; el editor ya no bloquea código, legs ni tipos y avisa cuando el tour está en marcha. Migración `tour_admin_edit`, prueba 026 (21); 012 ajustada.
 
 ## Idioma de lectura: español e inglés (2026-11-07)
 

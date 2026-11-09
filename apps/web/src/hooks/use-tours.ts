@@ -66,6 +66,8 @@ export interface TourInput {
 }
 
 export interface LegInput {
+  /** El id del leg que se conserva; null para uno nuevo. */
+  id?: string | null;
   origin_airport_id: number;
   destination_airport_id: number;
   notes: string | null;

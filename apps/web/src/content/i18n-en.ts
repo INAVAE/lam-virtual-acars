@@ -3,6 +3,18 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "Solo el superadministrador o el administrador de": "Only the superadmin or the administrator of",
+    "modifican este tour. Quien lo propuso lo edita mientras es borrador o fue rechazado.": "can modify this tour. Whoever proposed it can edit it while it is a draft or was rejected.",
+    "Este tour ya está en marcha.": "This tour is already under way.",
+    "Los cambios aplican de inmediato a quienes ya están inscritos. Los legs que conservas guardan los vuelos y PIREP ya hechos; un leg que quitas deja sus vuelos como vuelos normales de la aerolínea, y uno nuevo lo tendrán que volar todos. Quien ya terminó el tour conserva su insignia.": "Changes apply immediately to everyone already enrolled. The legs you keep retain the flights and PIREPs already flown; a leg you remove turns its flights into regular airline flights, and a new leg must be flown by everyone. Anyone who already finished the tour keeps their badge.",
+    "Modificar un tour": "Modify a tour",
+    "Quien lo propuso lo edita mientras es borrador o fue rechazado. Ya enviado, publicado, cerrado o con pilotos inscritos, solo lo modifican el superadministrador y el administrador de su aerolínea: código, legs, orden, aeronaves, fechas, reglas e insignia.": "Whoever proposed it can edit it while it is a draft or was rejected. Once submitted, published, closed or with enrolled pilots, only the superadmin and its airline administrator can modify it: code, legs, order, aircraft, dates, rules and badge.",
+    "Si cambian los legs": "If the legs change",
+    "Los legs que siguen guardan tu avance (vuelos y PIREP ya hechos). Uno que se quita deja tus vuelos como vuelos normales; uno nuevo lo tendrás que volar. Si ya terminaste el tour, conservas la insignia.": "The legs that remain keep your progress (flights and PIREPs already flown). A removed leg turns your flights into regular flights; a new one you will have to fly. If you already finished the tour, you keep the badge.",
+    "Cambiaron los legs de un tour en el que voy a la mitad.": "The legs changed on a tour I'm halfway through.",
+    "El administrador de la aerolínea puede ajustarlo en cualquier momento. Lo que ya volaste en los legs que siguen te cuenta; vuela los que falten. Si quitaron los que te faltaban, el tour queda terminado y ganas la insignia.": "The airline administrator can adjust it at any time. What you already flew on the remaining legs still counts; fly the ones left. If the ones you were missing were removed, the tour is complete and you earn the badge.",
+    "Tours: el superadministrador y el administrador de la aerolínea los modifican por completo aunque estén publicados, cerrados o con pilotos con avance; el avance se conserva.": "Tours: the superadmin and the airline administrator can fully modify them even when published, closed or with pilots in progress; progress is kept.",
+    "Solo el superadministrador o el administrador de la aerolínea cierran el tour": "Only the superadmin or the airline administrator can close the tour",
     "(Whazzup público) · FIR:": "(public Whazzup) · FIR:",
     "(cúmulos de gran desarrollo)": "(towering cumulus)",
     "). Solo tú y quien lo atiende lo verán.": "). Only you and whoever handles it will see it.",
@@ -573,7 +585,6 @@ export const EN: Dictionary = {
     "El superadministrador revisa tu solicitud. Hasta que la aprueba no llega ningún correo. Al aprobarla te llega «Invitación a LAM Virtual ACARS»; si no la ves, revisa la carpeta de no deseados.": "The superadministrator reviews your request. Until it is approved no email arrives. Once approved you get «Invitation to LAM Virtual ACARS»; if you do not see it, check your spam folder.",
     "El tablero diario del jefe de operaciones.": "The daily board of the chief of operations.",
     "El tour espera que un administrador de": "The tour is waiting for an administrator of",
-    "El tour ya está publicado: su código, sus legs y los tipos de aeronave quedan fijos. Puedes cambiar lo demás.": "The tour is already published: its code, legs and aircraft types are fixed. You can change the rest.",
     "El tour ya terminó.": "The tour already ended.",
     "El umbral debe ser un número positivo": "The threshold must be a positive number",
     "El vuelo no se cierra al llegar.": "The flight does not close on arrival.",
@@ -1323,7 +1334,6 @@ export const EN: Dictionary = {
     "Próximos y en curso": "Upcoming and in progress",
     "Publicación rechazada:": "Publication rejected:",
     "Publicado": "Published",
-    "Publicado: los legs no cambian.": "Published: the legs do not change.",
     "Pulsa «Reservar» en la ruta": "Press «Book» on the route",
     "Pulsa «Vincular este equipo» y escribe el código en Settings → Dispositivos ACARS.": "Press «Link this computer» and type the code in Settings → ACARS devices.",
     "Puntaje": "Score",
@@ -1639,7 +1649,6 @@ export const EN: Dictionary = {
     "Solo como referencia; el ingreso lo pides ya con tu cuenta.": "Reference only; you request to join once you have your account.",
     "Solo el administrador y el jefe de operaciones de": "Only the administrator and chief of operations of",
     "Solo el creador del evento o un administrador de su aerolínea lo puede editar.": "Only the event creator or an administrator of its airline can edit it.",
-    "Solo el creador del tour o un administrador de su aerolínea lo puede editar.": "Only the tour creator or an administrator of its airline can edit it.",
     "Solo el superadministrador cambia estos datos.": "Only the superadministrator changes these data.",
     "Solo lectura": "Read only",
     "Solo los administradores y jefes de operaciones de una aerolínea programan entrenamientos.": "Only administrators and chiefs of operations of an airline schedule trainings.",
@@ -2002,6 +2011,7 @@ export const EN: Dictionary = {
     "Callsign, piloto, aeropuerto, evento, tour…": "Callsign, pilot, airport, event, tour…"
   },
   patterns: [
+    ["Solo el superadministrador o el administrador de {0} modifican este tour", "Only the superadmin or the administrator of {0} can modify this tour"],
     [
       "(información {0})",
       "({0} information)"

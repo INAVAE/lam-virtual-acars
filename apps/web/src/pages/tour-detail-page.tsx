@@ -428,7 +428,8 @@ function OwnerActions({ tour }: { tour: TourDetail }) {
   const review = useReviewTour();
   const close = useCloseTour();
   const [rejecting, setRejecting] = useState(false);
-  const editable = tour.can_edit && tour.status !== 'closed';
+  // Superadministrador y administrador de la aerolínea: en cualquier estado. Quien lo propuso: en borrador o rechazado.
+  const editable = tour.can_modify;
   return (
     <div className="flex flex-wrap gap-2">
       {editable ? (
@@ -476,7 +477,7 @@ function OwnerActions({ tour }: { tour: TourDetail }) {
           </Button>
         </>
       ) : null}
-      {tour.can_edit && tour.status === 'published' ? (
+      {tour.can_modify && tour.status === 'published' ? (
         <ConfirmButton
           size="sm"
           variant="secondary"

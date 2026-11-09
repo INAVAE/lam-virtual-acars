@@ -133,6 +133,19 @@ La firma (`author_name`, `author_pilot_number`), el estado inicial y quién aten
 
 Las tablas no tienen permisos directos; todo pasa por funciones `security definer`. Pruebas: `025_trainings.test.sql`.
 
+## Tours
+
+| Acción | Piloto (miembro de la aerolínea) | Quien lo propuso | Jefe de operaciones | Admin. de la aerolínea del tour | Superadmin |
+| --- | --- | --- | --- | --- | --- |
+| Proponer (`save_tour` nuevo) | Sí | — | Sí | Sí (se publica al enviarlo) | Sí |
+| Modificar todo (`save_tour`: código, legs, orden, tipos, fechas, reglas; insignia en `tour-badges`) | No | Solo en borrador o rechazado | No | En cualquier estado, aun publicado, cerrado o con avance | Igual |
+| Enviar a publicar (`submit_tour`) | No | Borrador o rechazado | No | Sí | Sí |
+| Aprobar o rechazar (`review_tour`) | No | No | No | Sí | Sí |
+| Revisar inscripciones (`review_tour_enrollment`) | No | Sí | No | Sí | Sí |
+| Cerrar (`close_tour`) | No | No | No | Sí | Sí |
+
+`private.can_modify_tour` decide quién modifica (la web lo recibe como `can_modify`); `private.can_edit_tour` (creador o administrador) sigue para revisar inscripciones y enviar. Al cambiar los legs, `save_tour` conserva el id de los que siguen (vuelos y PIREP siguen contando), quita los demás (sus vuelos quedan sin leg) y recalcula las inscripciones en curso; las terminadas conservan la insignia. Pruebas: `012_phase7_tours.test.sql`, `026_tour_admin_edit.test.sql`.
+
 ## Cuentas por invitación
 
 | Tabla o función | Sin sesión | Piloto, staff de aerolínea | Superadministrador |

@@ -608,16 +608,16 @@ const tourSummary = (n, extra = {}) => ({
   color: '#a855f7', badge_path: null, status: 'published', starts_on: null, ends_on: null, ordered_legs: true, allow_unreviewed_progress: true,
   max_unreviewed_legs: 2, auto_approve_same_airline: true, aircraft_type_ids: [1, 2], aircraft_types: ['A20N', 'B738'], review_comment: null,
   submitted_at: minsAgo(9000), published_at: minsAgo(8000), airline: tairline, creator: { id: USER_ID, name: PROFILE.display_name },
-  legs_count: 5, distance_nm: 4079, participants: 6, finishers: 1, can_edit: true, can_approve: false, pending_enrollments: 2,
+  legs_count: 5, distance_nm: 4079, participants: 6, finishers: 1, can_edit: true, can_modify: true, can_approve: false, pending_enrollments: 2,
   my_enrollment: { id: id(1650), status: 'approved', airline_id: MXL.id, legs_accepted: 1, legs_flown: 2 }, ...extra,
 });
 const TOURS = [
   tourSummary(0),
   tourSummary(1, { code: 'CARIBE-26', name: 'Caribe en turbohélice', color: '#14b8a6', aircraft_types: ['AT76'], aircraft_type_ids: [5], legs_count: 8, distance_nm: 2300,
-    ordered_legs: false, participants: 3, finishers: 0, can_edit: false, pending_enrollments: null, my_enrollment: null, creator: { id: id(701), name: 'Ana Torres' },
+    ordered_legs: false, participants: 3, finishers: 0, can_edit: false, can_modify: false, pending_enrollments: null, my_enrollment: null, creator: { id: id(701), name: 'Ana Torres' },
     starts_on: '2026-11-01', ends_on: '2026-12-31' }),
   tourSummary(2, { code: 'NORTE-77', name: 'Ruta del Norte en 777', color: '#f97316', aircraft_types: ['B77W'], aircraft_type_ids: [3], legs_count: 4, distance_nm: 5200,
-    status: 'submitted', can_approve: true, can_edit: true, participants: 0, finishers: 0, pending_enrollments: 0, my_enrollment: null, creator: { id: id(702), name: 'Luis Ramírez' } }),
+    status: 'submitted', can_approve: true, can_edit: true, can_modify: true, participants: 0, finishers: 0, pending_enrollments: 0, my_enrollment: null, creator: { id: id(702), name: 'Luis Ramírez' } }),
 ];
 const TOUR_DETAIL = {
   ...TOURS[0],
