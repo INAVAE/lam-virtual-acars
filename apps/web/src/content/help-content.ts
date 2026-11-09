@@ -483,7 +483,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
-  ['2026-11-08', 'Conector 0.1.30: la APU del Fenix A320 se detecta por su panel (MASTER SW y luz AVAIL).'],
+  ['2026-11-08', 'Conector 0.1.32: la APU del Fenix A320 se detecta por su panel (MASTER SW y luz AVAIL).'],
   ['2026-11-08', 'Live Flights y My Flights: hoja completa del plan de SimBrief (información del vuelo, resumen del plan y hoja de carga); antes de despegar, distancia, tiempo y llegada salen del plan.'],
   ['2026-11-08', 'Tours: botón «Reservar leg» en cada leg. Solo el vuelo reservado desde el tour cuenta para el tour; Flight Booking avisa cuando una ruta es un leg que te falta.'],
   ['2026-11-08', 'Tours: el superadministrador y el administrador de la aerolínea los modifican por completo aunque estén publicados, cerrados o con pilotos con avance; el avance se conserva.'],
