@@ -33,7 +33,7 @@ import {
 import { ProgramTag } from '@/components/program-tag';
 import { FlightPlanSheetView } from '@/components/flight-plan-sheet';
 import { FlightCategoryBadge } from '@/components/weather';
-import { formatAltimeter, formatTemperature, formatVisibility, formatWind, formatZulu } from '@/lib/weather';
+import { formatAltimeter, formatTemperature, formatVisibility, formatWind as formatMetarWind, formatZulu } from '@/lib/weather';
 import { useAuth } from '@/lib/auth';
 import { useAirlineScope } from '@/lib/airline-scope';
 import { describeError } from '@/lib/errors';
@@ -213,7 +213,7 @@ function MetarCard({ label, weather, fallbackIcao }: { label: string; weather: F
           <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
             <div>
               <dt className="text-xs text-muted">Viento</dt>
-              <dd className="font-mono">{formatWind(metar.wind_dir, metar.wind_kt, metar.gust_kt)}</dd>
+              <dd className="font-mono">{formatMetarWind(metar.wind_dir, metar.wind_kt, metar.gust_kt)}</dd>
             </div>
             <div>
               <dt className="text-xs text-muted">Visibilidad</dt>
