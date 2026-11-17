@@ -204,6 +204,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Tu comentario', 'Desde el detalle del PIREP puedes dejar un comentario para quien lo revisa: es el lugar para explicar algo que el sistema no sabe.'],
       ['Al aceptarse', 'Suma el block time y un ciclo a la aeronave y a tus horas, y cuenta para estadísticas, tours y eventos.'],
       ['El análisis', 'El mapa, las gráficas de altitud, velocidad y combustible, la APU, la actitud y el viento comparten un cursor: al pasar sobre una gráfica se marca el mismo instante en las demás.'],
+      ['Clima de salida y llegada', 'El METAR de NOAA más cercano a los calzos fuera y a los calzos puestos se guarda con el vuelo. Si a un vuelo le falta, al abrir el PIREP se busca solo; NOAA conserva pocos días de observaciones, así que los vuelos más antiguos pueden quedar sin él.'],
     ],
     note: 'El staff puede anular una falta con un motivo (queda registrado quién y por qué) y archivar un PIREP. Uno archivado deja de verse en las listas; el superadministrador puede restaurarlo.',
     shot: {
@@ -489,6 +490,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-16', 'PIREP: corregido el METAR de salida y de llegada, que no se estaba guardando. Los vuelos recientes que quedaron sin él lo recuperan solos al abrir su PIREP.'],
   ['2026-11-09', 'Tours: en el mapa del tour, los legs con PIREP aceptado se pintan en verde (encima de los demás) y los de ida y regreso se separan para que se vea tu avance; abajo, el resumen de completados, en revisión y por volar.'],
   ['2026-11-09', 'PIREP: muestra la ruta del plan de SimBrief en el mapa, la hoja del plan (información, resumen y hoja de carga) y el METAR de salida y de llegada guardados con el vuelo.'],
   ['2026-11-09', 'PIREP: el piloto y el staff pueden comentar en cualquier momento, aunque el PIREP ya esté aceptado o rechazado (sección Comentarios de la revisión).'],

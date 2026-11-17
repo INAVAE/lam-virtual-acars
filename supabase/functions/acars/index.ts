@@ -9,7 +9,7 @@
 
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.57.4';
 import type { ZodTypeAny, z } from 'zod';
-import { captureFlightMetar, sessionAirports } from './metar.ts';
+import { captureFlightMetar, fillMissingFlightMetar, flightAirports, sessionAirports } from './metar.ts';
 import {
   ACARS_ERROR_STATUS,
   eventsRequest,
@@ -50,6 +50,16 @@ function errorResponse(error: ApiError): Response {
   const body: Record<string, unknown> = { code: error.code, message: error.message };
   if (error.details) body.details = error.details;
   return json({ error: body }, status);
+}
+
+function publishableKey(): string {
+  try {
+    const keys = JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') ?? '{}') as Record<string, string>;
+    if (keys.default) return keys.default;
+  } catch {
+    // Formato anterior de claves.
+  }
+  return Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 }
 
 function secretKey(): string {
@@ -236,14 +246,20 @@ const routes: Record<string, Handler> = {
       p_latitude: body.latitude ?? null,
       p_longitude: body.longitude ?? null,
     });
-    // METAR del aeropuerto donde terminó (o del destino si no se pudo saber).
+    // METAR del aeropuerto donde terminó (o del destino si no se pudo saber), y
+    // el de salida si no se guardó con los calzos fuera.
     background(async () => {
       const info = await sessionAirports(db(), body.session_id);
       if (!info) return;
       const icao = info.final ?? info.destination;
-      const { data: saved } = await db().from('flight_weather').select('icao, event_at').eq('flight_id', info.flightId).eq('role', 'arrival').maybeSingle();
-      if (saved && saved.icao === icao) return;
-      await captureFlightMetar(db(), info.flightId, 'arrival', icao, saved?.event_at ? new Date(saved.event_at) : new Date());
+      const { data: saved } = await db().from('flight_weather').select('role, icao, event_at').eq('flight_id', info.flightId);
+      const arrival = saved?.find((r) => r.role === 'arrival');
+      if (!arrival || arrival.icao !== icao) {
+        await captureFlightMetar(db(), info.flightId, 'arrival', icao, arrival?.event_at ? new Date(arrival.event_at) : info.blockOnAt ? new Date(info.blockOnAt) : new Date());
+      }
+      if (!saved?.some((r) => r.role === 'departure') && info.blockOffAt) {
+        await captureFlightMetar(db(), info.flightId, 'departure', info.origin, new Date(info.blockOffAt));
+      }
     });
     // La posición viva solo existe mientras el vuelo está en curso.
     const { error } = await db().from('flight_positions_live').delete().eq('session_id', body.session_id);
@@ -252,6 +268,32 @@ const routes: Record<string, Handler> = {
   },
 };
 routes['POST /event'] = routes['POST /events']!;
+
+// Desde la web (sesión de Supabase del usuario): completa el METAR de un vuelo
+// que se cerró sin él. Solo si quien llama puede ver el vuelo.
+routes['POST /flight-weather'] = async (req) => {
+  const header = req.headers.get('authorization') ?? '';
+  const jwt = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  if (!jwt) throw new ApiError('invalid_token', 'Inicia sesión');
+  const { data: userData, error: userError } = await db().auth.getUser(jwt);
+  if (userError || !userData.user) throw new ApiError('invalid_token', 'La sesión no es válida');
+  let flightId = '';
+  try {
+    flightId = String(((await req.json()) as { flight_id?: unknown })?.flight_id ?? '');
+  } catch {
+    // Cuerpo inválido.
+  }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(flightId)) throw new ApiError('bad_request', 'Indica el vuelo');
+  const asUser = createClient(Deno.env.get('SUPABASE_URL') ?? '', publishableKey(), {
+    global: { headers: { Authorization: `Bearer ${jwt}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: visible } = await asUser.from('flights').select('id').eq('id', flightId).maybeSingle();
+  if (!visible) throw new ApiError('flight_not_found', 'No encontramos ese vuelo');
+  const info = await flightAirports(db(), flightId);
+  if (!info?.endedAt) return json({ filled: [] });
+  return json({ filled: await fillMissingFlightMetar(db(), info) });
+};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });

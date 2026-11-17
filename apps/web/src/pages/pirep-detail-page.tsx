@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import {
   useFlightPlanSheet,
+  useFillFlightWeather,
   useFlightWeather,
   usePirepPrograms,
   useArchivePirep,
@@ -197,7 +198,17 @@ function PlanPanel({ flightId }: { flightId: string }) {
   );
 }
 
-function MetarCard({ label, weather, fallbackIcao }: { label: string; weather: FlightWeather | undefined; fallbackIcao: string | undefined }) {
+function MetarCard({
+  label,
+  weather,
+  fallbackIcao,
+  filling,
+}: {
+  label: string;
+  weather: FlightWeather | undefined;
+  fallbackIcao: string | undefined;
+  filling: boolean;
+}) {
   const metar = weather?.metar ?? null;
   return (
     <div className="rounded-md border border-line bg-bg p-3">
@@ -231,7 +242,11 @@ function MetarCard({ label, weather, fallbackIcao }: { label: string; weather: F
         </>
       ) : (
         <p className="mt-2 text-sm text-muted">
-          {weather ? 'NOAA no tenía un METAR de ese momento.' : 'Sin METAR guardado: se registra desde el 9 de noviembre de 2026 (calzos fuera y calzos puestos).'}
+          {weather
+            ? 'NOAA no tenía un METAR de ese momento.'
+            : filling
+              ? 'Buscando el METAR de ese momento en NOAA…'
+              : 'Sin METAR guardado. NOAA solo conserva unos días de observaciones; los vuelos más antiguos quedan sin él.'}
         </p>
       )}
     </div>
@@ -241,14 +256,17 @@ function MetarCard({ label, weather, fallbackIcao }: { label: string; weather: F
 function WeatherPanel({ flightId, origin, arrival }: { flightId: string; origin: string | undefined; arrival: string | undefined }) {
   const weather = useFlightWeather(flightId);
   const rows = weather.data ?? [];
+  const missing = weather.isSuccess && !(rows.some((r) => r.role === 'departure') && rows.some((r) => r.role === 'arrival'));
+  const fill = useFillFlightWeather(flightId, missing);
+  const filling = fill.isFetching;
   return (
     <Panel title="Clima de salida y llegada" description="METAR de NOAA más cercano a los calzos fuera y a los calzos puestos, guardado con el vuelo.">
       {weather.isPending ? (
         <Skeleton className="h-32" />
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
-          <MetarCard label="Salida" weather={rows.find((r) => r.role === 'departure')} fallbackIcao={origin} />
-          <MetarCard label="Llegada" weather={rows.find((r) => r.role === 'arrival')} fallbackIcao={arrival} />
+          <MetarCard label="Salida" weather={rows.find((r) => r.role === 'departure')} fallbackIcao={origin} filling={filling} />
+          <MetarCard label="Llegada" weather={rows.find((r) => r.role === 'arrival')} fallbackIcao={arrival} filling={filling} />
         </div>
       )}
     </Panel>

@@ -3,6 +3,10 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "PIREP: corregido el METAR de salida y de llegada, que no se estaba guardando. Los vuelos recientes que quedaron sin él lo recuperan solos al abrir su PIREP.": "PIREP: fixed the departure and arrival METAR, which was not being saved. Recent flights left without it recover it automatically when their PIREP is opened.",
+    "El METAR de NOAA más cercano a los calzos fuera y a los calzos puestos se guarda con el vuelo. Si a un vuelo le falta, al abrir el PIREP se busca solo; NOAA conserva pocos días de observaciones, así que los vuelos más antiguos pueden quedar sin él.": "The NOAA METAR closest to block-off and block-on is saved with the flight. If a flight lacks it, it is looked up automatically when the PIREP is opened; NOAA keeps only a few days of observations, so older flights may stay without it.",
+    "Buscando el METAR de ese momento en NOAA…": "Looking up the METAR for that time in NOAA…",
+    "Sin METAR guardado. NOAA solo conserva unos días de observaciones; los vuelos más antiguos quedan sin él.": "No METAR saved. NOAA only keeps a few days of observations; older flights stay without it.",
     "Tu avance en el mapa": "Your progress on the map",
     "Tours: en el mapa del tour, los legs con PIREP aceptado se pintan en verde (encima de los demás) y los de ida y regreso se separan para que se vea tu avance; abajo, el resumen de completados, en revisión y por volar.": "Tours: on the tour map, legs with an accepted PIREP are painted green (on top of the others) and outbound and return legs are separated so your progress is visible; below, the summary of completed, in review and to fly.",
     "El plan que se importó para este vuelo: información, resumen y hoja de carga.": "The plan imported for this flight: info, summary and load sheet.",
@@ -11,7 +15,6 @@ export const EN: Dictionary = {
     "Temp./rocío": "Temp./dew point",
     "QNH": "QNH",
     "NOAA no tenía un METAR de ese momento.": "NOAA had no METAR for that time.",
-    "Sin METAR guardado: se registra desde el 9 de noviembre de 2026 (calzos fuera y calzos puestos).": "No METAR saved: recorded since November 9, 2026 (block-off and block-on).",
     "PIREP: muestra la ruta del plan de SimBrief en el mapa, la hoja del plan (información, resumen y hoja de carga) y el METAR de salida y de llegada guardados con el vuelo.": "PIREP: shows the SimBrief plan route on the map, the plan sheet (info, summary and load sheet) and the departure and arrival METAR saved with the flight.",
     "Comentarios": "Comments",
     "Enviar comentario": "Send comment",

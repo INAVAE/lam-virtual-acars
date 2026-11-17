@@ -1136,6 +1136,9 @@ async function handleSupabase(route) {
   if (url.pathname === '/functions/v1/account-requests') {
     return route.fulfill({ status: 200, headers: CORS, json: { ok: true } });
   }
+  if (url.pathname === '/functions/v1/acars/v1/flight-weather') {
+    return route.fulfill({ status: 200, headers: CORS, json: { filled: [] } });
+  }
   if (url.pathname === '/rest/v1/rpc/request_pilot_account') {
     return route.fulfill({ status: 204, headers: CORS, body: '' });
   }

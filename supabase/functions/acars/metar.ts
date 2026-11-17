@@ -1,7 +1,9 @@
 // METAR de salida y de llegada que se guarda con el vuelo (tabla flight_weather).
 //
 // - Fuente: Aviation Weather Center de NOAA, la misma de la función weather.
-//   Se toma la observación más cercana al momento del evento (de las últimas 3 h).
+//   Se toma la observación más cercana al momento del evento (de las 3 h
+//   anteriores). Si el evento ya pasó, se pide con fecha de fin (`date`) para
+//   poder recuperar vuelos de días anteriores.
 // - Si NOAA no responde, se usa la caché de public.weather_reports si la
 //   observación es de menos de 90 minutos antes del evento.
 // - Corre en segundo plano: el conector no espera por esto.
@@ -76,11 +78,25 @@ export function closestMetar(list: unknown, at: Date): Obj | null {
   return best?.m ?? null;
 }
 
+/** Fecha de fin de la búsqueda en NOAA (yyyymmdd_hhnn, UTC). */
+export function awcDate(at: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${at.getUTCFullYear()}${p(at.getUTCMonth() + 1)}${p(at.getUTCDate())}_${p(at.getUTCHours())}${p(at.getUTCMinutes())}`;
+}
+
+/** URL de NOAA: sin fecha si el evento es de ahora; con fecha de fin si ya pasó. */
+export function noaaMetarUrl(icao: string, at: Date, now = new Date()): string {
+  const end = new Date(at.getTime() + 15 * 60_000);
+  const base = `${AWC}/metar?ids=${icao}&format=json&hours=4`;
+  return end.getTime() < now.getTime() - 5 * 60_000 ? `${base}&date=${awcDate(end)}` : base;
+}
+
 async function fromNoaa(icao: string, at: Date): Promise<Obj | null> {
-  const res = await fetch(`${AWC}/metar?ids=${icao}&format=json&hours=3`, {
+  const res = await fetch(noaaMetarUrl(icao, at), {
     headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
     signal: AbortSignal.timeout(12000),
   });
+  if (res.status === 204) return null;
   if (!res.ok) throw new Error(`NOAA respondió ${res.status}`);
   const text = await res.text();
   if (!text.trim()) return null;
@@ -124,19 +140,88 @@ export async function captureFlightMetar(db: SupabaseClient, flightId: string, r
   }
 }
 
-/** Datos del vuelo de una sesión: id y códigos OACI de salida, destino y llegada final. */
-export async function sessionAirports(db: SupabaseClient, sessionId: string) {
-  const { data: session } = await db.from('flight_sessions').select('flight_id, final_airport_id').eq('id', sessionId).maybeSingle();
-  if (!session) return null;
-  const { data: flight } = await db.from('flights').select('id, origin_airport_id, destination_airport_id').eq('id', session.flight_id).maybeSingle();
+/** Datos del vuelo: id, códigos OACI de salida, destino y llegada final, y horas de calzos. */
+export interface FlightAirports {
+  flightId: string;
+  origin: string | null;
+  destination: string | null;
+  final: string | null;
+  sessionId: string | null;
+  blockOffAt: string | null;
+  blockOnAt: string | null;
+  endedAt: string | null;
+}
+
+async function check<T>(label: string, query: PromiseLike<{ data: T | null; error: { message: string } | null }>): Promise<T | null> {
+  const { data, error } = await query;
+  // Antes un error aquí (por ejemplo, de permisos) se perdía y no se guardaba nada.
+  if (error) throw new Error(`${label}: ${error.message}`);
+  return data;
+}
+
+export async function flightAirports(db: SupabaseClient, flightId: string): Promise<FlightAirports | null> {
+  const flight = await check<{ id: string; origin_airport_id: number; destination_airport_id: number }>(
+    'vuelo',
+    db.from('flights').select('id, origin_airport_id, destination_airport_id').eq('id', flightId).maybeSingle(),
+  );
   if (!flight) return null;
-  const ids = [flight.origin_airport_id, flight.destination_airport_id, session.final_airport_id].filter((x): x is number => typeof x === 'number');
-  const { data: airports } = await db.from('airports').select('id, icao_code').in('id', ids);
-  const icao = (id: unknown) => airports?.find((a) => a.id === id)?.icao_code ?? null;
+  const session = await check<{ id: string; final_airport_id: number | null; ended_at: string | null }>(
+    'sesión',
+    db.from('flight_sessions').select('id, final_airport_id, ended_at').eq('flight_id', flightId).maybeSingle(),
+  );
+  const ids = [flight.origin_airport_id, flight.destination_airport_id, session?.final_airport_id].filter((x): x is number => x !== null && x !== undefined);
+  const airports = await check<{ id: number; icao_code: string }[]>('aeropuertos', db.from('airports').select('id, icao_code').in('id', ids));
+  // bigint puede llegar como número o texto: se compara como texto.
+  const icao = (id: unknown) => (id === null || id === undefined ? null : (airports?.find((a) => String(a.id) === String(id))?.icao_code ?? null));
+  let blockOffAt: string | null = null;
+  let blockOnAt: string | null = null;
+  if (session) {
+    const events = await check<{ type: string; occurred_at: string }[]>(
+      'eventos',
+      db.from('flight_events').select('type, occurred_at').eq('session_id', session.id).in('type', ['block_off', 'block_on']).order('seq'),
+    );
+    blockOffAt = events?.find((e) => e.type === 'block_off')?.occurred_at ?? null;
+    blockOnAt = [...(events ?? [])].reverse().find((e) => e.type === 'block_on')?.occurred_at ?? null;
+  }
   return {
-    flightId: flight.id as string,
+    flightId: flight.id,
     origin: icao(flight.origin_airport_id),
     destination: icao(flight.destination_airport_id),
-    final: icao(session.final_airport_id),
+    final: icao(session?.final_airport_id),
+    sessionId: session?.id ?? null,
+    blockOffAt,
+    blockOnAt,
+    endedAt: session?.ended_at ?? null,
   };
+}
+
+/** Lo mismo a partir de la sesión del conector. */
+export async function sessionAirports(db: SupabaseClient, sessionId: string): Promise<FlightAirports | null> {
+  const session = await check<{ flight_id: string }>('sesión', db.from('flight_sessions').select('flight_id').eq('id', sessionId).maybeSingle());
+  return session ? flightAirports(db, session.flight_id) : null;
+}
+
+/** Días hacia atrás que se intentan recuperar de NOAA. */
+export const BACKFILL_DAYS = 14;
+
+/**
+ * Guarda los METAR que le falten al vuelo (salida y llegada). Para vuelos
+ * terminados antes de que esto funcionara. Devuelve los roles que intentó.
+ */
+export async function fillMissingFlightMetar(db: SupabaseClient, info: FlightAirports, now = new Date()): Promise<string[]> {
+  const saved = await check<{ role: string }[]>('clima guardado', db.from('flight_weather').select('role').eq('flight_id', info.flightId));
+  const have = new Set((saved ?? []).map((r) => r.role));
+  const oldest = now.getTime() - BACKFILL_DAYS * 86_400_000;
+  const done: string[] = [];
+  const departureAt = info.blockOffAt;
+  if (!have.has('departure') && departureAt && Date.parse(departureAt) > oldest) {
+    await captureFlightMetar(db, info.flightId, 'departure', info.origin, new Date(departureAt));
+    done.push('departure');
+  }
+  const arrivalAt = info.blockOnAt ?? info.endedAt;
+  if (!have.has('arrival') && arrivalAt && Date.parse(arrivalAt) > oldest) {
+    await captureFlightMetar(db, info.flightId, 'arrival', info.final ?? info.destination, new Date(arrivalAt));
+    done.push('arrival');
+  }
+  return done;
 }

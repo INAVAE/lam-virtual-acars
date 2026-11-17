@@ -359,6 +359,30 @@ export interface FlightWeather {
 }
 
 /** METAR de salida (calzos fuera) y de llegada (calzos puestos) guardados con el vuelo. */
+/**
+ * Completa el METAR de un vuelo que se cerró sin él (por ejemplo, los vuelos
+ * anteriores a la corrección de permisos del 16 de noviembre de 2026). Corre una
+ * vez por vuelo y solo si falta la salida o la llegada; NOAA guarda pocos días.
+ */
+export function useFillFlightWeather(flightId: string | undefined, missing: boolean) {
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: ['flight-weather-fill', flightId],
+    enabled: Boolean(flightId) && missing,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async (): Promise<string[]> => {
+      const { data, error } = await getSupabase().functions.invoke<{ filled?: string[] }>('acars/v1/flight-weather', {
+        body: { flight_id: flightId },
+      });
+      if (error) throw error;
+      const filled = data?.filled ?? [];
+      if (filled.length > 0) await queryClient.invalidateQueries({ queryKey: ['flight-weather', flightId] });
+      return filled;
+    },
+  });
+}
+
 export function useFlightWeather(flightId: string | undefined) {
   return useQuery({
     queryKey: ['flight-weather', flightId],
