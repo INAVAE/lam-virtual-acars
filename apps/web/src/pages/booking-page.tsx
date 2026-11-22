@@ -222,7 +222,7 @@ function BookingDialog({ airline, route, onClose }: { airline: Airline; route: R
           </section>
         ) : null}
 
-        <fieldset>
+        <fieldset className="min-w-0">
           <legend className="mb-2 text-sm font-medium">Aeronave</legend>
           {options.isError ? <Alert tone="danger">{describeError(options.error)}</Alert> : null}
           {options.isPending ? (
@@ -698,7 +698,7 @@ function DirectFlightDialog({
             </Alert>
           ) : null}
 
-          <fieldset>
+          <fieldset className="min-w-0">
             <legend className="mb-2 flex w-full flex-wrap items-center justify-between gap-2">
               <span className="text-sm font-medium">
                 Aeronave

@@ -1,10 +1,14 @@
 import type { ReactNode, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
-/** Tabla con desplazamiento horizontal propio para no romper el ancho de página. */
+/**
+ * Tabla con desplazamiento horizontal propio para no romper el ancho de página.
+ * `relative` hace que los textos sr-only (posición absoluta) queden dentro del
+ * desplazamiento; sin él ensanchaban la página en el celular.
+ */
 export function Table({ children, minWidth = '48rem', className }: { children: ReactNode; minWidth?: string; className?: string }) {
   return (
-    <div className={cn('overflow-x-auto rounded-lg border border-line bg-surface', className)}>
+    <div className={cn('relative overflow-x-auto rounded-lg border border-line bg-surface', className)}>
       <table className="w-full border-collapse text-left text-sm" style={{ minWidth }}>
         {children}
       </table>

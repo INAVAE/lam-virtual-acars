@@ -491,7 +491,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
-  ['2026-11-22', 'Vuelo directo: la lista de aeronaves muestra toda la flota (sin un recuadro con su propio desplazamiento), con buscador y el conteo de disponibles; el administrador agrega ahí mismo el avión que falte con «Agregar avión a la flota» y el superadministrador, un tipo nuevo con «Nuevo tipo».'],
+  ['2026-11-22', 'Vuelo directo: la lista de aeronaves muestra toda la flota completa también en el celular (las tarjetas ya no se salen de la ventana), con buscador y el conteo de disponibles; el administrador agrega ahí mismo el avión que falte con «Agregar avión a la flota» y el superadministrador, un tipo nuevo con «Nuevo tipo».'],
   ['2026-11-16', 'PIREP: corregido el METAR de salida y de llegada, que no se estaba guardando. Los vuelos recientes que quedaron sin él lo recuperan solos al abrir su PIREP.'],
   ['2026-11-09', 'Tours: en el mapa del tour, los legs con PIREP aceptado se pintan en verde (encima de los demás) y los de ida y regreso se separan para que se vea tu avance; abajo, el resumen de completados, en revisión y por volar.'],
   ['2026-11-09', 'PIREP: muestra la ruta del plan de SimBrief en el mapa, la hoja del plan (información, resumen y hoja de carga) y el METAR de salida y de llegada guardados con el vuelo.'],
