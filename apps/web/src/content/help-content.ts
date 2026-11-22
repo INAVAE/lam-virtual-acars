@@ -137,6 +137,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['Elige la aeronave', 'Las que no puedes usar aparecen con el motivo: tipo no permitido en la ruta, sin habilitación, ocupada o en otro aeropuerto. Qué reglas aplican depende de las políticas de la aerolínea.'],
       ['Escribe tu callsign', 'El que vas a usar en la red y en SimBrief. Lo eliges tú en cada vuelo.'],
       ['Vuelo directo', 'Si la ruta no existe, «Reservar un nuevo vuelo directo» (junto a «Registrar ruta») reserva origen, destino, número de vuelo, aeronave y callsign sin buscar una ruta. Al reservar, la misma ventana te deja crear el plan en SimBrief e importarlo. Marca «Registrar la ruta de este vuelo» si quieres que quede en las rutas de la aerolínea (pendiente hasta su primer vuelo aceptado); sin marcar, el vuelo se hace solo esa vez.'],
+      ['La aeronave del vuelo directo', 'La ventana muestra toda la flota de la aerolínea, con cuántas hay y cuántas están disponibles; con más de seis aparece un buscador por matrícula, tipo o modelo. Si el avión que vas a volar no está, el administrador de la aerolínea lo agrega ahí mismo con «Agregar avión a la flota» (queda en el aeropuerto de origen y ya elegido), y si el tipo tampoco existe, el superadministrador lo crea con «Nuevo tipo». Si no eres administrador, pídele que lo agregue en Fleet.'],
       ['Confirma', 'La reserva aparece en My Flights. Vence si no inicias el vuelo en el plazo que fija la aerolínea (24 horas por omisión), y la aerolínea limita cuántas reservas activas puedes tener.'],
     ],
     note: 'Las reglas las valida el servidor, no la pantalla: si una reserva se rechaza, el mensaje dice exactamente qué regla no se cumplió.',
@@ -316,7 +317,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     summary: 'Fleet y Routes, para el administrador de la aerolínea.',
     audience: 'admin',
     steps: [
-      ['Flota', 'En Fleet das de alta cada aeronave con su matrícula, tipo y base. Las horas y ciclos los suma el sistema con cada PIREP aceptado.'],
+      ['Flota', 'En Fleet das de alta cada aeronave con su matrícula, tipo y base. Las horas y ciclos los suma el sistema con cada PIREP aceptado. También se agregan desde la reserva de un vuelo directo con «Agregar avión a la flota».'],
       ['Rutas', 'En Routes, número de vuelo, origen, destino, días, horario y, si quieres, los tipos permitidos. La distancia la calcula el servidor.'],
       ['Importar rutas', '«Importar CSV» con la plantilla descargable. Antes de guardar se muestra una revisión fila por fila y se guarda todo o nada.'],
       ['Rutas pendientes', 'Las registradas por pilotos aparecen como «Pendiente» con quién las registró, y «Volada con» muestra los tipos con que se ha volado cada ruta.'],
@@ -490,6 +491,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-22', 'Vuelo directo: la lista de aeronaves muestra toda la flota (sin un recuadro con su propio desplazamiento), con buscador y el conteo de disponibles; el administrador agrega ahí mismo el avión que falte con «Agregar avión a la flota» y el superadministrador, un tipo nuevo con «Nuevo tipo».'],
   ['2026-11-16', 'PIREP: corregido el METAR de salida y de llegada, que no se estaba guardando. Los vuelos recientes que quedaron sin él lo recuperan solos al abrir su PIREP.'],
   ['2026-11-09', 'Tours: en el mapa del tour, los legs con PIREP aceptado se pintan en verde (encima de los demás) y los de ida y regreso se separan para que se vea tu avance; abajo, el resumen de completados, en revisión y por volar.'],
   ['2026-11-09', 'PIREP: muestra la ruta del plan de SimBrief en el mapa, la hoja del plan (información, resumen y hoja de carga) y el METAR de salida y de llegada guardados con el vuelo.'],

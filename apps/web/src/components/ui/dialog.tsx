@@ -35,9 +35,15 @@ export function Dialog({ open, onClose, title, description, children, footer, si
       ref={ref}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
-      onClose={onClose}
+      onClose={(e) => {
+        // React propaga close y cancel por el árbol de componentes: sin esto,
+        // cerrar una ventana abierta desde otra cerraría también la de atrás.
+        e.stopPropagation();
+        onClose();
+      }}
       onCancel={(e) => {
         e.preventDefault();
+        e.stopPropagation();
         onClose();
       }}
       className={cn(

@@ -1,11 +1,12 @@
 import type { RouteAircraftOption } from '@lam/shared-types';
 import { OPERATION_TYPES } from '@lam/shared-types';
-import { ArrowRight, CalendarPlus, CloudDownload, ExternalLink, MapPin, MapPinPlus, PlaneTakeoff } from 'lucide-react';
+import { ArrowRight, CalendarPlus, CloudDownload, ExternalLink, MapPin, MapPinPlus, PlaneTakeoff, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { AirportPicker } from '@/components/airport-picker';
 import { ConfirmButton } from '@/components/confirm-button';
+import { AircraftDialog } from '@/components/fleet-dialogs';
 import { WeatherStrip } from '@/components/weather';
 import { ScopeRequired } from '@/components/scope-required';
 import { TourLegBadge, TourLegNotice } from '@/components/tour-leg-notice';
@@ -123,6 +124,17 @@ function AircraftOption({
       {reason ? <Badge tone="warn">{reason}</Badge> : controlled ? <Badge tone="ok">Disponible</Badge> : null}
     </label>
   );
+}
+
+/** Filtra las aeronaves por matrícula, tipo, modelo o número de flota. */
+function filterAircraftOptions(options: RouteAircraftOption[], query: string): RouteAircraftOption[] {
+  const q = query.trim().toUpperCase();
+  if (!q) return options;
+  const compact = q.replace(/[\s-]/g, '');
+  return options.filter((o) => {
+    const text = `${o.registration} ${o.type_icao} ${o.type_model ?? ''} ${o.fleet_number ?? ''}`.toUpperCase();
+    return text.includes(q) || text.replace(/[\s-]/g, '').includes(compact);
+  });
 }
 
 function BookingDialog({ airline, route, onClose }: { airline: Airline; route: RouteRow; onClose: () => void }) {
@@ -473,6 +485,8 @@ function DirectFlightDialog({
   const myTourLegs = useMyTourLegs();
   const profile = useProfile();
   const hasSimbriefUser = Boolean(profile.data?.simbrief_username?.trim());
+  const { canManage, isOrgAdmin } = useAirlinePermissions(airline.id);
+  const types = useAircraftTypes();
 
   const [number, setNumber] = useState('');
   const [originId, setOriginId] = useState<number | null>(null);
@@ -483,8 +497,12 @@ function DirectFlightDialog({
   const [registerRoute, setRegisterRoute] = useState(false);
   const [touched, setTouched] = useState(false);
   const [bookedId, setBookedId] = useState<string | null>(null);
+  const [aircraftSearch, setAircraftSearch] = useState('');
+  const [addingAircraft, setAddingAircraft] = useState(false);
 
   const options = useDirectAircraftOptions(airline.id, originId);
+  const fleetSize = options.data?.length ?? 0;
+  const shownAircraft = useMemo(() => filterAircraftOptions(options.data ?? [], aircraftSearch), [options.data, aircraftSearch]);
   const existing = useRoutesBetween(airline.id, originId, destinationId);
   const available = useMemo(() => (options.data ?? []).filter((o) => !o.block_reason), [options.data]);
   const aircraftId = chosenId && available.some((o) => o.aircraft_id === chosenId) ? chosenId : available.length === 1 ? (available[0]?.aircraft_id ?? null) : null;
@@ -623,116 +641,170 @@ function DirectFlightDialog({
   }
 
   return (
-    <Dialog
-      open
-      size="lg"
-      onClose={onClose}
-      title="Reservar un nuevo vuelo directo"
-      description={`Elige origen, destino y número de vuelo sin buscar una ruta de ${airline.name}. Después generas el plan en SimBrief y lo importas.`}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button loading={book.isPending} onClick={submit}>
-            Reservar vuelo directo
-          </Button>
-        </>
-      }
-    >
-      <div className="space-y-5">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field id="df-origin" label="Origen" error={show(errors.origin)}>
-            <AirportPicker id="df-origin" value={originId} onChange={setOriginId} invalid={Boolean(show(errors.origin))} />
-          </Field>
-          <Field id="df-destination" label="Destino" error={show(errors.destination)}>
-            <AirportPicker id="df-destination" value={destinationId} onChange={setDestinationId} invalid={Boolean(show(errors.destination))} />
-          </Field>
-          <TourLegNotice legs={matchingTourLegs(myTourLegs.data, originId, destinationId)} className="sm:col-span-2" />
-          <Field id="df-number" label="Número de vuelo" error={show(errors.number)} hint={numberHint}>
+    <>
+      <Dialog
+        open
+        size="lg"
+        onClose={onClose}
+        title="Reservar un nuevo vuelo directo"
+        description={`Elige origen, destino y número de vuelo sin buscar una ruta de ${airline.name}. Después generas el plan en SimBrief y lo importas.`}
+        footer={
+          <>
+            <Button variant="secondary" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button loading={book.isPending} onClick={submit}>
+              Reservar vuelo directo
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field id="df-origin" label="Origen" error={show(errors.origin)}>
+              <AirportPicker id="df-origin" value={originId} onChange={setOriginId} invalid={Boolean(show(errors.origin))} />
+            </Field>
+            <Field id="df-destination" label="Destino" error={show(errors.destination)}>
+              <AirportPicker id="df-destination" value={destinationId} onChange={setDestinationId} invalid={Boolean(show(errors.destination))} />
+            </Field>
+            <TourLegNotice legs={matchingTourLegs(myTourLegs.data, originId, destinationId)} className="sm:col-span-2" />
+            <Field id="df-number" label="Número de vuelo" error={show(errors.number)} hint={numberHint}>
+              <Input
+                className="font-mono uppercase"
+                maxLength={6}
+                autoComplete="off"
+                placeholder="2201"
+                value={number}
+                onChange={(e) => setNumber(e.target.value)}
+                {...fieldAria('df-number', show(errors.number), numberHint)}
+              />
+            </Field>
+            <Field id="df-operation" label="Tipo de operación">
+              <Select id="df-operation" value={operation} onChange={(e) => setOperation(e.target.value)}>
+                {OPERATION_TYPES.map((o) => (
+                  <option key={o} value={o}>
+                    {operationTypeLabels[o]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </div>
+
+          {existing.data && existing.data.length > 0 ? (
+            <Alert>
+              {code} ya tiene {existing.data.length === 1 ? 'una ruta' : `${existing.data.length} rutas`} entre estos aeropuertos:{' '}
+              <span className="font-mono">{existing.data.map((r) => `${code}${r.flight_number}`).join(', ')}</span>. Puedes reservarla en la lista o
+              seguir con tu vuelo directo.
+            </Alert>
+          ) : null}
+
+          <fieldset>
+            <legend className="mb-2 flex w-full flex-wrap items-center justify-between gap-2">
+              <span className="text-sm font-medium">
+                Aeronave
+                {fleetSize > 0 ? <span className="ml-2 font-normal text-muted">{`${fleetSize} en la flota · ${available.length} disponibles`}</span> : null}
+              </span>
+              {canManage && types.data ? (
+                <Button size="sm" variant="secondary" onClick={() => setAddingAircraft(true)}>
+                  <Plus className="size-4" aria-hidden />
+                  Agregar avión a la flota
+                </Button>
+              ) : null}
+            </legend>
+            {options.isError ? <Alert tone="danger">{describeError(options.error)}</Alert> : null}
+            {fleetSize > 6 ? (
+              <div className="relative mb-2">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
+                <Input
+                  className="pl-8"
+                  type="search"
+                  autoComplete="off"
+                  aria-label="Buscar aeronave"
+                  placeholder="Busca por matrícula, tipo o modelo (A320, XA-LAM…)"
+                  value={aircraftSearch}
+                  onChange={(e) => setAircraftSearch(e.target.value)}
+                />
+              </div>
+            ) : null}
+            {options.isPending ? (
+              <Skeleton className="h-32" />
+            ) : fleetSize > 0 ? (
+              shownAircraft.length > 0 ? (
+                // Sin desplazamiento propio: la lista completa se recorre con la ventana. En el celular,
+                // un segundo desplazamiento dentro de la ventana dejaba parte de la flota sin verse.
+                <div className="space-y-1.5">
+                  {shownAircraft.map((o) => (
+                    <AircraftOption
+                      key={o.aircraft_id}
+                      option={o}
+                      checked={aircraftId === o.aircraft_id}
+                      controlled={controlled}
+                      onSelect={() => setAircraftId(o.aircraft_id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-md border border-dashed border-line px-3 py-4 text-center text-sm text-muted">
+                  {canManage
+                    ? `Ninguna aeronave coincide con «${aircraftSearch.trim()}». Agrégala con «Agregar avión a la flota».`
+                    : `Ninguna aeronave coincide con «${aircraftSearch.trim()}».`}
+                </p>
+              )
+            ) : (
+              <Alert>La aerolínea no tiene aeronaves registradas.</Alert>
+            )}
+            {!canManage && fleetSize > 0 ? (
+              <p className="mt-2 text-xs text-muted">¿No está el avión que vas a volar? Pide al administrador de la aerolínea que lo agregue en Fleet.</p>
+            ) : null}
+            {show(errors.aircraft) && fleetSize > 0 ? <p className="mt-1 text-sm text-danger-ink">{errors.aircraft}</p> : null}
+          </fieldset>
+
+          <Field id="df-callsign" label="Callsign" error={show(errors.callsign)} hint={callsignHint}>
             <Input
               className="font-mono uppercase"
-              maxLength={6}
+              maxLength={12}
               autoComplete="off"
-              placeholder="2201"
-              value={number}
-              onChange={(e) => setNumber(e.target.value)}
-              {...fieldAria('df-number', show(errors.number), numberHint)}
+              placeholder={`${code}${flightNumber || '2201'}`}
+              value={callsign}
+              onChange={(e) => setCallsign(e.target.value)}
+              {...fieldAria('df-callsign', show(errors.callsign), callsignHint)}
             />
           </Field>
-          <Field id="df-operation" label="Tipo de operación">
-            <Select id="df-operation" value={operation} onChange={(e) => setOperation(e.target.value)}>
-              {OPERATION_TYPES.map((o) => (
-                <option key={o} value={o}>
-                  {operationTypeLabels[o]}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </div>
 
-        {existing.data && existing.data.length > 0 ? (
-          <Alert>
-            {code} ya tiene {existing.data.length === 1 ? 'una ruta' : `${existing.data.length} rutas`} entre estos aeropuertos:{' '}
-            <span className="font-mono">{existing.data.map((r) => `${code}${r.flight_number}`).join(', ')}</span>. Puedes reservarla en la lista o
-            seguir con tu vuelo directo.
-          </Alert>
-        ) : null}
-
-        <fieldset>
-          <legend className="mb-2 text-sm font-medium">Aeronave</legend>
-          {options.isError ? <Alert tone="danger">{describeError(options.error)}</Alert> : null}
-          {options.isPending ? (
-            <Skeleton className="h-32" />
-          ) : options.data && options.data.length > 0 ? (
-            <div className="max-h-60 space-y-1.5 overflow-y-auto pr-1">
-              {options.data.map((o) => (
-                <AircraftOption
-                  key={o.aircraft_id}
-                  option={o}
-                  checked={aircraftId === o.aircraft_id}
-                  controlled={controlled}
-                  onSelect={() => setAircraftId(o.aircraft_id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <Alert>La aerolínea no tiene aeronaves registradas.</Alert>
-          )}
-          {show(errors.aircraft) && options.data && options.data.length > 0 ? (
-            <p className="mt-1 text-sm text-danger-ink">{errors.aircraft}</p>
+          {canRegisterRoute ? (
+            <Checkbox
+              id="df-register"
+              label="Registrar la ruta de este vuelo"
+              hint={`Se agrega a las rutas de ${airline.name} como pendiente para que cualquier piloto la reserve después; se activa con el primer PIREP aceptado que llegue al destino. Sin marcar, el vuelo se hace solo esta vez.`}
+              checked={registerRoute}
+              onChange={(e) => setRegisterRoute(e.target.checked)}
+            />
           ) : null}
-        </fieldset>
 
-        <Field id="df-callsign" label="Callsign" error={show(errors.callsign)} hint={callsignHint}>
-          <Input
-            className="font-mono uppercase"
-            maxLength={12}
-            autoComplete="off"
-            placeholder={`${code}${flightNumber || '2201'}`}
-            value={callsign}
-            onChange={(e) => setCallsign(e.target.value)}
-            {...fieldAria('df-callsign', show(errors.callsign), callsignHint)}
-          />
-        </Field>
-
-        {canRegisterRoute ? (
-          <Checkbox
-            id="df-register"
-            label="Registrar la ruta de este vuelo"
-            hint={`Se agrega a las rutas de ${airline.name} como pendiente para que cualquier piloto la reserve después; se activa con el primer PIREP aceptado que llegue al destino. Sin marcar, el vuelo se hace solo esta vez.`}
-            checked={registerRoute}
-            onChange={(e) => setRegisterRoute(e.target.checked)}
-          />
-        ) : null}
-
-        {airline.flight_plan_remarks ? (
-          <p className="text-sm text-muted">
-            En el plan de vuelo agrega <span className="font-mono text-ink">RMK/{airline.flight_plan_remarks}</span>.
-          </p>
-        ) : null}
-      </div>
-    </Dialog>
+          {airline.flight_plan_remarks ? (
+            <p className="text-sm text-muted">
+              En el plan de vuelo agrega <span className="font-mono text-ink">RMK/{airline.flight_plan_remarks}</span>.
+            </p>
+          ) : null}
+        </div>
+      </Dialog>
+      {addingAircraft && types.data ? (
+        <AircraftDialog
+          airline={airline}
+          aircraft={null}
+          types={types.data}
+          controlled={controlled}
+          canAddType={isOrgAdmin}
+          // Queda en el origen del vuelo para poder reservarla enseguida.
+          initial={{ base_airport_id: originId, current_airport_id: originId, operation_type: OPERATION_TYPES.find((o) => o === operation) }}
+          onClose={() => setAddingAircraft(false)}
+          onSaved={(id) => {
+            setAircraftSearch('');
+            setAircraftId(id);
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 

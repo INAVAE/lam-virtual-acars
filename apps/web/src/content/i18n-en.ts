@@ -3,6 +3,17 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "Vuelo directo: la lista de aeronaves muestra toda la flota (sin un recuadro con su propio desplazamiento), con buscador y el conteo de disponibles; el administrador agrega ahí mismo el avión que falte con «Agregar avión a la flota» y el superadministrador, un tipo nuevo con «Nuevo tipo».": "Direct flight: the aircraft list shows the whole fleet (no box with its own scrolling), with a search box and the count of available aircraft; the admin adds the missing aircraft right there with «Add aircraft to the fleet» and the superadmin a new type with «New type».",
+    "La aeronave del vuelo directo": "The direct flight aircraft",
+    "La ventana muestra toda la flota de la aerolínea, con cuántas hay y cuántas están disponibles; con más de seis aparece un buscador por matrícula, tipo o modelo. Si el avión que vas a volar no está, el administrador de la aerolínea lo agrega ahí mismo con «Agregar avión a la flota» (queda en el aeropuerto de origen y ya elegido), y si el tipo tampoco existe, el superadministrador lo crea con «Nuevo tipo». Si no eres administrador, pídele que lo agregue en Fleet.": "The window shows the airline's whole fleet, with how many there are and how many are available; with more than six a search box by registration, type or model appears. If the aircraft you will fly is missing, the airline admin adds it right there with «Add aircraft to the fleet» (it is placed at the origin airport and already selected), and if the type does not exist either, the superadmin creates it with «New type». If you are not an admin, ask them to add it in Fleet.",
+    "En Fleet das de alta cada aeronave con su matrícula, tipo y base. Las horas y ciclos los suma el sistema con cada PIREP aceptado. También se agregan desde la reserva de un vuelo directo con «Agregar avión a la flota».": "In Fleet you add each aircraft with its registration, type and base. Hours and cycles are added by the system with each accepted PIREP. They can also be added from the direct flight booking with «Add aircraft to the fleet».",
+    "Agregar avión a la flota": "Add aircraft to the fleet",
+    "Buscar aeronave": "Search aircraft",
+    "Busca por matrícula, tipo o modelo (A320, XA-LAM…)": "Search by registration, type or model (A320, XA-LAM…)",
+    "¿No está el avión que vas a volar? Pide al administrador de la aerolínea que lo agregue en Fleet.": "Is the aircraft you will fly missing? Ask the airline admin to add it in Fleet.",
+    "Nuevo tipo": "New type",
+    "¿No está en la lista? «Nuevo tipo» lo agrega al catálogo.": "Not in the list? «New type» adds it to the catalog.",
+    "Se agrega al catálogo que comparten todas las aerolíneas; después ya se puede usar en la flota y en las rutas.": "It is added to the catalog shared by all airlines; then it can be used in the fleet and routes.",
     "PIREP: corregido el METAR de salida y de llegada, que no se estaba guardando. Los vuelos recientes que quedaron sin él lo recuperan solos al abrir su PIREP.": "PIREP: fixed the departure and arrival METAR, which was not being saved. Recent flights left without it recover it automatically when their PIREP is opened.",
     "El METAR de NOAA más cercano a los calzos fuera y a los calzos puestos se guarda con el vuelo. Si a un vuelo le falta, al abrir el PIREP se busca solo; NOAA conserva pocos días de observaciones, así que los vuelos más antiguos pueden quedar sin él.": "The NOAA METAR closest to block-off and block-on is saved with the flight. If a flight lacks it, it is looked up automatically when the PIREP is opened; NOAA keeps only a few days of observations, so older flights may stay without it.",
     "Buscando el METAR de ese momento en NOAA…": "Looking up the METAR for that time in NOAA…",
@@ -2174,6 +2185,11 @@ export const EN: Dictionary = {
     "Callsign, piloto, aeropuerto, evento, tour…": "Callsign, pilot, airport, event, tour…"
   },
   patterns: [
+    ["{0} en la flota · {1} disponibles", "{0} in the fleet · {1} available"],
+    ["Ninguna aeronave coincide con «{0}». Agrégala con «Agregar avión a la flota».", "No aircraft matches «{0}». Add it with «Add aircraft to the fleet»."],
+    ["Ninguna aeronave coincide con «{0}».", "No aircraft matches «{0}»."],
+    ["Aeronave {0} agregada a la flota", "Aircraft {0} added to the fleet"],
+    ["Tipo {0} agregado al catálogo", "Type {0} added to the catalog"],
     ["Completados (PIREP aceptado): {0} de {1}", "Completed (PIREP accepted): {0} of {1}"],
     ["Reservados o en revisión: {0}", "Booked or in review: {0}"],
     ["Por repetir: {0}", "To repeat: {0}"],

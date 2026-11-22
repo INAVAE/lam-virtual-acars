@@ -1697,6 +1697,25 @@ await shoot('76-badge-designer', `tours/${id(1600)}/edit`, {
     await page.waitForTimeout(400);
   },
 });
+await shoot('77-direct-add-aircraft', 'booking', {
+  airlineId: MXL.id,
+  waitFor: 'MXL100',
+  viewport: { width: 390, height: 844 },
+  fullPage: false,
+  action: async (page) => {
+    await page.getByRole('button', { name: 'Reservar un nuevo vuelo directo' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Reservar un nuevo vuelo directo' });
+    await dialog.getByText('5 en la flota · 2 disponibles').waitFor();
+    await dialog.getByRole('button', { name: 'Agregar avión a la flota' }).click();
+    const add = page.getByRole('dialog', { name: 'Agregar aeronave' });
+    await add.getByRole('button', { name: 'Nuevo tipo' }).waitFor();
+    // Cerrar la ventana de la aeronave no debe cerrar la de la reserva.
+    await add.getByRole('button', { name: 'Cancelar' }).click();
+    await dialog.getByRole('button', { name: 'Agregar avión a la flota' }).waitFor();
+    await dialog.getByRole('button', { name: 'Agregar avión a la flota' }).click();
+    await page.getByRole('dialog', { name: 'Agregar aeronave' }).getByRole('button', { name: 'Nuevo tipo' }).waitFor();
+  },
+});
 await shoot('38-tour-editor', `tours/${id(1600)}/edit`, { waitFor: 'Editar TMX01' });
 await shoot('39-tours-mobile', `tours/${id(1600)}`, { viewport: { width: 390, height: 844 }, waitFor: 'Mi participación' });
 await shoot('40-events', 'events', { waitFor: 'Fly-in Ciudad de México' });

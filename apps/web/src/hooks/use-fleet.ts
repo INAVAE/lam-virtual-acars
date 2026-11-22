@@ -19,16 +19,18 @@ export function useAircraftTypes() {
 export function useSaveAircraftType() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, values }: { id?: number; values: TablesInsert<'aircraft_types'> }) => {
+    /** Devuelve el id del tipo guardado. */
+    mutationFn: async ({ id, values }: { id?: number; values: TablesInsert<'aircraft_types'> }): Promise<number> => {
       const supabase = getSupabase();
       if (id) {
         const { icao_code: _code, ...changes } = values;
         const { error } = await supabase.from('aircraft_types').update(changes satisfies TablesUpdate<'aircraft_types'>).eq('id', id);
         if (error) throw error;
-      } else {
-        const { error } = await supabase.from('aircraft_types').insert(values);
-        if (error) throw error;
+        return id;
       }
+      const { data, error } = await supabase.from('aircraft_types').insert(values).select('id').single();
+      if (error) throw error;
+      return data.id;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['aircraft-types'] }),
   });
@@ -59,18 +61,26 @@ export type AircraftValues = Omit<TablesInsert<'aircraft'>, 'id' | 'total_minute
 export function useSaveAircraft() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, values }: { id?: string; values: AircraftValues }) => {
+    /** Devuelve el id de la aeronave guardada. */
+    mutationFn: async ({ id, values }: { id?: string; values: AircraftValues }): Promise<string> => {
       const supabase = getSupabase();
       if (id) {
         const { airline_id: _airline, ...changes } = values;
         const { error } = await supabase.from('aircraft').update(changes).eq('id', id);
         if (error) throw error;
-      } else {
-        const { error } = await supabase.from('aircraft').insert(values);
-        if (error) throw error;
+        return id;
       }
+      const { data, error } = await supabase.from('aircraft').insert(values).select('id').single();
+      if (error) throw error;
+      return data.id;
     },
-    onSuccess: (_data, { values }) => queryClient.invalidateQueries({ queryKey: ['fleet', values.airline_id] }),
+    onSuccess: async (_data, { values }) => {
+      // La flota y las aeronaves que se ofrecen al reservar.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['fleet', values.airline_id] }),
+        queryClient.invalidateQueries({ queryKey: ['route-aircraft-options'] }),
+      ]);
+    },
   });
 }
 
