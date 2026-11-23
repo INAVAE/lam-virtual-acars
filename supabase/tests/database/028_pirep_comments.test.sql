@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(12);
+select plan(15);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-000000000bc3', 'c@pc.test', '{"display_name":"Admin C"}'),
@@ -68,6 +68,13 @@ select throws_ok(format($$select add_pirep_comment(%L, '   ')$$, (select pirep f
 
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000bc3"}';
 select is(add_pirep_comment((select pirep from t), 'Enterado, gracias.') ->> 'author_role', 'staff', 'El staff responde');
+-- Candado: el staff no escribe como el piloto.
+select throws_ok(format($$select comment_pirep(%L, 'Me hago pasar por el piloto')$$, (select pirep from t)), '42501', null,
+  'El staff no escribe el comentario del piloto en un PIREP ajeno');
+select throws_ok(format($$update pireps set pilot_comment = 'falso' where id = %L$$, (select pirep from t)), '42501', null,
+  'Ni lo cambia directo en la tabla');
+select is((select author_name from pirep_comments where pirep_id = (select pirep from t) and author_role = 'staff'),
+  (select display_name from profiles where id = '00000000-0000-0000-0000-000000000bc3'), 'Su comentario queda con su nombre, como staff');
 select results_eq(
   $$select author_role, body from pirep_comments where pirep_id = (select pirep from t) order by created_at, author_role$$,
   $$values ('pilot'::text, 'El motor 2 falló por el simulador'::text), ('staff', 'Enterado, gracias.')$$,
