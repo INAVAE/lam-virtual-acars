@@ -1,10 +1,9 @@
 import type { PirepFinding, PirepFuel, PirepMetrics, PirepWindAt } from '@lam/shared-types';
-import { Archive, ArchiveRestore, ArrowLeft, Ban, Check, CheckCircle2, Copy, Plane, RotateCcw, TriangleAlert, X } from 'lucide-react';
+import { Archive, ArchiveRestore, ArrowLeft, Ban, Check, Copy, Plane, RotateCcw, TriangleAlert, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { AirlineLogo } from '@/components/airline-logo';
-import { ConfirmButton } from '@/components/confirm-button';
 import { FlightAnalysisPanel } from '@/components/flight-analysis-panel';
 import type { MapAirport } from '@/components/flight-map';
 import { Alert } from '@/components/ui/alert';
@@ -987,44 +986,22 @@ export function PirepDetailPage() {
               {p.archived_from ? pirepStatusLabels[p.archived_from] : '—'}.
             </span>
             {isOrgAdmin ? (
-              <span className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={restore.isPending}
-                  onClick={async () => {
-                    try {
-                      await restore.mutateAsync({ id: p.id });
-                      toast.success('PIREP restaurado a su estado anterior');
-                    } catch (error) {
-                      toast.error(describeError(error));
-                    }
-                  }}
-                >
-                  <ArchiveRestore className="size-4" aria-hidden />
-                  {p.archived_from === 'accepted' ? 'Restaurar (aprobado)' : 'Restaurar a su estado anterior'}
-                </Button>
-                {p.archived_from !== 'accepted' ? (
-                  <ConfirmButton
-                    size="sm"
-                    title="Desarchivar como aprobado"
-                    message="El PIREP queda aprobado aunque antes estuviera en revisión o rechazado: se suman sus horas y su ciclo a la aeronave, cuenta para tours y estadísticas, y quedas registrado como quien lo aprobó."
-                    confirmLabel="Desarchivar y aprobar"
-                    onConfirm={async () => {
-                      try {
-                        await restore.mutateAsync({ id: p.id, asAccepted: true });
-                        toast.success('PIREP desarchivado y aprobado');
-                      } catch (error) {
-                        toast.error(describeError(error));
-                        throw error;
-                      }
-                    }}
-                  >
-                    <CheckCircle2 className="size-4" aria-hidden />
-                    Desarchivar como aprobado
-                  </ConfirmButton>
-                ) : null}
-              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                loading={restore.isPending}
+                onClick={async () => {
+                  try {
+                    await restore.mutateAsync({ id: p.id });
+                    toast.success('PIREP restaurado');
+                  } catch (error) {
+                    toast.error(describeError(error));
+                  }
+                }}
+              >
+                <ArchiveRestore className="size-4" aria-hidden />
+                Restaurar
+              </Button>
             ) : null}
           </span>
         </Alert>

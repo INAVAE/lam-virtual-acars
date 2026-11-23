@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(39);
+select plan(35);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000b1', 'piloto@viento.test', '{"display_name":"Piloto Viento"}'),
@@ -253,24 +253,6 @@ select results_eq(
   $$select total_minutes, cycles from before_archive$$,
   $$select total_minutes, cycles from aircraft where registration = 'XA-QW1'$$,
   'Al restaurarlo vuelven sus horas y su ciclo'
-);
-
--- Restaurar como aprobado un PIREP que estaba rechazado al archivarse.
-set local role authenticated;
-set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2"}';
-select archive_pirep((select pirep from t), 'Revisión de un rechazo');
-reset role;
-update pireps set archived_from = 'rejected', reviewed_by = '00000000-0000-0000-0000-0000000000b2' where id = (select pirep from t);
-set local role authenticated;
-set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b3"}';
-select throws_ok($$select restore_pirep((select pirep from t), 'rejected')$$, '22023', null, 'Solo se restaura a su estado anterior o como aprobado');
-select is((restore_pirep((select pirep from t), 'accepted')).status::text, 'accepted', 'El superadministrador lo desarchiva como aprobado');
-select is((select reviewed_by from pireps where id = (select pirep from t)), '00000000-0000-0000-0000-0000000000b3'::uuid, 'Queda registrado quién lo aprobó');
-reset role;
-select results_eq(
-  $$select total_minutes, cycles from before_archive$$,
-  $$select total_minutes, cycles from aircraft where registration = 'XA-QW1'$$,
-  'Aprobado al restaurarlo, se suman sus horas y su ciclo'
 );
 
 select * from finish();
