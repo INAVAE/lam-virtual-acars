@@ -78,7 +78,7 @@ export function PilotDirectory({
           {byAirline.map((a) => (
             <li key={`${a.icao}-${a.name}`} className="rounded-md border border-line bg-surface px-2.5 py-1.5">
               <AirlineTag name={a.name} icao={a.icao} color={a.color} />
-              <span className="ml-2 text-sm tabular-nums">{a.pending > 0 ? `${a.active} activos · ${a.pending} por aprobar` : `${a.active} activos`}</span>
+              <span className="ml-2 text-sm tabular-nums">{`${a.active} ${a.active === 1 ? 'activo' : 'activos'}${a.pending > 0 ? ` · ${a.pending} por aprobar` : ''}`}</span>
             </li>
           ))}
         </ul>

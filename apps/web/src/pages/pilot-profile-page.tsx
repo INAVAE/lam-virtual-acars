@@ -164,7 +164,7 @@ function ToursPanel({ tours }: { tours: PilotProfileTour[] }) {
       description={
         tours.length === 0
           ? 'Tours en los que participa y los que ya terminó.'
-          : `${tours.length - done} en curso o por aprobar · ${done} terminados. El avance cuenta los legs con PIREP aceptado.`
+          : `${tours.length - done} en curso o por aprobar · ${done} ${done === 1 ? 'terminado' : 'terminados'}. El avance cuenta los legs con PIREP aceptado.`
       }
     >
       {tours.length === 0 ? (
