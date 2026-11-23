@@ -51,7 +51,8 @@ select is((select (get_pilot_profile(num) -> 'viewer' ->> 'staff')::boolean from
 
 -- Ajeno
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000fc04"}';
-select throws_ok($$select get_pilot_profile(num) from t$$, '42501', null, 'Un piloto de otra aerolínea no lo ve');
+select is((select get_pilot_profile(num) -> 'profile' ->> 'display_name' from t), 'Piloto Perfil',
+  'Un piloto activo de otra aerolínea también lo ve (directorio de LAM)');
 reset role;
 
 select * from finish();

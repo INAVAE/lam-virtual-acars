@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(31);
+select plan(34);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000b1', 'piloto@viento.test', '{"display_name":"Piloto Viento"}'),
@@ -199,9 +199,23 @@ set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2"}';
 select lives_ok($$select review_pirep((select pirep from t), 'accepted', null)$$, 'El jefe acepta el PIREP');
 select throws_ok(
   $$select waive_pirep_finding((select pirep from t), 'landing_firm', null, false)$$,
-  '55000', null, 'Las faltas solo se cambian en revisión'
+  '55000', null, 'El jefe de operaciones solo cambia faltas en revisión'
+);
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b3"}';
+select is(
+  (waive_pirep_finding((select pirep from t), 'landing_firm', null, false)).score::int,
+  95, 'El superadministrador cambia faltas de un PIREP ya aceptado'
 );
 reset role;
+update airline_memberships set roles = '{airline_admin,pilot}' where user_id = '00000000-0000-0000-0000-0000000000b2';
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2"}';
+select is(
+  (waive_pirep_finding((select pirep from t), 'landing_firm', 'Revisión posterior')).score::int,
+  100, 'El administrador de la aerolínea también, en los PIREP de su aerolínea'
+);
+reset role;
+update airline_memberships set roles = '{ops_chief,pilot}' where user_id = '00000000-0000-0000-0000-0000000000b2';
 create temp table before_archive on commit drop as select total_minutes, cycles from aircraft where registration = 'XA-QW1';
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1"}';
@@ -222,6 +236,10 @@ set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2"}';
 select throws_ok($$select restore_pirep((select pirep from t))$$, '42501', null, 'Solo el superadministrador restaura');
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b3"}';
 select is((select status::text from pireps where id = (select pirep from t)), 'archived', 'El superadministrador ve el archivado');
+select is(
+  (waive_pirep_finding((select pirep from t), 'landing_firm', null, false)).score::int,
+  95, 'Y aun archivado puede cambiar sus faltas'
+);
 select is((restore_pirep((select pirep from t))).status::text, 'accepted', 'Restaurado a su estado anterior');
 reset role;
 select results_eq(
