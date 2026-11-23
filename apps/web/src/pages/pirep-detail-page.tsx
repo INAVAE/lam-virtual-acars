@@ -803,7 +803,7 @@ function FindingRow({ pirep, finding, canWaive }: { pirep: PirepDetail; finding:
 
 function FindingsPanel({ pirep, canReview, canAdjustClosed }: { pirep: PirepDetail; canReview: boolean; canAdjustClosed: boolean }) {
   const findings = parseFindings(pirep.findings);
-  // En revisión: el staff. Ya calificado: el superadministrador (cualquier aerolínea) o el administrador de la aerolínea.
+  // En revisión o ya calificado: el staff de la aerolínea; archivado, solo el superadministrador.
   const canWaive = pirep.status === 'pending' ? canReview : canAdjustClosed;
   const waivedPoints = findings.filter((f) => f.waived).reduce((sum, f) => sum + f.penalty, 0);
   return (
@@ -910,7 +910,8 @@ export function PirepDetailPage() {
   const isOwner = p.user_id === user?.id;
   const canReview = permissions.canStaff && (!isOwner || isOrgAdmin);
   const canArchive = canReview && p.status !== 'archived';
-  const canAdjustClosed = isOrgAdmin || (permissions.canManage && !isOwner && p.status !== 'archived');
+  // Ya calificado: el staff de la aerolínea (no en sus propios PIREP); archivado, solo el superadministrador.
+  const canAdjustClosed = isOrgAdmin || (canReview && p.status !== 'archived');
   const airports: MapAirport[] = [];
   if (p.origin) airports.push({ icao: p.origin.icao_code, name: p.origin.name, latitude: p.origin.latitude, longitude: p.origin.longitude, role: 'origin' });
   if (p.destination)

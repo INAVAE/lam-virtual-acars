@@ -208,7 +208,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['El análisis', 'El mapa, las gráficas de altitud, velocidad y combustible, la APU, la actitud y el viento comparten un cursor: al pasar sobre una gráfica se marca el mismo instante en las demás.'],
       ['Clima de salida y llegada', 'El METAR de NOAA más cercano a los calzos fuera y a los calzos puestos se guarda con el vuelo. Si a un vuelo le falta, al abrir el PIREP se busca solo; NOAA conserva pocos días de observaciones, así que los vuelos más antiguos pueden quedar sin él.'],
     ],
-    note: 'El staff puede anular una falta con un motivo (queda registrado quién y por qué) y archivar un PIREP. Uno archivado deja de verse en las listas; el superadministrador puede restaurarlo. Ya calificado, el administrador de la aerolínea y el superadministrador todavía pueden anular o restaurar faltas.',
+    note: 'El staff puede anular una falta con un motivo (queda registrado quién y por qué) y archivar un PIREP. Uno archivado deja de verse en las listas; el superadministrador puede restaurarlo. Ya calificado, el staff de la aerolínea (administrador o jefe de operaciones) y el superadministrador todavía pueden anular o restaurar faltas; archivado, solo el superadministrador.',
     shot: {
       file: 'm-05-pirep-detail',
       caption: 'Detalle de un PIREP.',
@@ -353,7 +353,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     steps: [
       ['Resumen', 'Vuelos en curso con alertas, salidas pendientes, reservas por vencer y vencidas en 24 horas.'],
       ['PIREP por revisar', 'La cola de PIREP pendientes, con los que tienen faltas graves o comentario del piloto marcados.'],
-      ['Revisar', 'En el detalle del PIREP: «Aceptar» o «Rechazar» con comentario. Si una falta no aplica, «Anular falta» con el motivo. Con el PIREP ya calificado (también si se aprobó en automático), solo el administrador de la aerolínea puede anular o restaurar faltas de sus vuelos, y el superadministrador las de cualquier PIREP, aunque haya pasado tiempo.'],
+      ['Revisar', 'En el detalle del PIREP: «Aceptar» o «Rechazar» con comentario. Si una falta no aplica, «Anular falta» con el motivo. Con el PIREP ya calificado (también si se aprobó en automático), el administrador y el jefe de operaciones pueden anular o restaurar faltas de los vuelos de su aerolínea, y el superadministrador las de cualquier PIREP, aunque haya pasado tiempo o esté archivado.'],
       ['Rendimiento', 'Faltas frecuentes y desempeño por piloto, para saber a quién acompañar.'],
     ],
   },
@@ -492,6 +492,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-23', 'El jefe de operaciones también puede anular o restaurar faltas de los PIREP de su aerolínea ya calificados, aunque se hayan aprobado en automático.'],
   ['2026-11-23', 'Pilots abre en «Miembros» y suma «Todas las aerolíneas»: cualquier piloto activo ve a los pilotos de todo LAM con su aerolínea, VID de IVAO y vuelos, y quién espera aprobación. Solo el staff ve las solicitudes con sus acciones; sin aerolínea, Pilots muestra el estado de tu solicitud. El perfil del piloto suma sus tours con el avance. El superadministrador puede anular faltas de cualquier PIREP ya calificado; el administrador, de los de su aerolínea.'],
   ['2026-11-22', 'Vuelo directo: la lista de aeronaves muestra toda la flota completa también en el celular (las tarjetas ya no se salen de la ventana), con buscador y el conteo de disponibles; el administrador agrega ahí mismo el avión que falte con «Agregar avión a la flota» y el superadministrador, un tipo nuevo con «Nuevo tipo».'],
   ['2026-11-16', 'PIREP: corregido el METAR de salida y de llegada, que no se estaba guardando. Los vuelos recientes que quedaron sin él lo recuperan solos al abrir su PIREP.'],

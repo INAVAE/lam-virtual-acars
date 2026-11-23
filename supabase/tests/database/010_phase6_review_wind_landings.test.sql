@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(34);
+select plan(35);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000b1', 'piloto@viento.test', '{"display_name":"Piloto Viento"}'),
@@ -197,14 +197,14 @@ select throws_ok(
 -- Aceptar y archivar: se restan las horas de la aeronave
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2"}';
 select lives_ok($$select review_pirep((select pirep from t), 'accepted', null)$$, 'El jefe acepta el PIREP');
-select throws_ok(
-  $$select waive_pirep_finding((select pirep from t), 'landing_firm', null, false)$$,
-  '55000', null, 'El jefe de operaciones solo cambia faltas en revisión'
+select is(
+  (waive_pirep_finding((select pirep from t), 'landing_firm', null, false)).score::int,
+  95, 'El jefe de operaciones cambia faltas de un PIREP ya aceptado de su aerolínea'
 );
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b3"}';
 select is(
-  (waive_pirep_finding((select pirep from t), 'landing_firm', null, false)).score::int,
-  95, 'El superadministrador cambia faltas de un PIREP ya aceptado'
+  (waive_pirep_finding((select pirep from t), 'landing_firm', 'Revisión posterior')).score::int,
+  100, 'El superadministrador también'
 );
 reset role;
 -- El cambio de roles lo hace el superadministrador (la guarda de membresías lo exige).
@@ -213,8 +213,8 @@ update airline_memberships set roles = '{airline_admin,pilot}' where user_id = '
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2"}';
 select is(
-  (waive_pirep_finding((select pirep from t), 'landing_firm', 'Revisión posterior')).score::int,
-  100, 'El administrador de la aerolínea también, en los PIREP de su aerolínea'
+  (waive_pirep_finding((select pirep from t), 'landing_firm', null, false)).score::int,
+  95, 'Y el administrador de la aerolínea'
 );
 reset role;
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b3"}';
@@ -225,6 +225,10 @@ set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1"}';
 select throws_ok($$select archive_pirep((select pirep from t), 'Quiero borrarlo')$$, '42501', null, 'El piloto no archiva');
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2"}';
 select is((archive_pirep((select pirep from t), 'Vuelo duplicado')).status::text, 'archived', 'El jefe de operaciones archiva el PIREP');
+select throws_ok(
+  $$select waive_pirep_finding((select pirep from t), 'landing_firm', 'Ya archivado')$$,
+  '55000', null, 'Archivado, el jefe de operaciones ya no cambia faltas'
+);
 reset role;
 select results_eq(
   $$select a.total_minutes + (select block_minutes from pireps where id = (select pirep from t)), a.cycles + 1
