@@ -3,6 +3,14 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "PIREP archivado: el superadministrador puede desarchivarlo como aprobado aunque antes estuviera en revisión o rechazado (se suman sus horas y cuenta para tours), además de restaurarlo a su estado anterior.": "Archived PIREP: the superadmin can unarchive it as approved even if it was in review or rejected before (its hours are added and it counts for tours), besides restoring it to its previous status.",
+    "Restaurar a su estado anterior": "Restore to its previous status",
+    "Restaurar (aprobado)": "Restore (approved)",
+    "Desarchivar como aprobado": "Unarchive as approved",
+    "Desarchivar y aprobar": "Unarchive and approve",
+    "El PIREP queda aprobado aunque antes estuviera en revisión o rechazado: se suman sus horas y su ciclo a la aeronave, cuenta para tours y estadísticas, y quedas registrado como quien lo aprobó.": "The PIREP is approved even if it was in review or rejected before: its hours and cycle are added to the aircraft, it counts for tours and statistics, and you are recorded as the approver.",
+    "PIREP restaurado a su estado anterior": "PIREP restored to its previous status",
+    "PIREP desarchivado y aprobado": "PIREP unarchived and approved",
     "El jefe de operaciones también puede anular o restaurar faltas de los PIREP de su aerolínea ya calificados, aunque se hayan aprobado en automático.": "The chief of operations can also waive or restore findings on their airline's PIREPs once graded, even if they were approved automatically.",
     "Miembros y solicitudes": "Members and requests",
     "Pilotos de LAM": "LAM pilots",
@@ -776,7 +784,7 @@ export const EN: Dictionary = {
     "El radar no está disponible": "Radar is not available",
     "El ranking toma el mejor PIREP de cada piloto según el criterio que elijas.": "The ranking takes each pilot's best PIREP according to the criterion you choose.",
     "El selector de la barra superior cambia la aerolínea con la que trabajas. Casi todas las pantallas (reservas, flota, rutas, PIREP, estadísticas) siguen a ese selector.": "The selector in the top bar changes the airline you work with. Almost every screen (bookings, fleet, routes, PIREP, statistics) follows that selector.",
-    "El staff puede anular una falta con un motivo (queda registrado quién y por qué) y archivar un PIREP. Uno archivado deja de verse en las listas; el superadministrador puede restaurarlo. Ya calificado, el staff de la aerolínea (administrador o jefe de operaciones) y el superadministrador todavía pueden anular o restaurar faltas; archivado, solo el superadministrador.": "Staff can waive a finding with a reason (who and why is recorded) and archive a PIREP. An archived one is no longer shown in lists; the superadministrator can restore it. Once graded, the airline staff (admin or chief of operations) and the superadmin can still waive or restore findings; once archived, only the superadmin.",
+    "El staff puede anular una falta con un motivo (queda registrado quién y por qué) y archivar un PIREP. Uno archivado deja de verse en las listas; el superadministrador puede restaurarlo a su estado anterior o desarchivarlo como aprobado. Ya calificado, el staff de la aerolínea (administrador o jefe de operaciones) y el superadministrador todavía pueden anular o restaurar faltas; archivado, solo el superadministrador.": "Staff can waive a finding with a reason (who and why is recorded) and archive a PIREP. An archived one is no longer shown in lists; the superadministrator can restore it to its previous status or unarchive it as approved. Once graded, the airline staff (admin or chief of operations) and the superadmin can still waive or restore findings; once archived, only the superadmin.",
     "El superadministrador revisa tu solicitud. Hasta que la aprueba no llega ningún correo. Al aprobarla te llega «Invitación a LAM Virtual ACARS»; si no la ves, revisa la carpeta de no deseados.": "The superadministrator reviews your request. Until it is approved no email arrives. Once approved you get «Invitation to LAM Virtual ACARS»; if you do not see it, check your spam folder.",
     "El tablero diario del jefe de operaciones.": "The daily board of the chief of operations.",
     "El tour espera que un administrador de": "The tour is waiting for an administrator of",

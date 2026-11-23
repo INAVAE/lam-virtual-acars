@@ -2688,7 +2688,7 @@ export type Database = {
       add_pirep_comment: { Args: { p_body: string; p_pirep_id: string }; Returns: Json }
       get_pirep_programs: { Args: { p_pirep_ids: string[] }; Returns: Json }
       restore_pirep: {
-        Args: { p_pirep_id: string }
+        Args: { p_pirep_id: string; p_status?: Database["public"]["Enums"]["pirep_status"] }
         Returns: Database["public"]["Tables"]["pireps"]["Row"]
       }
       waive_pirep_finding: {

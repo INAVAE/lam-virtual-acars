@@ -170,8 +170,9 @@ export function useArchivePirep() {
 export function useRestorePirep() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id }: { id: string }) => {
-      const { data, error } = await getSupabase().rpc('restore_pirep', { p_pirep_id: id });
+    /** asAccepted: queda aprobado aunque antes estuviera en revisión o rechazado. */
+    mutationFn: async ({ id, asAccepted = false }: { id: string; asAccepted?: boolean }) => {
+      const { data, error } = await getSupabase().rpc('restore_pirep', asAccepted ? { p_pirep_id: id, p_status: 'accepted' } : { p_pirep_id: id });
       if (error) throw error;
       return data;
     },
