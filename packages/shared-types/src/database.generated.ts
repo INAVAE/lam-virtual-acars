@@ -2012,6 +2012,9 @@ export type Database = {
           archived_at: string | null
           archived_by: string | null
           archived_from: Database["public"]["Enums"]["pirep_status"] | null
+          reactivation_request: string | null
+          reactivation_requested_at: string | null
+          reactivation_requested_by: string | null
           auto_approved: boolean
           block_minutes: number
           block_off_at: string | null
@@ -2058,6 +2061,9 @@ export type Database = {
           archived_at?: string | null
           archived_by?: string | null
           archived_from?: Database["public"]["Enums"]["pirep_status"] | null
+          reactivation_request?: string | null
+          reactivation_requested_at?: string | null
+          reactivation_requested_by?: string | null
           auto_approved?: boolean
           block_minutes: number
           block_off_at?: string | null
@@ -2104,6 +2110,9 @@ export type Database = {
           archived_at?: string | null
           archived_by?: string | null
           archived_from?: Database["public"]["Enums"]["pirep_status"] | null
+          reactivation_request?: string | null
+          reactivation_requested_at?: string | null
+          reactivation_requested_by?: string | null
           auto_approved?: boolean
           block_minutes?: number
           block_off_at?: string | null
@@ -2809,6 +2818,14 @@ export type Database = {
           p_origin_airport_id: number
         }
         Returns: string
+      }
+      request_pirep_reactivation: {
+        Args: { p_comment: string; p_pirep_id: string }
+        Returns: Database["public"]["Tables"]["pireps"]["Row"]
+      }
+      reactivate_pirep: {
+        Args: { p_action: string; p_comment?: string; p_pirep_id: string }
+        Returns: Database["public"]["Tables"]["pireps"]["Row"]
       }
       review_pirep: {
         Args: {

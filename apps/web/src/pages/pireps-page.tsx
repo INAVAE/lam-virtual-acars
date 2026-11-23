@@ -139,6 +139,7 @@ function PirepTable({ pireps, showPilot, empty }: { pireps: PirepListItem[]; sho
                 <Td>
                   <div className="flex flex-wrap items-center gap-1">
                     <Badge tone={pirepStatusTone[p.status]}>{pirepStatusLabels[p.status]}</Badge>
+                    {p.status === 'rejected' && p.reactivation_requested_at ? <Badge tone="warn">Reactivación solicitada</Badge> : null}
                     {p.has_critical && p.status === 'pending' ? (
                       <TriangleAlert className="size-4 text-warn-ink" aria-label="Con faltas graves" />
                     ) : null}

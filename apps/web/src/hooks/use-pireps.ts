@@ -7,7 +7,7 @@ import type { Metar } from '@/lib/weather';
 import { getSupabase } from '@/lib/supabase';
 
 const PIREP_LIST_SELECT =
-  'id, folio, airline_id, user_id, callsign, flight_number, aircraft_registration, status, score, has_critical, diverted, block_minutes, flight_minutes, distance_nm, landing_vs_fpm, block_on_at, created_at, auto_approved, airline:airlines!pireps_airline_id_fkey(name, icao_code, slug, logo_path, brand_primary_color), pilot:profiles!pireps_user_id_fkey(display_name, pilot_number), type:aircraft_types!pireps_aircraft_type_id_fkey(icao_code), origin:airports!pireps_origin_airport_id_fkey(icao_code), destination:airports!pireps_destination_airport_id_fkey(icao_code), arrival:airports!pireps_arrival_airport_id_fkey(icao_code)' as const;
+  'id, folio, airline_id, user_id, callsign, flight_number, aircraft_registration, status, score, has_critical, diverted, block_minutes, flight_minutes, distance_nm, landing_vs_fpm, block_on_at, created_at, auto_approved, reactivation_requested_at, airline:airlines!pireps_airline_id_fkey(name, icao_code, slug, logo_path, brand_primary_color), pilot:profiles!pireps_user_id_fkey(display_name, pilot_number), type:aircraft_types!pireps_aircraft_type_id_fkey(icao_code), origin:airports!pireps_origin_airport_id_fkey(icao_code), destination:airports!pireps_destination_airport_id_fkey(icao_code), arrival:airports!pireps_arrival_airport_id_fkey(icao_code)' as const;
 
 export type PirepListView = 'mine' | 'review' | 'airline';
 
@@ -24,7 +24,8 @@ export function usePireps(view: PirepListView, airlineId: string | null, status:
       let query = getSupabase().from('pireps').select(PIREP_LIST_SELECT).order('created_at', { ascending: view === 'review' }).limit(200);
       if (view === 'mine') query = query.eq('user_id', user!.id);
       if (view === 'review') {
-        query = query.eq('status', 'pending');
+        // En revisión, y los rechazados cuyo piloto pidió reactivarlos.
+        query = query.or('status.eq.pending,and(status.eq.rejected,reactivation_requested_at.not.is.null)');
         // Solo el superadministrador revisa sus propios PIREP.
         if (!includeOwnInReview) query = query.neq('user_id', user!.id);
       }
@@ -176,6 +177,42 @@ export function useRestorePirep() {
       return data;
     },
     onSettled: () => refreshPireps(queryClient),
+  });
+}
+
+/** El piloto pide reactivar su PIREP rechazado. */
+export function useRequestReactivation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, comment }: { id: string; comment: string }) => {
+      const { data, error } = await getSupabase().rpc('request_pirep_reactivation', { p_pirep_id: id, p_comment: comment.trim() });
+      if (error) throw error;
+      return data;
+    },
+    onSettled: (_d, _e, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: ['pirep-comments', id] });
+      return refreshPireps(queryClient);
+    },
+  });
+}
+
+/** Administrador o superadministrador: reactiva un PIREP rechazado (a revisión o aprobado) o declina la solicitud. */
+export function useReactivatePirep() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, action, comment }: { id: string; action: 'review' | 'approve' | 'decline'; comment?: string }) => {
+      const { data, error } = await getSupabase().rpc('reactivate_pirep', {
+        p_pirep_id: id,
+        p_action: action,
+        p_comment: comment?.trim() || undefined,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSettled: (_d, _e, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: ['pirep-comments', id] });
+      return refreshPireps(queryClient);
+    },
   });
 }
 

@@ -26,6 +26,8 @@ import {
   usePirepTrack,
   useRestorePirep,
   useReviewPirep,
+  useReactivatePirep,
+  useRequestReactivation,
   useWaiveFinding,
   type FlightEvent,
   type FlightWeather,
@@ -332,7 +334,125 @@ function Conversation({ pirep, canWrite }: { pirep: PirepDetail; canWrite: boole
   );
 }
 
-function CommentsPanel({ pirep, isOwner, canReview, canStaff }: { pirep: PirepDetail; isOwner: boolean; canReview: boolean; canStaff: boolean }) {
+/** PIREP rechazado: el piloto pide reactivarlo; el administrador o el superadministrador lo reactivan. */
+function ReactivationBlock({ pirep, isOwner, canReactivate }: { pirep: PirepDetail; isOwner: boolean; canReactivate: boolean }) {
+  const request = useRequestReactivation();
+  const reactivate = useReactivatePirep();
+  const [text, setText] = useState('');
+  const [staffText, setStaffText] = useState('');
+  const requested = pirep.reactivation_requested_at;
+
+  async function send() {
+    try {
+      await request.mutateAsync({ id: pirep.id, comment: text });
+      toast.success('Solicitud de reactivación enviada');
+      setText('');
+    } catch (error) {
+      toast.error(describeError(error));
+    }
+  }
+
+  async function act(action: 'review' | 'approve' | 'decline') {
+    try {
+      await reactivate.mutateAsync({ id: pirep.id, action, comment: staffText });
+      toast.success(
+        action === 'approve'
+          ? 'PIREP reactivado y aprobado: horas y ciclo sumados'
+          : action === 'review'
+            ? 'PIREP reactivado: vuelve a revisión'
+            : 'Solicitud declinada',
+      );
+      setStaffText('');
+    } catch (error) {
+      toast.error(describeError(error));
+    }
+  }
+
+  if (!isOwner && !canReactivate && !requested) return null;
+  const busy = (a: string) => reactivate.isPending && reactivate.variables?.action === a;
+
+  return (
+    <div className="space-y-3 border-t border-line pt-4">
+      <p className="text-xs uppercase tracking-wide text-muted">Reactivación</p>
+      {requested ? (
+        <div className="rounded-md border border-warn/40 bg-warn/10 p-3 text-sm">
+          <p className="font-medium">{`Reactivación solicitada el ${formatLocalDateTime(requested)}`}</p>
+          {pirep.reactivation_request ? <p className="mt-1 whitespace-pre-wrap">{pirep.reactivation_request}</p> : null}
+        </div>
+      ) : null}
+
+      {isOwner ? (
+        <div className="space-y-2">
+          <p className="text-sm text-muted">
+            {requested
+              ? 'Puedes actualizar tu solicitud. El administrador de la aerolínea la revisará.'
+              : 'Si crees que el rechazo no corresponde, pide al administrador de la aerolínea que reactive el PIREP. Explica por qué.'}
+          </p>
+          <Textarea
+            aria-label="Motivo de la solicitud de reactivación"
+            placeholder="Por qué debería reactivarse: qué pasó en el vuelo, qué corregiste, evidencia…"
+            maxLength={2000}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <Button size="sm" variant="secondary" onClick={send} loading={request.isPending} disabled={text.trim() === ''}>
+            <RotateCcw className="size-4" aria-hidden />
+            {requested ? 'Actualizar solicitud' : 'Solicitar reactivación'}
+          </Button>
+        </div>
+      ) : null}
+
+      {canReactivate ? (
+        <div className="space-y-2">
+          <Textarea
+            aria-label="Comentario para el piloto sobre la reactivación"
+            placeholder={requested ? 'Comentario para el piloto (obligatorio para declinar)' : 'Comentario para el piloto (opcional)'}
+            maxLength={2000}
+            value={staffText}
+            onChange={(e) => setStaffText(e.target.value)}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => act('approve')} loading={busy('approve')} disabled={reactivate.isPending}>
+              <Check className="size-4" aria-hidden />
+              Reactivar y aprobar
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => act('review')} loading={busy('review')} disabled={reactivate.isPending}>
+              <RotateCcw className="size-4" aria-hidden />
+              Reactivar a revisión
+            </Button>
+            {requested ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => act('decline')}
+                loading={busy('decline')}
+                disabled={reactivate.isPending || staffText.trim() === ''}
+              >
+                <X className="size-4" aria-hidden />
+                Declinar solicitud
+              </Button>
+            ) : null}
+          </div>
+          <p className="text-xs text-muted">{`Aprobar suma ${formatMinutes(pirep.block_minutes)} h de block y un ciclo a la aeronave y cuenta para tours y estadísticas.`}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function CommentsPanel({
+  pirep,
+  isOwner,
+  canReview,
+  canStaff,
+  canReactivate,
+}: {
+  pirep: PirepDetail;
+  isOwner: boolean;
+  canReview: boolean;
+  canStaff: boolean;
+  canReactivate: boolean;
+}) {
   const comment = useCommentPirep();
   const review = useReviewPirep();
   const [pilotText, setPilotText] = useState(pirep.pilot_comment ?? '');
@@ -394,6 +514,11 @@ function CommentsPanel({ pirep, isOwner, canReview, canStaff }: { pirep: PirepDe
               </span>
             </p>
             {pirep.review_comment ? <p className="mt-2 whitespace-pre-wrap text-[15px]">{pirep.review_comment}</p> : null}
+            {pirep.status === 'rejected' ? (
+              <div className="mt-4">
+                <ReactivationBlock pirep={pirep} isOwner={isOwner} canReactivate={canReactivate} />
+              </div>
+            ) : null}
           </div>
         ) : canReview ? (
           <div className="space-y-2 border-t border-line pt-4">
@@ -910,6 +1035,8 @@ export function PirepDetailPage() {
   const isOwner = p.user_id === user?.id;
   const canReview = permissions.canStaff && (!isOwner || isOrgAdmin);
   const canArchive = canReview && p.status !== 'archived';
+  // Reactivar un rechazado: el administrador de la aerolínea (no en sus propios PIREP) o el superadministrador.
+  const canReactivate = p.status === 'rejected' && (isOrgAdmin || (permissions.canManage && !isOwner));
   // Ya calificado: el staff de la aerolínea (no en sus propios PIREP); archivado, solo el superadministrador.
   const canAdjustClosed = isOrgAdmin || (canReview && p.status !== 'archived');
   const airports: MapAirport[] = [];
@@ -1097,7 +1224,7 @@ export function PirepDetailPage() {
         </div>
         <div className="space-y-6">
           <FindingsPanel pirep={p} canReview={canReview} canAdjustClosed={canAdjustClosed} />
-          <CommentsPanel pirep={p} isOwner={isOwner} canReview={canReview} canStaff={permissions.canStaff} />
+          <CommentsPanel pirep={p} isOwner={isOwner} canReview={canReview} canStaff={permissions.canStaff} canReactivate={canReactivate} />
           <EventsPanel events={track.data?.events ?? []} loading={track.isPending} />
         </div>
       </div>

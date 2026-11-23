@@ -3,6 +3,29 @@ import type { Dictionary } from '@/lib/translator';
 
 export const EN: Dictionary = {
   strings: {
+    "Si te lo rechazan": "If it is rejected",
+    "Si crees que el rechazo no corresponde, en el detalle del PIREP usa «Solicitar reactivación» y explica por qué. El administrador de la aerolínea o el superadministrador lo revisan: pueden reactivarlo y aprobarlo, devolverlo a revisión o declinar tu solicitud con un motivo. Todo queda en la conversación del PIREP.": "If you think the rejection is wrong, use «Request reactivation» in the PIREP detail and explain why. The airline admin or the superadmin review it: they can reactivate and approve it, send it back to review or decline your request with a reason. Everything stays in the PIREP conversation.",
+    "Reactivar un rechazado": "Reactivate a rejected one",
+    "Un PIREP rechazado solo lo reactivan el administrador de la aerolínea o el superadministrador: «Reactivar y aprobar» lo aprueba directo (suma horas y cuenta para tours) y «Reactivar a revisión» lo devuelve a la cola. Si el piloto pidió la reactivación, aparece en «Por revisar» marcado «Reactivación solicitada» y se puede declinar con un motivo. Los archivados no se reactivan: primero se restauran.": "Only the airline admin or the superadmin reactivate a rejected PIREP: «Reactivate and approve» approves it directly (adds hours and counts for tours) and «Reactivate to review» sends it back to the queue. If the pilot requested reactivation, it appears in «To review» marked «Reactivation requested» and can be declined with a reason. Archived ones are not reactivated: they are restored first.",
+    "PIREP rechazado: el piloto puede solicitar su reactivación con un comentario, y el administrador de la aerolínea o el superadministrador lo reactivan (a revisión o aprobado) o declinan la solicitud.": "Rejected PIREP: the pilot can request its reactivation with a comment, and the airline admin or the superadmin reactivate it (to review or approved) or decline the request.",
+    "Reactivación": "Reactivation",
+    "Reactivación solicitada": "Reactivation requested",
+    "Puedes actualizar tu solicitud. El administrador de la aerolínea la revisará.": "You can update your request. The airline admin will review it.",
+    "Si crees que el rechazo no corresponde, pide al administrador de la aerolínea que reactive el PIREP. Explica por qué.": "If you think the rejection is wrong, ask the airline admin to reactivate the PIREP. Explain why.",
+    "Motivo de la solicitud de reactivación": "Reason for the reactivation request",
+    "Por qué debería reactivarse: qué pasó en el vuelo, qué corregiste, evidencia…": "Why it should be reactivated: what happened in the flight, what you fixed, evidence…",
+    "Actualizar solicitud": "Update request",
+    "Solicitar reactivación": "Request reactivation",
+    "Comentario para el piloto sobre la reactivación": "Comment for the pilot about the reactivation",
+    "Comentario para el piloto (obligatorio para declinar)": "Comment for the pilot (required to decline)",
+    "Comentario para el piloto (opcional)": "Comment for the pilot (optional)",
+    "Reactivar y aprobar": "Reactivate and approve",
+    "Reactivar a revisión": "Reactivate to review",
+    "Declinar solicitud": "Decline request",
+    "Solicitud de reactivación enviada": "Reactivation request sent",
+    "PIREP reactivado y aprobado: horas y ciclo sumados": "PIREP reactivated and approved: hours and cycle added",
+    "PIREP reactivado: vuelve a revisión": "PIREP reactivated: back to review",
+    "Solicitud declinada": "Request declined",
     "El jefe de operaciones también puede anular o restaurar faltas de los PIREP de su aerolínea ya calificados, aunque se hayan aprobado en automático.": "The chief of operations can also waive or restore findings on their airline's PIREPs once graded, even if they were approved automatically.",
     "Miembros y solicitudes": "Members and requests",
     "Pilotos de LAM": "LAM pilots",
@@ -2206,6 +2229,8 @@ export const EN: Dictionary = {
     "Callsign, piloto, aeropuerto, evento, tour…": "Callsign, pilot, airport, event, tour…"
   },
   patterns: [
+    ["Reactivación solicitada el {0}", "Reactivation requested on {0}"],
+    ["Aprobar suma {0} h de block y un ciclo a la aeronave y cuenta para tours y estadísticas.", "Approving adds {0} h of block and a cycle to the aircraft and counts for tours and statistics."],
     ["Incluir solicitudes por aprobar ({0})", "Include requests pending approval ({0})"],
     ["{0} activos · {1} por aprobar", "{0} active · {1} pending approval"],
     ["{0} activos", "{0} active"],
