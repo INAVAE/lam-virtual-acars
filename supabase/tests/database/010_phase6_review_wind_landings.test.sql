@@ -207,6 +207,8 @@ select is(
   95, 'El superadministrador cambia faltas de un PIREP ya aceptado'
 );
 reset role;
+-- El cambio de roles lo hace el superadministrador (la guarda de membresías lo exige).
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b3"}';
 update airline_memberships set roles = '{airline_admin,pilot}' where user_id = '00000000-0000-0000-0000-0000000000b2';
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2"}';
@@ -215,6 +217,7 @@ select is(
   100, 'El administrador de la aerolínea también, en los PIREP de su aerolínea'
 );
 reset role;
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b3"}';
 update airline_memberships set roles = '{ops_chief,pilot}' where user_id = '00000000-0000-0000-0000-0000000000b2';
 create temp table before_archive on commit drop as select total_minutes, cycles from aircraft where registration = 'XA-QW1';
 set local role authenticated;
