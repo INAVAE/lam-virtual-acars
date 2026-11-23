@@ -2620,6 +2620,7 @@ export type Database = {
         Returns: string
       }
       get_pilot_profile: { Args: { p_pilot_number: number }; Returns: Json }
+      get_pilot_directory: { Args: never; Returns: Json }
       cancel_training: { Args: { p_reason?: string; p_training_id: string }; Returns: undefined }
       get_pilot_trainings: { Args: { p_pilot_number: number }; Returns: Json }
       get_training: { Args: { p_training_id: string }; Returns: Json }

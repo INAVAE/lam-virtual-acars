@@ -96,8 +96,9 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     audience: 'pilot',
     steps: [
       ['Menú de tu cuenta', 'Tu foto o tus iniciales, arriba a la derecha. Muestra tu correo, tu número LAM y tus roles, y lleva a tu perfil de piloto, a Mi cuenta, a Contraseña y sesiones, a Settings y a «Cerrar sesión» (se cierra en todas las pestañas).'],
-      ['Mi cuenta', 'Datos personales: foto de perfil (se recorta en cuadro), nombre, país, VID de IVAO, usuario de Discord y una presentación breve. Lo ven los pilotos de tus aerolíneas; el correo solo lo ve el staff.'],
-      ['Tu perfil de piloto', 'Tus totales (vuelos, horas de vuelo y block, millas, puntaje y tomas), actividad por mes, aerolíneas y roles, tipos de aeronave, rutas, historial de vuelos, habilitaciones, insignias de tours, eventos y entrenamientos completados.'],
+      ['Mi cuenta', 'Datos personales: foto de perfil (se recorta en cuadro), nombre, país, VID de IVAO, usuario de Discord y una presentación breve. Lo ven los pilotos activos de LAM; el correo solo lo ve el staff.'],
+      ['Tu perfil de piloto', 'Tus totales (vuelos, horas de vuelo y block, millas, puntaje y tomas), tu VID de IVAO, actividad por mes, aerolíneas y roles, tours (los que terminaste y en los que participas, con el porcentaje y los vuelos completados y faltantes), tipos de aeronave, rutas, historial de vuelos, habilitaciones, insignias de tours, eventos y entrenamientos completados.'],
+      ['Pilotos de LAM', 'En Pilots, la pestaña «Miembros» muestra a los pilotos de tu aerolínea y «Todas las aerolíneas», a los de todo LAM con su aerolínea, país, VID de IVAO y vuelos. También aparecen quienes esperan aprobación, marcados «Por aprobar». Clic en un piloto abre su perfil. Si aún no te aprueban en ninguna aerolínea, Pilots te muestra en qué va tu solicitud.'],
       ['Usuario de SimBrief', 'En Settings → Perfil de piloto escribe tu usuario de SimBrief (el de navigraph.com/simbrief). Sin él no se puede importar el plan de vuelo.'],
       ['Aerolínea principal', 'Es la que se selecciona sola al entrar. Útil si vuelas en varias.'],
       ['Zona horaria', 'La operación usa UTC (Zulu). En Settings → Hora eliges tu zona y toda hora Zulu muestra también la local. Un clic en el reloj de arriba cambia cuál va primero.'],
@@ -207,7 +208,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
       ['El análisis', 'El mapa, las gráficas de altitud, velocidad y combustible, la APU, la actitud y el viento comparten un cursor: al pasar sobre una gráfica se marca el mismo instante en las demás.'],
       ['Clima de salida y llegada', 'El METAR de NOAA más cercano a los calzos fuera y a los calzos puestos se guarda con el vuelo. Si a un vuelo le falta, al abrir el PIREP se busca solo; NOAA conserva pocos días de observaciones, así que los vuelos más antiguos pueden quedar sin él.'],
     ],
-    note: 'El staff puede anular una falta con un motivo (queda registrado quién y por qué) y archivar un PIREP. Uno archivado deja de verse en las listas; el superadministrador puede restaurarlo.',
+    note: 'El staff puede anular una falta con un motivo (queda registrado quién y por qué) y archivar un PIREP. Uno archivado deja de verse en las listas; el superadministrador puede restaurarlo. Ya calificado, el administrador de la aerolínea y el superadministrador todavía pueden anular o restaurar faltas.',
     shot: {
       file: 'm-05-pirep-detail',
       caption: 'Detalle de un PIREP.',
@@ -304,11 +305,11 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     summary: 'Pilots: solicitudes, roles y habilitaciones.',
     audience: 'staff',
     steps: [
-      ['Solicitudes', 'La pestaña «Solicitudes» lista a quien pidió unirse. Apruébalas o recházalas.'],
+      ['Miembros y solicitudes', 'Pilots abre en «Miembros» (tus pilotos, con correo, VID de IVAO, roles y acciones). «Todas las aerolíneas» muestra a los pilotos de todo LAM y «Solicitudes», a quien pidió unirse: apruébalas o recházalas. Solo el staff ve las solicitudes con sus acciones. El superadministrador, con «LAM, todas las aerolíneas» en el selector, ve a todos los pilotos y las solicitudes de todas las aerolíneas.'],
       ['Roles', 'Piloto, jefe de operaciones o administrador; valen solo dentro de esa aerolínea. Solo el superadministrador nombra administradores.'],
       ['Habilitaciones de tipo', 'Si la aerolínea exige habilitación, «Habilitaciones» define qué tipos puede reservar cada piloto. Nadie se otorga habilitaciones a sí mismo.'],
       ['Suspender', 'Una membresía suspendida conserva su historial y deja de poder reservar.'],
-      ['Perfil del piloto', 'Clic en el nombre de un piloto abre su perfil completo: correo, aerolíneas y roles, totales, horas, tipos, rutas, todos sus PIREP (también los que están en revisión) e insignias.'],
+      ['Perfil del piloto', 'Clic en el nombre de un piloto abre su perfil completo: correo, VID de IVAO, aerolíneas y roles, totales, horas, tours con su avance, tipos, rutas, todos sus PIREP (también los que están en revisión) e insignias.'],
     ],
   },
   {
@@ -352,7 +353,7 @@ export const HELP_CHAPTERS: HelpChapter[] = [
     steps: [
       ['Resumen', 'Vuelos en curso con alertas, salidas pendientes, reservas por vencer y vencidas en 24 horas.'],
       ['PIREP por revisar', 'La cola de PIREP pendientes, con los que tienen faltas graves o comentario del piloto marcados.'],
-      ['Revisar', 'En el detalle del PIREP: «Aceptar» o «Rechazar» con comentario. Si una falta no aplica, «Anular falta» con el motivo.'],
+      ['Revisar', 'En el detalle del PIREP: «Aceptar» o «Rechazar» con comentario. Si una falta no aplica, «Anular falta» con el motivo. Con el PIREP ya calificado (también si se aprobó en automático), solo el administrador de la aerolínea puede anular o restaurar faltas de sus vuelos, y el superadministrador las de cualquier PIREP, aunque haya pasado tiempo.'],
       ['Rendimiento', 'Faltas frecuentes y desempeño por piloto, para saber a quién acompañar.'],
     ],
   },
@@ -491,6 +492,7 @@ export const ticketModules = [
 
 /** Cambios del manual y de la plataforma, el más reciente primero. */
 export const MANUAL_CHANGES: [date: string, text: string][] = [
+  ['2026-11-23', 'Pilots abre en «Miembros» y suma «Todas las aerolíneas»: cualquier piloto activo ve a los pilotos de todo LAM con su aerolínea, VID de IVAO y vuelos, y quién espera aprobación. Solo el staff ve las solicitudes con sus acciones; sin aerolínea, Pilots muestra el estado de tu solicitud. El perfil del piloto suma sus tours con el avance. El superadministrador puede anular faltas de cualquier PIREP ya calificado; el administrador, de los de su aerolínea.'],
   ['2026-11-22', 'Vuelo directo: la lista de aeronaves muestra toda la flota completa también en el celular (las tarjetas ya no se salen de la ventana), con buscador y el conteo de disponibles; el administrador agrega ahí mismo el avión que falte con «Agregar avión a la flota» y el superadministrador, un tipo nuevo con «Nuevo tipo».'],
   ['2026-11-16', 'PIREP: corregido el METAR de salida y de llegada, que no se estaba guardando. Los vuelos recientes que quedaron sin él lo recuperan solos al abrir su PIREP.'],
   ['2026-11-09', 'Tours: en el mapa del tour, los legs con PIREP aceptado se pintan en verde (encima de los demás) y los de ida y regreso se separan para que se vea tu avance; abajo, el resumen de completados, en revisión y por volar.'],

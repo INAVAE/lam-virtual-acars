@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { ConfirmButton } from '@/components/confirm-button';
-import { ScopeRequired } from '@/components/scope-required';
+import { AllPendingRequests, PilotDirectory } from '@/components/pilot-directory';
 import { SelectAll } from '@/components/select-all';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -16,16 +16,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
 import { Tabs } from '@/components/ui/tabs';
 import { useAircraftTypes, useFleet, type AircraftType } from '@/hooks/use-fleet';
-import type { Airline } from '@/hooks/use-lam-data';
 import { useAirlineSettings } from '@/hooks/use-airline-admin';
 import { useAirlineRatings, useSaveRatings } from '@/hooks/use-ratings';
-import { useAirlineMembers, useRemoveMembership, useUpdateMembership, type AirlineMember } from '@/hooks/use-members';
+import { useAirlineMembers, usePilotDirectory, useRemoveMembership, useUpdateMembership, type AirlineMember } from '@/hooks/use-members';
+import { useAirlines, useMyMemberships, type Airline } from '@/hooks/use-lam-data';
+import { useAirlineScope } from '@/lib/airline-scope';
 import { useAuth } from '@/lib/auth';
 import { describeError } from '@/lib/errors';
 import { countryName, formatLocalDate, formatPilotNumber, formatRoles, roleLabels, statusLabels } from '@/lib/format';
 import { useAirlinePermissions, type AirlinePermissions } from '@/lib/permissions';
 
-type View = 'pending' | 'members' | 'inactive';
+type View = 'members' | 'all' | 'pending' | 'inactive';
 
 const statusTone = { active: 'ok', pending: 'warn', suspended: 'danger', rejected: 'neutral' } as const;
 
@@ -282,10 +283,12 @@ function MemberActions({
   );
 }
 
+/** Staff de la aerolínea: miembros (con acciones), todas las aerolíneas, solicitudes y suspendidos. */
 function PilotsView({ airline }: { airline: Airline }) {
-  const members = useAirlineMembers(airline.id);
   const permissions = useAirlinePermissions(airline.id);
-  const [view, setView] = useState<View>('pending');
+  const members = useAirlineMembers(airline.id);
+  const [view, setView] = useState<View>('members');
+  const directory = usePilotDirectory(view === 'all');
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<AirlineMember | null>(null);
   const [rating, setRating] = useState<AirlineMember | null>(null);
@@ -317,8 +320,9 @@ function PilotsView({ airline }: { airline: Airline }) {
 
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return groups[view];
-    return groups[view].filter((m) => {
+    const list = view === 'all' ? [] : groups[view];
+    if (!term) return list;
+    return list.filter((m) => {
       const p = m.profile;
       return (
         p?.display_name.toLowerCase().includes(term) ||
@@ -328,10 +332,6 @@ function PilotsView({ airline }: { airline: Airline }) {
     });
   }, [groups, view, search]);
 
-  if (!permissions.canStaff) {
-    return <Alert>Solo el administrador y el jefe de operaciones de {airline.name} pueden ver la lista de pilotos.</Alert>;
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -340,18 +340,25 @@ function PilotsView({ airline }: { airline: Airline }) {
           value={view}
           onChange={setView}
           items={[
-            { value: 'pending', label: 'Solicitudes', count: groups.pending.length },
             { value: 'members', label: 'Miembros', count: groups.members.length },
+            { value: 'all', label: 'Todas las aerolíneas' },
+            { value: 'pending', label: 'Solicitudes', count: groups.pending.length },
             { value: 'inactive', label: 'Suspendidos y rechazados', count: groups.inactive.length },
           ]}
         />
+        {view === 'all' ? null : (
         <div className="w-full sm:w-72">
           <label htmlFor="pilot-search" className="sr-only">
             Buscar piloto
           </label>
           <Input id="pilot-search" placeholder="Buscar por nombre, correo o número" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
+        )}
       </div>
+
+      {view === 'all' ? (
+        <PilotDirectory rows={directory.data ?? []} loading={directory.isPending} error={directory.error} showAirline />
+      ) : null}
 
       {view === 'members' && !ratingsRequired ? (
         <p className="text-sm text-muted">
@@ -361,15 +368,16 @@ function PilotsView({ airline }: { airline: Airline }) {
       ) : null}
       {members.isError ? <Alert tone="danger">{describeError(members.error)}</Alert> : null}
 
-      {members.isPending ? (
+      {view === 'all' ? null : members.isPending ? (
         <Skeleton className="h-48" />
       ) : (
-        <Table minWidth="56rem">
+        <Table minWidth="62rem">
           <thead>
             <tr>
               <Th>Piloto</Th>
               <Th>Correo</Th>
               <Th>País</Th>
+              <Th>IVAO</Th>
               <Th>Roles</Th>
               {showRatings ? <Th>Habilitaciones</Th> : null}
               <Th>{view === 'pending' ? 'Solicitó' : 'Estado'}</Th>
@@ -378,7 +386,7 @@ function PilotsView({ airline }: { airline: Airline }) {
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <EmptyRow colSpan={showRatings ? 7 : 6}>
+              <EmptyRow colSpan={showRatings ? 8 : 7}>
                 {view === 'pending'
                   ? 'No hay solicitudes pendientes. Los pilotos solicitan ingreso desde su dashboard.'
                   : search
@@ -404,6 +412,7 @@ function PilotsView({ airline }: { airline: Airline }) {
                   </Td>
                   <Td className="break-all text-muted">{m.profile?.email}</Td>
                   <Td>{countryName(m.profile?.country_code ?? null)}</Td>
+                  <Td className="font-mono text-sm">{m.profile?.ivao_vid ?? <span className="font-sans text-muted">—</span>}</Td>
                   <Td>{formatRoles(m.roles)}</Td>
                   {showRatings ? (
                     <Td className="max-w-48 font-mono text-xs">
@@ -453,14 +462,128 @@ function PilotsView({ airline }: { airline: Airline }) {
   );
 }
 
+/** Piloto de la aerolínea (sin rol de staff): sus compañeros y el directorio de LAM. */
+function PeersView({ airline }: { airline: Airline }) {
+  const [view, setView] = useState<'members' | 'all'>('members');
+  const directory = usePilotDirectory();
+  const rows = directory.data ?? [];
+  const mine = rows.filter((p) => p.airline_id === airline.id);
+  return (
+    <div className="space-y-4">
+      <Tabs
+        label="Pilotos"
+        value={view}
+        onChange={setView}
+        items={[
+          { value: 'members', label: `Miembros de ${airline.icao_code ?? airline.name}`, count: mine.filter((p) => p.status === 'active').length },
+          { value: 'all', label: 'Todas las aerolíneas', count: rows.filter((p) => p.status === 'active').length },
+        ]}
+      />
+      <PilotDirectory
+        key={view}
+        rows={view === 'all' ? rows : mine}
+        loading={directory.isPending}
+        error={directory.error}
+        showAirline={view === 'all'}
+      />
+    </div>
+  );
+}
+
+/** Vista de LAM (todas las aerolíneas) del superadministrador: directorio y solicitudes de todas. */
+function AllAirlinesView() {
+  const [view, setView] = useState<'members' | 'pending'>('members');
+  const directory = usePilotDirectory();
+  const rows = directory.data ?? [];
+  return (
+    <div className="space-y-4">
+      <Tabs
+        label="Pilotos"
+        value={view}
+        onChange={setView}
+        items={[
+          { value: 'members', label: 'Miembros', count: rows.filter((p) => p.status === 'active').length },
+          { value: 'pending', label: 'Solicitudes', count: rows.filter((p) => p.status === 'pending').length },
+        ]}
+      />
+      {view === 'members' ? (
+        <PilotDirectory rows={rows} loading={directory.isPending} error={directory.error} showAirline />
+      ) : (
+        <AllPendingRequests rows={rows} loading={directory.isPending} error={directory.error} />
+      )}
+    </div>
+  );
+}
+
+const requestTone = { pending: 'warn', active: 'ok', suspended: 'danger', rejected: 'neutral' } as const;
+const requestText: Record<keyof typeof requestTone, string> = {
+  pending: 'Tu solicitud está en revisión. El administrador o el jefe de operaciones de la aerolínea la aprobará.',
+  active: 'Ya eres miembro.',
+  suspended: 'Tu membresía está suspendida. Habla con el administrador de la aerolínea.',
+  rejected: 'Tu solicitud fue rechazada. Puedes hablar con el administrador o solicitar ingreso a otra aerolínea.',
+};
+
+/** Sin aerolínea activa: el estado de sus solicitudes. */
+function MyRequestsView({ airlines }: { airlines: Airline[] }) {
+  const memberships = useMyMemberships();
+  const name = (id: string) => airlines.find((a) => a.id === id);
+  const list = memberships.data ?? [];
+  return (
+    <div className="space-y-4">
+      <Alert>
+        La lista de pilotos de LAM se abre cuando una aerolínea aprueba tu solicitud. Mientras tanto, aquí ves en qué va cada una.
+      </Alert>
+      {list.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center">
+          <p className="font-display text-lg font-semibold">Aún no solicitas ingreso a una aerolínea</p>
+          <p className="mx-auto mt-1 max-w-md text-muted">Elige una aerolínea y solicita ingreso desde tu Dashboard.</p>
+          <Link to="/" className="mt-3 inline-block font-medium text-accent underline-offset-4 hover:underline">
+            Ir al Dashboard
+          </Link>
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {list.map((m) => {
+            const a = name(m.airline_id);
+            return (
+              <li key={m.id} className="rounded-lg border border-line bg-surface p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold">
+                    {a?.name ?? 'Aerolínea'}
+                    {a?.icao_code ? <span className="ml-2 font-mono text-sm text-muted">{a.icao_code}</span> : null}
+                  </p>
+                  <Badge tone={requestTone[m.status]}>{statusLabels[m.status]}</Badge>
+                </div>
+                <p className="mt-1 text-sm text-muted">{`${requestText[m.status]} Solicitada el ${formatLocalDate(m.requested_at)}.`}</p>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function PilotsContent() {
+  const { selected, ready, isOrgAdmin } = useAirlineScope();
+  const memberships = useMyMemberships();
+  const airlines = useAirlines();
+  const permissions = useAirlinePermissions(selected?.id ?? null);
+  if (!ready || memberships.isPending) return <Skeleton className="h-64" />;
+  const isActivePilot = (memberships.data ?? []).some((m) => m.status === 'active');
+  if (!isOrgAdmin && !isActivePilot) return <MyRequestsView airlines={airlines.data ?? []} />;
+  if (!selected) return <AllAirlinesView />;
+  return permissions.canStaff ? <PilotsView key={selected.id} airline={selected} /> : <PeersView key={selected.id} airline={selected} />;
+}
+
 export function PilotsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
         title="Pilots"
-        description="Aprueba solicitudes de ingreso y administra roles y habilitaciones de tipo de los pilotos de la aerolínea seleccionada."
+        description="Los pilotos de cada aerolínea de LAM y quién espera aprobación. El administrador y el jefe de operaciones aprueban solicitudes y administran roles y habilitaciones de tipo."
       />
-      <ScopeRequired>{(airline) => <PilotsView airline={airline} />}</ScopeRequired>
+      <PilotsContent />
     </div>
   );
 }

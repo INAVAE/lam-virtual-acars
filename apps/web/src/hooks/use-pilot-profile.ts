@@ -77,6 +77,27 @@ export interface PilotProfileData {
   type_ratings: { airline_icao: string | null; icao_code: string; model: string; granted_at: string }[];
   tour_badges: { tour_id: string; code: string; name: string; color: string; badge_path: string | null; airline_icao: string | null; awarded_at: string }[];
   events: { event_id: string; folio: string; name: string; starts_at: string }[];
+  /** Tours en curso y terminados, con el avance por legs. */
+  tours?: PilotProfileTour[];
+}
+
+export interface PilotProfileTour {
+  tour_id: string;
+  code: string;
+  name: string;
+  color: string;
+  badge_path: string | null;
+  airline_icao: string | null;
+  tour_status: 'published' | 'closed';
+  starts_on: string | null;
+  ends_on: string | null;
+  enrollment_status: 'pending' | 'approved' | 'completed';
+  enrolled_at: string;
+  completed_at: string | null;
+  legs: number;
+  accepted: number;
+  in_review: number;
+  booked: number;
 }
 
 /** Perfil completo de un piloto por su número LAM. */

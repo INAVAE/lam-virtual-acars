@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Panel } from '@/components/ui/panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
-import { usePilotProfile, type PilotProfileData } from '@/hooks/use-pilot-profile';
+import { usePilotProfile, type PilotProfileData, type PilotProfileTour } from '@/hooks/use-pilot-profile';
 import { usePilotTrainings, type PilotTraining } from '@/hooks/use-trainings';
 import { describeError } from '@/lib/errors';
 import { countryName, formatLocalDate, formatLocalDateTime, formatNumber, formatPilotNumber, roleLabels, statusLabels } from '@/lib/format';
@@ -68,10 +68,10 @@ function Header({ data }: { data: PilotProfileData }) {
                 </a>
               </li>
             ) : null}
-            {p.ivao_vid ? (
-              <li className="inline-flex items-center gap-1.5">
-                <Plane className="size-4 text-muted" aria-hidden />
-                IVAO{' '}
+            <li className="inline-flex items-center gap-1.5">
+              <Plane className="size-4 text-muted" aria-hidden />
+              IVAO{' '}
+              {p.ivao_vid ? (
                 <a
                   href={`https://www.ivao.aero/Member.aspx?Id=${p.ivao_vid}`}
                   target="_blank"
@@ -80,8 +80,14 @@ function Header({ data }: { data: PilotProfileData }) {
                 >
                   {p.ivao_vid}
                 </a>
-              </li>
-            ) : null}
+              ) : data.viewer.self ? (
+                <Link to="/account" className="text-muted underline-offset-4 hover:underline">
+                  Agrega tu VID en Mi cuenta
+                </Link>
+              ) : (
+                <span className="text-muted">sin VID registrado</span>
+              )}
+            </li>
             {p.discord_username ? (
               <li className="inline-flex items-center gap-1.5">
                 <MessageCircle className="size-4 text-muted" aria-hidden />
@@ -138,6 +144,79 @@ function MonthlyBars({ data }: { data: PilotProfileData['monthly'] }) {
         </div>
       ))}
     </div>
+  );
+}
+
+function tourState(t: PilotProfileTour): { label: string; tone: 'ok' | 'info' | 'warn' | 'neutral' } {
+  if (t.enrollment_status === 'completed' || (t.legs > 0 && t.accepted >= t.legs)) return { label: 'Terminado', tone: 'ok' };
+  if (t.enrollment_status === 'pending') return { label: 'Inscripción por aprobar', tone: 'warn' };
+  if (t.tour_status === 'closed') return { label: 'Tour cerrado', tone: 'neutral' };
+  return { label: 'En curso', tone: 'info' };
+}
+
+/** Tours del piloto: en los que participa y los que ya terminó, con su avance. */
+function ToursPanel({ tours }: { tours: PilotProfileTour[] }) {
+  const done = tours.filter((t) => tourState(t).label === 'Terminado').length;
+  return (
+    <Panel
+      expandable
+      title="Tours"
+      description={
+        tours.length === 0
+          ? 'Tours en los que participa y los que ya terminó.'
+          : `${tours.length - done} en curso o por aprobar · ${done} terminados. El avance cuenta los legs con PIREP aceptado.`
+      }
+    >
+      {tours.length === 0 ? (
+        <p className="text-sm text-muted">Todavía no participa en ningún tour.</p>
+      ) : (
+        <ul className="grid gap-3 md:grid-cols-2">
+          {tours.map((t) => {
+            const state = tourState(t);
+            const pct = t.legs > 0 ? Math.round((t.accepted / t.legs) * 100) : 0;
+            const left = Math.max(0, t.legs - t.accepted);
+            return (
+              <li key={t.tour_id} className="flex gap-3 rounded-lg border border-line bg-bg p-3">
+                <TourBadge code={t.code} color={t.color} badgePath={t.badge_path} size="sm" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Link to={`/tours/${t.tour_id}`} className="font-medium underline-offset-4 hover:underline">
+                      {t.name}
+                    </Link>
+                    <Badge tone={state.tone}>{state.label}</Badge>
+                  </div>
+                  <p className="text-xs text-muted">
+                    <span className="font-mono">{t.code}</span>
+                    {t.airline_icao ? ` · ${t.airline_icao}` : ''}
+                    {t.completed_at ? ` · Terminado el ${formatLocalDate(t.completed_at)}` : ` · Inscrito el ${formatLocalDate(t.enrolled_at)}`}
+                  </p>
+                  <div
+                    className="h-2 overflow-hidden rounded-full bg-surface-2"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={pct}
+                    aria-label={`Avance de ${t.name}`}
+                  >
+                    <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: '#22c55e' }} />
+                  </div>
+                  <p className="text-sm tabular-nums">
+                    <span className="font-semibold">{`${pct}%`}</span>
+                    {` · ${t.accepted} de ${t.legs} vuelos completados`}
+                    {left > 0 ? ` · faltan ${left}` : ''}
+                  </p>
+                  {t.in_review > 0 || t.booked > 0 ? (
+                    <p className="text-xs text-muted">
+                      {[t.in_review > 0 ? `${t.in_review} en revisión` : null, t.booked > 0 ? `${t.booked} reservados` : null].filter(Boolean).join(' · ')}
+                    </p>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Panel>
   );
 }
 
@@ -276,6 +355,8 @@ export function PilotProfilePage() {
               />
             </section>
           </Expandable>
+
+          <ToursPanel tours={d.tours ?? []} />
 
           <div className="grid gap-5 xl:grid-cols-2">
             <Panel expandable title="Actividad de los últimos 12 meses" description="Vuelos aceptados por mes.">

@@ -801,17 +801,20 @@ function FindingRow({ pirep, finding, canWaive }: { pirep: PirepDetail; finding:
   );
 }
 
-function FindingsPanel({ pirep, canReview }: { pirep: PirepDetail; canReview: boolean }) {
+function FindingsPanel({ pirep, canReview, canAdjustClosed }: { pirep: PirepDetail; canReview: boolean; canAdjustClosed: boolean }) {
   const findings = parseFindings(pirep.findings);
-  const canWaive = canReview && pirep.status === 'pending';
+  // En revisión: el staff. Ya calificado: el superadministrador (cualquier aerolínea) o el administrador de la aerolínea.
+  const canWaive = pirep.status === 'pending' ? canReview : canAdjustClosed;
   const waivedPoints = findings.filter((f) => f.waived).reduce((sum, f) => sum + f.penalty, 0);
   return (
     <Panel
       title="Puntaje"
       description={
-        canWaive
-          ? 'Si el comentario del piloto justifica una falta, anúlala con un motivo: el puntaje se recalcula antes de tu decisión.'
-          : '100 puntos menos la penalización de cada regla de la aerolínea que se cumplió.'
+        canWaive && pirep.status !== 'pending'
+          ? 'El PIREP ya está calificado, pero puedes anular o restaurar una falta con un motivo: el puntaje se recalcula y queda registrado quién lo cambió.'
+          : canWaive
+            ? 'Si el comentario del piloto justifica una falta, anúlala con un motivo: el puntaje se recalcula antes de tu decisión.'
+            : '100 puntos menos la penalización de cada regla de la aerolínea que se cumplió.'
       }
     >
       <div className="flex items-center gap-4">
@@ -907,6 +910,7 @@ export function PirepDetailPage() {
   const isOwner = p.user_id === user?.id;
   const canReview = permissions.canStaff && (!isOwner || isOrgAdmin);
   const canArchive = canReview && p.status !== 'archived';
+  const canAdjustClosed = isOrgAdmin || (permissions.canManage && !isOwner && p.status !== 'archived');
   const airports: MapAirport[] = [];
   if (p.origin) airports.push({ icao: p.origin.icao_code, name: p.origin.name, latitude: p.origin.latitude, longitude: p.origin.longitude, role: 'origin' });
   if (p.destination)
@@ -1091,7 +1095,7 @@ export function PirepDetailPage() {
           {metrics.fuel ? <FuelPanel fuel={metrics.fuel} /> : null}
         </div>
         <div className="space-y-6">
-          <FindingsPanel pirep={p} canReview={canReview} />
+          <FindingsPanel pirep={p} canReview={canReview} canAdjustClosed={canAdjustClosed} />
           <CommentsPanel pirep={p} isOwner={isOwner} canReview={canReview} canStaff={permissions.canStaff} />
           <EventsPanel events={track.data?.events ?? []} loading={track.isPending} />
         </div>

@@ -489,6 +489,27 @@ const apt = (icao) => {
   return { icao: a.icao_code, name: a.name, city: a.city, latitude: a.latitude, longitude: a.longitude };
 };
 const minsAgo = (m) => new Date(Date.now() - m * 60_000).toISOString();
+
+// Directorio de pilotos de LAM (todas las aerolíneas).
+const dirPilot = (n, name, airlineIdx, status, extra = {}) => {
+  const a = AIRLINES[airlineIdx];
+  return {
+    membership_id: id(2400 + n), airline_id: a.id, airline_name: a.name, airline_icao: a.icao_code, airline_color: a.brand_primary_color,
+    status, roles: ['pilot'], requested_at: minsAgo(60 * n), decided_at: status === 'active' ? minsAgo(50 * n) : null,
+    user_id: id(2500 + n), pilot_number: 1100 + n, display_name: name, country_code: 'MX', avatar_url: null, ivao_vid: null,
+    flights: 0, block_minutes: 0, last_flight_at: null, ...extra,
+  };
+};
+const PILOT_DIRECTORY = [
+  dirPilot(1, 'Carla Ruiz', 0, 'active', { roles: ['airline_admin', 'pilot'], ivao_vid: '612001', flights: 42, block_minutes: 5400 }),
+  dirPilot(2, 'Diego Torres', 0, 'active', { roles: ['ops_chief', 'pilot'], flights: 18, block_minutes: 2100 }),
+  dirPilot(3, 'Sofía Ramírez', 0, 'active', { ivao_vid: '598877', flights: 7, block_minutes: 640 }),
+  dirPilot(4, 'Ana Martínez', 0, 'pending'),
+  dirPilot(5, 'Mateo Gómez', 1, 'active', { country_code: 'AR', ivao_vid: '701234', flights: 25, block_minutes: 3900 }),
+  dirPilot(6, 'Valeria Soto', 1, 'pending', { country_code: 'CL' }),
+  dirPilot(7, 'Jorge Lara', 2, 'active', { flights: 11, block_minutes: 1800 }),
+];
+
 const liveFlight = (n, callsign, from, to, pos, phase, extra = {}) => ({
   flight_id: id(1500 + n),
   session_id: id(1550 + n),
@@ -1074,6 +1095,16 @@ const PILOT_PROFILE = {
   ],
   type_ratings: [{ airline_icao: 'MXL', icao_code: 'A320', model: 'A320', granted_at: minsAgo(20000) }],
   tour_badges: [{ tour_id: id(1700), code: 'MXRIV', name: 'Riviera Maya', color: '#0ea5e9', badge_path: null, airline_icao: 'MXL', awarded_at: minsAgo(5000) }],
+  tours: [
+    {
+      tour_id: id(1600), code: 'TMX01', name: 'Tour México', color: '#057956', badge_path: null, airline_icao: 'MXL', tour_status: 'published',
+      starts_on: null, ends_on: null, enrollment_status: 'approved', enrolled_at: minsAgo(9000), completed_at: null, legs: 10, accepted: 4, in_review: 1, booked: 1,
+    },
+    {
+      tour_id: id(1700), code: 'MXRIV', name: 'Riviera Maya', color: '#0ea5e9', badge_path: null, airline_icao: 'MXL', tour_status: 'closed',
+      starts_on: null, ends_on: null, enrollment_status: 'completed', enrolled_at: minsAgo(20000), completed_at: minsAgo(5000), legs: 5, accepted: 5, in_review: 0, booked: 0,
+    },
+  ],
   events: [],
   trainings: [],
 };
@@ -1170,6 +1201,7 @@ async function handleSupabase(route) {
     get_route_type_usage: ROUTE_TYPE_USAGE,
     list_platform_accounts: PLATFORM_ACCOUNTS,
     get_pilot_profile: PILOT_PROFILE,
+    get_pilot_directory: PILOT_DIRECTORY,
     get_pilot_trainings: PILOT_TRAININGS,
     get_trainings: TRAININGS_LIST,
     search_training_instructors: [{ user_id: id(2501), display_name: 'Ana Torres', pilot_number: 1002, avatar_url: null }],
@@ -1338,7 +1370,24 @@ async function shoot(name, path, { viewport = { width: 1440, height: 900 }, airl
 await shoot('01-dashboard', '', { waitFor: 'Aerolíneas registradas' });
 await shoot('02-airlines', 'airlines', { waitFor: 'Nueva aerolínea' });
 await shoot('03-airline-detail', 'airlines/lineas-aereas-mexicanas', { waitFor: 'Políticas operacionales' });
-await shoot('04-pilots', 'pilots', { airlineId: MXL.id, waitFor: 'Ana Martínez' });
+await shoot('04-pilots', 'pilots', {
+  airlineId: MXL.id,
+  waitFor: 'Carla Ruiz',
+  action: async (page) => {
+    await page.getByRole('tab', { name: /Solicitudes/ }).click();
+    await page.getByText('Ana Martínez').waitFor();
+  },
+});
+await shoot('78-pilots-all-airlines', 'pilots', {
+  airlineId: MXL.id,
+  waitFor: 'Carla Ruiz',
+  action: async (page) => {
+    await page.getByRole('tab', { name: /Todas las aerolíneas/ }).click();
+    await page.getByText('Mateo Gómez').waitFor();
+    await page.getByText('Por aprobar').first().waitFor();
+  },
+});
+await shoot('79-pilots-lam', 'pilots', { waitFor: 'Jorge Lara' });
 await shoot('05-fleet', 'fleet', { airlineId: MXL.id, waitFor: 'XA-MXA' });
 await shoot('06-fleet-types', 'fleet', {
   airlineId: MXL.id,
@@ -1458,7 +1507,13 @@ await shoot('65-training-calendar', 'training', { waitFor: 'Calendario', action:
 await shoot('66-training-detail', `training/${id(2601)}`, { waitFor: 'Inscripciones', action: async (page) => page.getByText('Hamad Al-Thani').waitFor() });
 await shoot('67-training-editor', 'training/new', { waitFor: 'Programar entrenamiento', action: async (page) => page.getByLabel('Título').fill('SOP del A320') });
 await shoot('68-training-mobile', 'training?vista=lista', { viewport: { width: 390, height: 844 }, waitFor: 'Próximos entrenamientos' });
-await shoot('62-pilot-profile', 'pilots/1001', { waitFor: 'Historial de vuelos', action: async (page) => page.getByText('PIREP-2026-00014').waitFor() });
+await shoot('62-pilot-profile', 'pilots/1001', {
+  waitFor: 'Historial de vuelos',
+  action: async (page) => {
+    await page.getByText('PIREP-2026-00014').waitFor();
+    await page.getByText('4 de 10 vuelos completados', { exact: false }).waitFor();
+  },
+});
 await shoot('63-account', 'account', { waitFor: 'Datos personales', action: async (page) => page.getByLabel('Usuario de Discord').waitFor() });
 await shoot('64-user-menu', '', {
   fullPage: false,
@@ -1517,7 +1572,7 @@ await shoot('18-my-flights-history', 'my-flights', {
 await shoot('19-my-flights-mobile', 'my-flights', { viewport: { width: 390, height: 844 }, waitFor: 'MXL21K' });
 await shoot('20-pilot-ratings', 'pilots', {
   airlineId: MXL.id,
-  waitFor: 'Ana Martínez',
+  waitFor: 'Carla Ruiz',
   action: async (page) => {
     await page.getByRole('tab', { name: /Miembros/ }).click();
     await page.getByRole('button', { name: 'Habilitaciones' }).first().click();
